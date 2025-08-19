@@ -144,15 +144,15 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Frontend UI testing completed successfully"
+    - "Test new backend features: auth (register first user, login), admin channels CRUD + approve/reject, parser endpoints (/api/parser/telemetr|tgstat), link checker (/api/admin/links/check), trending list"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
-    message: "Please test backend endpoints defined above. No auth required. DB via MONGO_URL. Ensure UUIDs in id and ISO timestamps in created_at/updated_at."
+    message: "Added multi-user local auth (JWT), admin endpoints, parser endpoints for Telemetr/TGStat (generic t.me extractor), and link checker. Please test backend flows."
   - agent: "testing"
     message: "BACKEND TESTING COMPLETE ✅ - All MVP endpoints fully functional. Fixed minor MongoDB bulk_write syntax issue in categories endpoint. All 7 test suites passed including health checks, categories population, channel CRUD operations, search/filtering, pagination, sorting, and data format validation. Backend APIs are production-ready with proper UUID usage, ISO timestamps, and CORS configuration. Ready for frontend integration testing or deployment."
   - agent: "testing"
-    message: "FRONTEND UI TESTING COMPLETE ✅ - Comprehensive testing of TeleIndex app at https://teleindex.preview.emergentagent.com completed successfully. All 6 requirements verified: Header with TeleIndex brand, category select with default categories (Technology, News, Crypto), search input, channel cards grid (11 cards loaded), sort functionality (New/Popular), and screenshot captured. App loads without build errors. Fixed minor ESLint issue. Both backend and frontend are fully functional and ready for production."
+    message: "FRONTEND UI TESTING COMPLETE ✅ - Comprehensive testing of TeleIndex app at https://teleindex.preview.emergentagent.com completed successfully. All 6 requirements verified."
