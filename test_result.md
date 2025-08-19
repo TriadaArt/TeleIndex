@@ -107,15 +107,18 @@ user_problem_statement: "Build MVP for Telegram Channels Catalog with search, ca
 backend:
   - task: "Core API: categories + channels CRUD + search + pagination"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Implemented /api/channels (list, create, patch), /api/categories, /api/channels/top with UUID ids and ISO dates; ensured CORS and env usage."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE BACKEND TESTING COMPLETED - All 7 test suites passed: ✅ Health endpoints (GET /api/health, GET /api/) return proper responses. ✅ Categories endpoint populates 10 default categories on first call and remains stable. ✅ Channel creation (POST /api/channels) works with minimal fields, returns UUID ids and ISO timestamps, defaults to 'approved' status. ✅ Channel listing (GET /api/channels) supports search (q), category filter, sort=popular/new, pagination with proper total/page/limit/has_more. ✅ Channel updates (PATCH /api/channels/{id}) modify fields and update timestamps correctly. ✅ Top channels (GET /api/channels/top) returns approved channels sorted by subscribers desc with limit support. ✅ All responses use UUIDs (not ObjectIds), ISO timestamps, and CORS is properly configured. Fixed minor bulk_write operation issue in categories endpoint during testing."
 
 frontend:
   - task: "Public UI: list channels with search, filters, sort, pagination"
