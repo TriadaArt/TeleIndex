@@ -886,6 +886,70 @@ class BackendTester:
         except Exception as e:
             self.log(f"❌ CORS/JSON Format - FAILED: {e}")
             return False
+    
+    def test_uuid_and_timestamps_validation(self):
+        """Test that all responses contain UUID ids and ISO timestamps"""
+        self.log("Testing UUID and timestamp format validation...")
+        
+        try:
+            # Test with channels endpoint
+            response = self.session.get(f"{BASE_URL}/channels?limit=5")
+            assert response.status_code == 200, "Channels fetch failed"
+            
+            data = response.json()
+            
+            for channel in data["items"]:
+                # Validate UUID format
+                try:
+                    uuid.UUID(channel["id"])
+                except ValueError:
+                    self.log(f"❌ Invalid UUID format: {channel['id']}")
+                    return False
+                
+                # Validate ISO timestamp format
+                try:
+                    datetime.fromisoformat(channel["created_at"].replace('Z', '+00:00'))
+                    datetime.fromisoformat(channel["updated_at"].replace('Z', '+00:00'))
+                except ValueError:
+                    self.log(f"❌ Invalid timestamp format: {channel['created_at']}, {channel['updated_at']}")
+                    return False
+                
+                # Ensure no MongoDB _id leakage
+                assert "_id" not in channel, f"MongoDB _id found in response: {channel.get('_id')}"
+            
+            self.log("✅ All channels have valid UUIDs, ISO timestamps, and no _id leakage")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ UUID and timestamp validation - FAILED: {e}")
+            return False
+    
+    def test_api_prefix_requirement(self):
+        """Test that all endpoints are reachable under /api prefix"""
+        self.log("Testing /api prefix requirement...")
+        
+        try:
+            # Test various endpoints to ensure they're under /api
+            endpoints_to_test = [
+                "/health",
+                "/categories", 
+                "/channels",
+                "/channels/trending",
+                "/channels/top"
+            ]
+            
+            for endpoint in endpoints_to_test:
+                response = self.session.get(f"{BASE_URL}{endpoint}")
+                assert response.status_code == 200, f"Endpoint {endpoint} not accessible under /api: {response.status_code}"
+            
+            self.log("✅ All endpoints properly accessible under /api prefix")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ API prefix requirement - FAILED: {e}")
+            return False
             
     def run_all_tests(self):
         """Run all backend tests"""
