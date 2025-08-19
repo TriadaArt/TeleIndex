@@ -31,7 +31,7 @@ const useFetch = (url, deps = []) => {
     return () => {
       mounted = false;
     };
-  }, deps); // eslint-disable-line react-hooks/exhaustive-deps
+  }, deps);
   return { data, loading, error };
 };
 
