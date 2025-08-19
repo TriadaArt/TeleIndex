@@ -158,7 +158,8 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Frontend: First-admin UI flow → Admin login → Admin tabs (Summary, Drafts, Approved, Add, Import) → Import via Telemetr/TGStat URL → Approve/Reject drafts → Link checker → Return to catalog and verify trending/cards/filters/sorts visible"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
