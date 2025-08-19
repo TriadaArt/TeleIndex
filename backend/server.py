@@ -1,15 +1,25 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Header
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from typing import List, Optional, Literal, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from passlib.context import CryptContext
+from jose import jwt, JWTError
+import re
+import requests
 
+# Optional: beautifulsoup for scrapers
+try:
+    from bs4 import BeautifulSoup
+except Exception:  # pragma: no cover
+    BeautifulSoup = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -19,33 +29,61 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
+# App and router
 app = FastAPI()
+api = APIRouter(prefix="/api")
 
-# Create a router with the /api prefix
-api_router = APIRouter(prefix="/api")
+# Security setup
+pwd_ctx = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
+JWT_SECRET = os.environ.get("JWT_SECRET", "dev_secret_change_me")
+JWT_ALG = "HS256"
+JWT_EXPIRE_MIN = int(os.environ.get("JWT_EXPIRES_MINUTES", "10080"))  # 7 days
+bearer_scheme = HTTPBearer(auto_error=False)
 
-# ---------------------- Helpers ----------------------
+# Helpers
 
 def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def to_int(value: str) -> Optional[int]:
+    if not value:
+        return None
+    s = value.strip().lower()
+    # replace localized suffixes
+    mult = 1
+    if any(k in s for k in ["m", "млн", "million", "миллион"]):
+        mult = 1_000_000
+    elif any(k in s for k in ["k", "тыс", "thousand"]):
+        mult = 1_000
+    # remove non digits, dot/comma for decimals
+    num = re.findall(r"[\d]+(?:[\.,]\d+)?", s)
+    if not num:
+        return None
+    n = num[0].replace(",", ".")
+    try:
+        if "." in n:
+            return int(float(n) * mult)
+        return int(int(n) * mult)
+    except Exception:
+        return None
+
+
 def prepare_for_mongo(data: Dict[str, Any]) -> Dict[str, Any]:
-    # Ensure datetimes are iso strings
-    for key in ["created_at", "updated_at"]:
-        if isinstance(data.get(key), datetime):
-            data[key] = data[key].astimezone(timezone.utc).isoformat()
+    data = dict(data)
+    # Convert datetimes
+    for k in ["created_at", "updated_at", "link_last_checked", "dead_at"]:
+        if isinstance(data.get(k), datetime):
+            data[k] = data[k].astimezone(timezone.utc).isoformat()
     return data
 
 
 def parse_from_mongo(item: Dict[str, Any]) -> Dict[str, Any]:
-    # Ignore Mongo's _id
+    item = dict(item)
     item.pop("_id", None)
     return item
 
-# ---------------------- Models ----------------------
-
+# Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     client_name: str
@@ -58,15 +96,19 @@ ChannelStatus = Literal["draft", "approved", "rejected"]
 
 class ChannelBase(BaseModel):
     name: str
-    link: str  # t.me/xxx or https://t.me/+invite
+    link: str
     avatar_url: Optional[str] = None
     subscribers: int = 0
     category: Optional[str] = None
     language: Optional[str] = None
-    short_description: Optional[str] = None  # brief summary for cards
+    short_description: Optional[str] = None
     seo_description: Optional[str] = None
     status: ChannelStatus = "approved"
     growth_score: Optional[float] = None
+    is_featured: bool = False
+    link_status: Optional[Literal["alive", "dead"]] = None
+    link_last_checked: Optional[str] = None
+    dead_at: Optional[str] = None
 
 class ChannelCreate(ChannelBase):
     name: str
@@ -83,6 +125,8 @@ class ChannelUpdate(BaseModel):
     seo_description: Optional[str] = None
     status: Optional[ChannelStatus] = None
     growth_score: Optional[float] = None
+    is_featured: Optional[bool] = None
+    link_status: Optional[Literal["alive", "dead"]] = None
 
 class ChannelResponse(ChannelBase):
     id: str
@@ -96,54 +140,145 @@ class PaginatedChannels(BaseModel):
     limit: int
     has_more: bool
 
-# ---------------------- Routes ----------------------
+class UserBase(BaseModel):
+    email: EmailStr
+    role: Literal["admin", "editor"] = "admin"
 
-@api_router.get("/health")
+class UserCreate(UserBase):
+    password: str
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(UserBase):
+    id: str
+    created_at: str
+
+# Security helpers
+async def create_indexes():
+    try:
+        await db.users.create_index("email", unique=True)
+        await db.channels.create_index("id", unique=True)
+        await db.channels.create_index([("status", 1), ("subscribers", -1)])
+        await db.channels.create_index([("created_at", -1)])
+        await db.channels.create_index([("name", "text"), ("short_description", "text"), ("seo_description", "text")])
+        await db.categories.create_index("name", unique=True)
+    except Exception:  # indexes may exist
+        pass
+
+
+def make_token(user: Dict[str, Any]) -> str:
+    payload = {
+        "sub": user["id"],
+        "email": user["email"],
+        "role": user.get("role", "admin"),
+        "exp": datetime.now(timezone.utc) + timedelta(minutes=JWT_EXPIRE_MIN),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
+
+
+async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)) -> Dict[str, Any]:
+    if not credentials:
+        raise HTTPException(401, detail="Not authenticated")
+    token = credentials.credentials
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALG])
+        uid = payload.get("sub")
+        if not uid:
+            raise HTTPException(401, detail="Invalid token")
+        user = await db.users.find_one({"id": uid})
+        if not user:
+            raise HTTPException(401, detail="User not found")
+        return parse_from_mongo(user)
+    except JWTError:
+        raise HTTPException(401, detail="Invalid token")
+
+
+async def get_current_admin(user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
+    if user.get("role") != "admin":
+        raise HTTPException(403, detail="Admin required")
+    return user
+
+# Defaults (RU)
+DEFAULT_CATEGORIES = [
+    "Новости", "Технологии", "Крипто", "Бизнес", "Развлечения"
+]
+
+# Routes: health and status
+@api.get("/health")
 async def health():
     return {"ok": True, "time": utcnow_iso()}
 
-@api_router.get("/")
+@api.get("/")
 async def root():
     return {"message": "TeleIndex API"}
 
-@api_router.post("/status", response_model=StatusCheck)
+@api.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
     status_obj = StatusCheck(client_name=input.client_name)
     await db.status_checks.insert_one(status_obj.model_dump())
     return status_obj
 
-@api_router.get("/status", response_model=List[StatusCheck])
+@api.get("/status", response_model=List[StatusCheck])
 async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**parse_from_mongo(s)) for s in status_checks]
 
-DEFAULT_CATEGORIES = [
-    "News", "Technology", "Crypto", "Business", "Entertainment",
-    "Education", "Sports", "Lifestyle", "Finance", "Gaming"
-]
+# Auth routes
+@api.post("/auth/register", response_model=UserResponse)
+async def register(user: UserCreate):
+    # Only allow open registration if no users exist; else forbid (admin should add more later)
+    existing_count = await db.users.count_documents({})
+    if existing_count > 0:
+        raise HTTPException(403, detail="Registration disabled. Ask an admin.")
+    data = {
+        "id": str(uuid.uuid4()),
+        "email": str(user.email).lower(),
+        "password_hash": pwd_ctx.hash(user.password),
+        "role": user.role,
+        "created_at": utcnow_iso(),
+        "updated_at": utcnow_iso(),
+    }
+    try:
+        await db.users.insert_one(data)
+    except Exception as e:
+        raise HTTPException(400, detail="User exists")
+    return UserResponse(id=data["id"], email=data["email"], role=data["role"], created_at=data["created_at"])    
 
-@api_router.get("/categories", response_model=List[str])
+@api.post("/auth/login")
+async def login(payload: UserLogin):
+    user = await db.users.find_one({"email": str(payload.email).lower()})
+    if not user or not pwd_ctx.verify(payload.password, user.get("password_hash", "")):
+        raise HTTPException(401, detail="Invalid credentials")
+    token = make_token(parse_from_mongo(user))
+    return {"access_token": token, "token_type": "bearer", "user": UserResponse(id=user["id"], email=user["email"], role=user["role"], created_at=user["created_at"]) }
+
+@api.get("/auth/me", response_model=UserResponse)
+async def me(user: Dict[str, Any] = Depends(get_current_user)):
+    return UserResponse(id=user["id"], email=user["email"], role=user.get("role", "admin"), created_at=user.get("created_at", utcnow_iso()))
+
+# Categories
+@api.get("/categories", response_model=List[str])
 async def list_categories():
-    # For MVP: return defaults if collection empty
     count = await db.categories.count_documents({})
     if count == 0:
-        # Upsert defaults once (idempotent)
-        from pymongo import UpdateOne
-        ops = [UpdateOne(
-            {"name": c},
-            {"$set": {"name": c}},
-            upsert=True
-        ) for c in DEFAULT_CATEGORIES]
-        if ops:
-            await db.categories.bulk_write(ops)
+        try:
+            from pymongo import UpdateOne
+            ops = [UpdateOne({"name": c}, {"$set": {"name": c}}, upsert=True) for c in DEFAULT_CATEGORIES]
+            if ops:
+                await db.categories.bulk_write(ops)
+        except Exception:
+            pass
     cats = await db.categories.find().sort("name", 1).to_list(1000)
     return [c.get("name") for c in cats]
 
-@api_router.post("/channels", response_model=ChannelResponse)
+# Public channels
+@api.post("/channels", response_model=ChannelResponse)
 async def create_channel(payload: ChannelCreate):
-    # Basic link guard
     if not payload.link.startswith("http") and not payload.link.startswith("t.me"):
-        raise HTTPException(status_code=400, detail="Invalid link. Provide t.me or https URL")
+        raise HTTPException(400, detail="Invalid link. Provide t.me or https URL")
     now = utcnow_iso()
     item = {
         "id": str(uuid.uuid4()),
@@ -154,11 +289,11 @@ async def create_channel(payload: ChannelCreate):
     await db.channels.insert_one(prepare_for_mongo(item))
     return ChannelResponse(**item)
 
-@api_router.patch("/channels/{channel_id}", response_model=ChannelResponse)
+@api.patch("/channels/{channel_id}", response_model=ChannelResponse)
 async def update_channel(channel_id: str, payload: ChannelUpdate):
     existing = await db.channels.find_one({"id": channel_id})
     if not existing:
-        raise HTTPException(status_code=404, detail="Channel not found")
+        raise HTTPException(404, detail="Channel not found")
     updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
     updates["updated_at"] = utcnow_iso()
     await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
@@ -166,12 +301,12 @@ async def update_channel(channel_id: str, payload: ChannelUpdate):
     doc = parse_from_mongo(doc)
     return ChannelResponse(**doc)
 
-@api_router.get("/channels", response_model=PaginatedChannels)
+@api.get("/channels", response_model=PaginatedChannels)
 async def list_channels(
     q: Optional[str] = None,
     category: Optional[str] = None,
     status: Optional[ChannelStatus] = "approved",
-    sort: Literal["popular", "new"] = "popular",
+    sort: Literal["popular", "new", "name"] = "popular",
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
 ):
@@ -187,7 +322,12 @@ async def list_channels(
             {"seo_description": {"$regex": q, "$options": "i"}},
         ]
 
-    sort_spec = [("subscribers", -1)] if sort == "popular" else [("created_at", -1)]
+    if sort == "popular":
+        sort_spec = [("subscribers", -1)]
+    elif sort == "name":
+        sort_spec = [("name", 1)]
+    else:
+        sort_spec = [("created_at", -1)]
 
     skip = (page - 1) * limit
     total = await db.channels.count_documents(query)
@@ -202,15 +342,189 @@ async def list_channels(
         has_more=(skip + len(items)) < total,
     )
 
-@api_router.get("/channels/top", response_model=List[ChannelResponse])
+@api.get("/channels/top", response_model=List[ChannelResponse])
 async def top_channels(limit: int = Query(10, ge=1, le=50)):
     cursor = db.channels.find({"status": "approved"}).sort("subscribers", -1).limit(limit)
     items_raw = await cursor.to_list(length=limit)
     return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
 
-# Include the router in the main app
-app.include_router(api_router)
+@api.get("/channels/trending", response_model=List[ChannelResponse])
+async def trending_channels(limit: int = Query(6, ge=1, le=20)):
+    # Prefer growth_score then subscribers
+    cursor = db.channels.find({"status": "approved"}).sort([
+        ("growth_score", -1),
+        ("subscribers", -1)
+    ]).limit(limit)
+    items_raw = await cursor.to_list(length=limit)
+    return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
 
+# Admin routes
+@api.get("/admin/summary")
+async def admin_summary(user: Dict[str, Any] = Depends(get_current_admin)):
+    draft = await db.channels.count_documents({"status": "draft"})
+    approved = await db.channels.count_documents({"status": "approved"})
+    dead = await db.channels.count_documents({"link_status": "dead"})
+    return {"draft": draft, "approved": approved, "dead": dead}
+
+@api.get("/admin/channels", response_model=PaginatedChannels)
+async def admin_list_channels(
+    status: Optional[ChannelStatus] = None,
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    user: Dict[str, Any] = Depends(get_current_admin),
+):
+    query: Dict[str, Any] = {}
+    if status:
+        query["status"] = status
+    total = await db.channels.count_documents(query)
+    skip = (page - 1) * limit
+    cursor = db.channels.find(query).sort("updated_at", -1).skip(skip).limit(limit)
+    items_raw = await cursor.to_list(length=limit)
+    items = [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
+    return PaginatedChannels(items=items, total=total, page=page, limit=limit, has_more=(skip + len(items)) < total)
+
+@api.post("/admin/channels", response_model=ChannelResponse)
+async def admin_create_channel(payload: ChannelCreate, user: Dict[str, Any] = Depends(get_current_admin)):
+    now = utcnow_iso()
+    item = {
+        "id": str(uuid.uuid4()),
+        **payload.model_dump(),
+        "status": payload.status or "draft",
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.channels.insert_one(prepare_for_mongo(item))
+    return ChannelResponse(**item)
+
+@api.patch("/admin/channels/{channel_id}", response_model=ChannelResponse)
+async def admin_update_channel(channel_id: str, payload: ChannelUpdate, user: Dict[str, Any] = Depends(get_current_admin)):
+    existing = await db.channels.find_one({"id": channel_id})
+    if not existing:
+        raise HTTPException(404, detail="Channel not found")
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    updates["updated_at"] = utcnow_iso()
+    await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
+    doc = await db.channels.find_one({"id": channel_id})
+    doc = parse_from_mongo(doc)
+    return ChannelResponse(**doc)
+
+@api.post("/admin/channels/{channel_id}/approve", response_model=ChannelResponse)
+async def admin_approve_channel(channel_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
+    existing = await db.channels.find_one({"id": channel_id})
+    if not existing:
+        raise HTTPException(404, detail="Channel not found")
+    await db.channels.update_one({"id": channel_id}, {"$set": {"status": "approved", "updated_at": utcnow_iso()}})
+    doc = await db.channels.find_one({"id": channel_id})
+    return ChannelResponse(**parse_from_mongo(doc))
+
+@api.post("/admin/channels/{channel_id}/reject", response_model=ChannelResponse)
+async def admin_reject_channel(channel_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
+    existing = await db.channels.find_one({"id": channel_id})
+    if not existing:
+        raise HTTPException(404, detail="Channel not found")
+    await db.channels.update_one({"id": channel_id}, {"$set": {"status": "rejected", "updated_at": utcnow_iso()}})
+    doc = await db.channels.find_one({"id": channel_id})
+    return ChannelResponse(**parse_from_mongo(doc))
+
+# Parser endpoints (admin)
+
+def extract_tme_links_from_html(html: str) -> List[Dict[str, Any]]:
+    if not BeautifulSoup:
+        return []
+    soup = BeautifulSoup(html, "lxml")
+    results = []
+    for a in soup.select('a[href*="t.me"]'):
+        href = a.get("href", "").strip()
+        if not href:
+            continue
+        name = a.get_text(strip=True) or a.get("title") or None
+        # Try to find subscriber count nearby
+        subs_text = None
+        parent_text = a.parent.get_text(" ", strip=True) if a.parent else ""
+        m = re.search(r"([\d\s,.]+)\s*(k|m|тыс|млн)?", parent_text.lower())
+        if m:
+            subs_text = m.group(0)
+        subscribers = to_int(subs_text or "") or 0
+        results.append({
+            "name": name or href,
+            "link": href,
+            "subscribers": subscribers,
+        })
+    return results
+
+@api.post("/parser/telemetr")
+async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
+    try:
+        resp = requests.get(list_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        if resp.status_code != 200:
+            raise HTTPException(400, detail=f"Fetch failed: {resp.status_code}")
+        items = extract_tme_links_from_html(resp.text)
+        inserted = 0
+        now = utcnow_iso()
+        for it in items[:limit]:
+            channel = {
+                "id": str(uuid.uuid4()),
+                "name": it.get("name") or "Без названия",
+                "link": it.get("link"),
+                "avatar_url": None,
+                "subscribers": int(it.get("subscribers") or 0),
+                "category": category,
+                "language": "ru",
+                "short_description": None,
+                "seo_description": None,
+                "status": "draft",
+                "created_at": now,
+                "updated_at": now,
+            }
+            # Upsert by link to avoid duplicates
+            await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
+            inserted += 1
+        return {"ok": True, "inserted": inserted}
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
+
+@api.post("/parser/tgstat")
+async def parse_tgstat(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
+    # Same generic approach; real-world selectors can be refined later
+    return await parse_telemetr(list_url=list_url, category=category, limit=limit, user=user)  # reuse
+
+# Link checker
+@api.post("/admin/links/check")
+async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[str, Any] = Depends(get_current_admin)):
+    cursor = db.channels.find({"status": {"$in": ["approved", "draft"]}}).sort("link_last_checked", 1).limit(limit)
+    items = await cursor.to_list(length=limit)
+    alive = dead = 0
+    now = utcnow_iso()
+    for ch in items:
+        link = ch.get("link", "")
+        if not link:
+            continue
+        url = link if link.startswith("http") else f"https://{link}"
+        status = "dead"
+        try:
+            r = requests.head(url, timeout=8, allow_redirects=True)
+            if r.status_code < 400:
+                status = "alive"
+            else:
+                # try GET as fallback
+                r2 = requests.get(url, timeout=8)
+                if r2.status_code < 400:
+                    status = "alive"
+        except Exception:
+            status = "dead"
+        if status == "alive":
+            alive += 1
+            updates = {"link_status": "alive", "link_last_checked": now, "updated_at": now}
+        else:
+            dead += 1
+            updates = {"link_status": "dead", "dead_at": now, "link_last_checked": now, "updated_at": now}
+            if replace_dead:
+                updates["link"] = "#"
+        await db.channels.update_one({"id": ch["id"]}, {"$set": updates})
+    return {"ok": True, "checked": len(items), "alive": alive, "dead": dead}
+
+# Include router and middleware
+app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
@@ -219,12 +533,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Lifecycle
+@app.on_event("startup")
+async def on_startup():
+    await create_indexes()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():

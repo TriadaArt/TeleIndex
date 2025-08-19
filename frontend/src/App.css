@@ -3,10 +3,4 @@
 html, body, #root { height: 100%; }
 img { display: block; }
 
-/* Line clamp utility (fallback if Tailwind plugin missing) */
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
-}
+.line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
