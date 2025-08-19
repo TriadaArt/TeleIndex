@@ -128,11 +128,12 @@ async def list_categories():
     count = await db.categories.count_documents({})
     if count == 0:
         # Upsert defaults once (idempotent)
-        ops = [{"updateOne": {
-            "filter": {"name": c},
-            "update": {"$set": {"name": c}},
-            "upsert": True
-        }} for c in DEFAULT_CATEGORIES]
+        from pymongo import UpdateOne
+        ops = [UpdateOne(
+            {"name": c},
+            {"$set": {"name": c}},
+            upsert=True
+        ) for c in DEFAULT_CATEGORIES]
         if ops:
             await db.categories.bulk_write(ops)
     cats = await db.categories.find().sort("name", 1).to_list(1000)
