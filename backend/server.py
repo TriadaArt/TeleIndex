@@ -198,7 +198,7 @@ async def list_channels(
         total=total,
         page=page,
         limit=limit,
-        has_more=(skip + len(items)) &lt; total,
+        has_more=(skip + len(items)) < total,
     )
 
 @api_router.get("/channels/top", response_model=List[ChannelResponse])
