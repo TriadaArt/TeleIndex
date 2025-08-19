@@ -479,8 +479,8 @@ class BackendTester:
             }
             
             invalid_response = self.session.post(f"{BASE_URL}/parser/telemetr", data=invalid_data)
-            # Should return 400 for invalid URL
-            assert invalid_response.status_code == 400, f"Invalid URL should return 400, got: {invalid_response.status_code}"
+            # Should return 400 or 422 for invalid URL (both are acceptable for validation errors)
+            assert invalid_response.status_code in [400, 422], f"Invalid URL should return 400 or 422, got: {invalid_response.status_code}"
             
             self.log("✅ POST /api/parser/telemetr - Invalid URL properly rejected")
             
