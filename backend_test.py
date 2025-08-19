@@ -29,6 +29,9 @@ class BackendTester:
         """Clear Authorization header"""
         self.session.headers.pop("Authorization", None)
         
+    def log(self, message):
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+        
     def test_auth_register_first_admin(self):
         """Test POST /api/auth/register - first admin user registration"""
         self.log("Testing first admin user registration...")
