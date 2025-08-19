@@ -476,12 +476,12 @@ class BackendTester:
             self.set_auth_header()
             
             # Test link checker with specific parameters
-            check_data = {
+            check_params = {
                 "limit": 10,
                 "replace_dead": False
             }
             
-            response = self.session.post(f"{BASE_URL}/admin/links/check", json=check_data)
+            response = self.session.post(f"{BASE_URL}/admin/links/check", params=check_params)
             assert response.status_code == 200, f"Link checker failed: {response.status_code} - {response.text}"
             
             result = response.json()
@@ -501,12 +501,12 @@ class BackendTester:
             self.log(f"✅ POST /api/admin/links/check - Checked {result['checked']} links: {result['alive']} alive, {result['dead']} dead")
             
             # Test with replace_dead=true
-            replace_data = {
+            replace_params = {
                 "limit": 5,
                 "replace_dead": True
             }
             
-            replace_response = self.session.post(f"{BASE_URL}/admin/links/check", json=replace_data)
+            replace_response = self.session.post(f"{BASE_URL}/admin/links/check", params=replace_params)
             assert replace_response.status_code == 200, "Link checker with replace_dead failed"
             
             replace_result = replace_response.json()
