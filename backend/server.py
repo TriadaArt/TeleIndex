@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Header
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -15,32 +15,27 @@ from jose import jwt, JWTError
 import re
 import requests
 
-# Optional: beautifulsoup for scrapers
 try:
     from bs4 import BeautifulSoup
-except Exception:  # pragma: no cover
+except Exception:
     BeautifulSoup = None
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# App and router
 app = FastAPI()
 api = APIRouter(prefix="/api")
 
-# Security setup
 pwd_ctx = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 JWT_SECRET = os.environ.get("JWT_SECRET", "dev_secret_change_me")
 JWT_ALG = "HS256"
-JWT_EXPIRE_MIN = int(os.environ.get("JWT_EXPIRES_MINUTES", "10080"))  # 7 days
+JWT_EXPIRE_MIN = int(os.environ.get("JWT_EXPIRES_MINUTES", "10080"))
 bearer_scheme = HTTPBearer(auto_error=False)
 
-# Helpers
 
 def utcnow_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -50,13 +45,11 @@ def to_int(value: str) -> Optional[int]:
     if not value:
         return None
     s = value.strip().lower()
-    # replace localized suffixes
     mult = 1
     if any(k in s for k in ["m", "млн", "million", "миллион"]):
         mult = 1_000_000
     elif any(k in s for k in ["k", "тыс", "thousand"]):
         mult = 1_000
-    # remove non digits, dot/comma for decimals
     num = re.findall(r"[\d]+(?:[\.,]\d+)?", s)
     if not num:
         return None
@@ -71,7 +64,6 @@ def to_int(value: str) -> Optional[int]:
 
 def prepare_for_mongo(data: Dict[str, Any]) -> Dict[str, Any]:
     data = dict(data)
-    # Convert datetimes
     for k in ["created_at", "updated_at", "link_last_checked", "dead_at"]:
         if isinstance(data.get(k), datetime):
             data[k] = data[k].astimezone(timezone.utc).isoformat()
@@ -83,7 +75,6 @@ def parse_from_mongo(item: Dict[str, Any]) -> Dict[str, Any]:
     item.pop("_id", None)
     return item
 
-# Models
 class StatusCheck(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     client_name: str
@@ -155,7 +146,6 @@ class UserResponse(UserBase):
     id: str
     created_at: str
 
-# Security helpers
 async def create_indexes():
     try:
         await db.users.create_index("email", unique=True)
@@ -164,7 +154,7 @@ async def create_indexes():
         await db.channels.create_index([("created_at", -1)])
         await db.channels.create_index([("name", "text"), ("short_description", "text"), ("seo_description", "text")])
         await db.categories.create_index("name", unique=True)
-    except Exception:  # indexes may exist
+    except Exception:
         pass
 
 
@@ -177,7 +167,6 @@ def make_token(user: Dict[str, Any]) -> str:
         "iat": datetime.now(timezone.utc),
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
-
 
 async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer_scheme)) -> Dict[str, Any]:
     if not credentials:
@@ -195,18 +184,13 @@ async def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] =
     except JWTError:
         raise HTTPException(401, detail="Invalid token")
 
-
 async def get_current_admin(user: Dict[str, Any] = Depends(get_current_user)) -> Dict[str, Any]:
     if user.get("role") != "admin":
         raise HTTPException(403, detail="Admin required")
     return user
 
-# Defaults (RU)
-DEFAULT_CATEGORIES = [
-    "Новости", "Технологии", "Крипто", "Бизнес", "Развлечения"
-]
+DEFAULT_CATEGORIES = ["Новости", "Технологии", "Крипто", "Бизнес", "Развлечения"]
 
-# Routes: health and status
 @api.get("/health")
 async def health():
     return {"ok": True, "time": utcnow_iso()}
@@ -226,10 +210,14 @@ async def get_status_checks():
     status_checks = await db.status_checks.find().to_list(1000)
     return [StatusCheck(**parse_from_mongo(s)) for s in status_checks]
 
-# Auth routes
+# Auth
+@api.get("/auth/can-register")
+async def can_register():
+    count = await db.users.count_documents({})
+    return {"allowed": count == 0}
+
 @api.post("/auth/register", response_model=UserResponse)
 async def register(user: UserCreate):
-    # Only allow open registration if no users exist; else forbid (admin should add more later)
     existing_count = await db.users.count_documents({})
     if existing_count > 0:
         raise HTTPException(403, detail="Registration disabled. Ask an admin.")
@@ -243,7 +231,7 @@ async def register(user: UserCreate):
     }
     try:
         await db.users.insert_one(data)
-    except Exception as e:
+    except Exception:
         raise HTTPException(400, detail="User exists")
     return UserResponse(id=data["id"], email=data["email"], role=data["role"], created_at=data["created_at"])    
 
@@ -280,12 +268,7 @@ async def create_channel(payload: ChannelCreate):
     if not payload.link.startswith("http") and not payload.link.startswith("t.me"):
         raise HTTPException(400, detail="Invalid link. Provide t.me or https URL")
     now = utcnow_iso()
-    item = {
-        "id": str(uuid.uuid4()),
-        **payload.model_dump(),
-        "created_at": now,
-        "updated_at": now,
-    }
+    item = {"id": str(uuid.uuid4()), **payload.model_dump(), "created_at": now, "updated_at": now}
     await db.channels.insert_one(prepare_for_mongo(item))
     return ChannelResponse(**item)
 
@@ -298,8 +281,7 @@ async def update_channel(channel_id: str, payload: ChannelUpdate):
     updates["updated_at"] = utcnow_iso()
     await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
     doc = await db.channels.find_one({"id": channel_id})
-    doc = parse_from_mongo(doc)
-    return ChannelResponse(**doc)
+    return ChannelResponse(**parse_from_mongo(doc))
 
 @api.get("/channels", response_model=PaginatedChannels)
 async def list_channels(
@@ -334,13 +316,7 @@ async def list_channels(
     cursor = db.channels.find(query).sort(sort_spec).skip(skip).limit(limit)
     items_raw = await cursor.to_list(length=limit)
     items = [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
-    return PaginatedChannels(
-        items=items,
-        total=total,
-        page=page,
-        limit=limit,
-        has_more=(skip + len(items)) < total,
-    )
+    return PaginatedChannels(items=items, total=total, page=page, limit=limit, has_more=(skip + len(items)) < total)
 
 @api.get("/channels/top", response_model=List[ChannelResponse])
 async def top_channels(limit: int = Query(10, ge=1, le=50)):
@@ -350,15 +326,11 @@ async def top_channels(limit: int = Query(10, ge=1, le=50)):
 
 @api.get("/channels/trending", response_model=List[ChannelResponse])
 async def trending_channels(limit: int = Query(6, ge=1, le=20)):
-    # Prefer growth_score then subscribers
-    cursor = db.channels.find({"status": "approved"}).sort([
-        ("growth_score", -1),
-        ("subscribers", -1)
-    ]).limit(limit)
+    cursor = db.channels.find({"status": "approved"}).sort([("growth_score", -1), ("subscribers", -1)]).limit(limit)
     items_raw = await cursor.to_list(length=limit)
     return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
 
-# Admin routes
+# Admin endpoints
 @api.get("/admin/summary")
 async def admin_summary(user: Dict[str, Any] = Depends(get_current_admin)):
     draft = await db.channels.count_documents({"status": "draft"})
@@ -366,13 +338,14 @@ async def admin_summary(user: Dict[str, Any] = Depends(get_current_admin)):
     dead = await db.channels.count_documents({"link_status": "dead"})
     return {"draft": draft, "approved": approved, "dead": dead}
 
+@api.get("/admin/dead", response_model=List[ChannelResponse])
+async def list_dead_links(limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
+    cursor = db.channels.find({"link_status": "dead"}).sort("dead_at", -1).limit(limit)
+    items_raw = await cursor.to_list(length=limit)
+    return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
+
 @api.get("/admin/channels", response_model=PaginatedChannels)
-async def admin_list_channels(
-    status: Optional[ChannelStatus] = None,
-    page: int = Query(1, ge=1),
-    limit: int = Query(20, ge=1, le=100),
-    user: Dict[str, Any] = Depends(get_current_admin),
-):
+async def admin_list_channels(status: Optional[ChannelStatus] = None, page: int = Query(1, ge=1), limit: int = Query(20, ge=1, le=100), user: Dict[str, Any] = Depends(get_current_admin)):
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
@@ -386,13 +359,7 @@ async def admin_list_channels(
 @api.post("/admin/channels", response_model=ChannelResponse)
 async def admin_create_channel(payload: ChannelCreate, user: Dict[str, Any] = Depends(get_current_admin)):
     now = utcnow_iso()
-    item = {
-        "id": str(uuid.uuid4()),
-        **payload.model_dump(),
-        "status": payload.status or "draft",
-        "created_at": now,
-        "updated_at": now,
-    }
+    item = {"id": str(uuid.uuid4()), **payload.model_dump(), "status": payload.status or "draft", "created_at": now, "updated_at": now}
     await db.channels.insert_one(prepare_for_mongo(item))
     return ChannelResponse(**item)
 
@@ -405,8 +372,7 @@ async def admin_update_channel(channel_id: str, payload: ChannelUpdate, user: Di
     updates["updated_at"] = utcnow_iso()
     await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
     doc = await db.channels.find_one({"id": channel_id})
-    doc = parse_from_mongo(doc)
-    return ChannelResponse(**doc)
+    return ChannelResponse(**parse_from_mongo(doc))
 
 @api.post("/admin/channels/{channel_id}/approve", response_model=ChannelResponse)
 async def admin_approve_channel(channel_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
@@ -426,7 +392,7 @@ async def admin_reject_channel(channel_id: str, user: Dict[str, Any] = Depends(g
     doc = await db.channels.find_one({"id": channel_id})
     return ChannelResponse(**parse_from_mongo(doc))
 
-# Parser endpoints (admin)
+# Parser endpoints
 
 def extract_tme_links_from_html(html: str) -> List[Dict[str, Any]]:
     if not BeautifulSoup:
@@ -438,18 +404,11 @@ def extract_tme_links_from_html(html: str) -> List[Dict[str, Any]]:
         if not href:
             continue
         name = a.get_text(strip=True) or a.get("title") or None
-        # Try to find subscriber count nearby
-        subs_text = None
         parent_text = a.parent.get_text(" ", strip=True) if a.parent else ""
         m = re.search(r"([\d\s,.]+)\s*(k|m|тыс|млн)?", parent_text.lower())
-        if m:
-            subs_text = m.group(0)
-        subscribers = to_int(subs_text or "") or 0
-        results.append({
-            "name": name or href,
-            "link": href,
-            "subscribers": subscribers,
-        })
+        subs_text = m.group(0) if m else ""
+        subscribers = to_int(subs_text) or 0
+        results.append({"name": name or href, "link": href, "subscribers": subscribers})
     return results
 
 @api.post("/parser/telemetr")
@@ -476,7 +435,6 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
                 "created_at": now,
                 "updated_at": now,
             }
-            # Upsert by link to avoid duplicates
             await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
             inserted += 1
         return {"ok": True, "inserted": inserted}
@@ -485,8 +443,7 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
 
 @api.post("/parser/tgstat")
 async def parse_tgstat(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
-    # Same generic approach; real-world selectors can be refined later
-    return await parse_telemetr(list_url=list_url, category=category, limit=limit, user=user)  # reuse
+    return await parse_telemetr(list_url=list_url, category=category, limit=limit, user=user)
 
 # Link checker
 @api.post("/admin/links/check")
@@ -506,24 +463,22 @@ async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[s
             if r.status_code < 400:
                 status = "alive"
             else:
-                # try GET as fallback
                 r2 = requests.get(url, timeout=8)
                 if r2.status_code < 400:
                     status = "alive"
         except Exception:
             status = "dead"
-        if status == "alive":
-            alive += 1
-            updates = {"link_status": "alive", "link_last_checked": now, "updated_at": now}
-        else:
-            dead += 1
-            updates = {"link_status": "dead", "dead_at": now, "link_last_checked": now, "updated_at": now}
+        updates = {"link_status": status, "link_last_checked": now, "updated_at": now}
+        if status == "dead":
+            updates["dead_at"] = now
             if replace_dead:
                 updates["link"] = "#"
+            dead += 1
+        else:
+            alive += 1
         await db.channels.update_one({"id": ch["id"]}, {"$set": updates})
     return {"ok": True, "checked": len(items), "alive": alive, "dead": dead}
 
-# Include router and middleware
 app.include_router(api)
 app.add_middleware(
     CORSMiddleware,
@@ -533,11 +488,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Lifecycle
 @app.on_event("startup")
 async def on_startup():
     await create_indexes()
