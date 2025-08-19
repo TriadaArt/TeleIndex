@@ -415,7 +415,7 @@ class BackendTester:
             }
             
             # Note: This might not find actual t.me links, but should test the endpoint structure
-            response = self.session.post(f"{BASE_URL}/parser/telemetr", json=telemetr_data)
+            response = self.session.post(f"{BASE_URL}/parser/telemetr", data=telemetr_data)
             
             # The endpoint should return 200 even if no links are found
             if response.status_code == 200:
@@ -430,7 +430,7 @@ class BackendTester:
                 self.log(f"ℹ️  POST /api/parser/telemetr - Endpoint accessible but failed to parse: {response.status_code}")
             
             # Test tgstat parser (should reuse same logic)
-            tgstat_response = self.session.post(f"{BASE_URL}/parser/tgstat", json=telemetr_data)
+            tgstat_response = self.session.post(f"{BASE_URL}/parser/tgstat", data=telemetr_data)
             
             if tgstat_response.status_code == 200:
                 tgstat_result = tgstat_response.json()
@@ -448,7 +448,8 @@ class BackendTester:
                 "limit": 10
             }
             
-            invalid_response = self.session.post(f"{BASE_URL}/parser/telemetr", json=invalid_data)
+            invalid_response = self.session.post(f"{BASE_URL}/parser/telemetr", data=invalid_data)
+            # Should return 400 for invalid URL
             assert invalid_response.status_code == 400, f"Invalid URL should return 400, got: {invalid_response.status_code}"
             
             self.log("✅ POST /api/parser/telemetr - Invalid URL properly rejected")
