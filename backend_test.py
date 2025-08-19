@@ -962,6 +962,17 @@ class BackendTester:
         # Run tests in order
         test_methods = [
             ("Health Endpoints", self.test_health_endpoints),
+            ("Auth Register First Admin", self.test_auth_register_first_admin),
+            ("Auth Login", self.test_auth_login),
+            ("Auth Me", self.test_auth_me),
+            ("Admin Summary", self.test_admin_summary),
+            ("Admin Channels Flow", self.test_admin_channels_flow),
+            ("Categories & Public Channels", self.test_categories_ru_and_public_channels),
+            ("Trending Channels", self.test_trending_channels),
+            ("Parser Endpoints", self.test_parser_endpoints),
+            ("Link Checker", self.test_link_checker),
+            ("UUID & Timestamps Validation", self.test_uuid_and_timestamps_validation),
+            ("API Prefix Requirement", self.test_api_prefix_requirement),
             ("Categories", self.test_categories_endpoint),
             ("Create Channel", self.test_create_channel),
             ("List Channels", self.test_list_channels),
