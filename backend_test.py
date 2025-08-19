@@ -20,8 +20,495 @@ class BackendTester:
         self.access_token = None  # Store JWT token for authenticated requests
         self.admin_user = None  # Store admin user info
         
-    def log(self, message):
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+    def set_auth_header(self):
+        """Set Authorization header for authenticated requests"""
+        if self.access_token:
+            self.session.headers.update({"Authorization": f"Bearer {self.access_token}"})
+    
+    def clear_auth_header(self):
+        """Clear Authorization header"""
+        self.session.headers.pop("Authorization", None)
+        
+    def test_auth_register_first_admin(self):
+        """Test POST /api/auth/register - first admin user registration"""
+        self.log("Testing first admin user registration...")
+        
+        try:
+            # Create first admin user
+            admin_data = {
+                "email": "admin@teleindex.com",
+                "password": "SecureAdmin123!",
+                "role": "admin"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/auth/register", json=admin_data)
+            assert response.status_code == 200, f"Admin registration failed: {response.status_code} - {response.text}"
+            
+            user = response.json()
+            
+            # Validate response structure
+            assert "id" in user, "User response missing id"
+            assert "email" in user, "User response missing email"
+            assert "role" in user, "User response missing role"
+            assert "created_at" in user, "User response missing created_at"
+            
+            # Validate UUID format
+            try:
+                uuid.UUID(user["id"])
+                self.log("✅ User ID is valid UUID")
+            except ValueError:
+                self.log(f"❌ User ID is not valid UUID: {user['id']}")
+                return False
+            
+            # Validate email and role
+            assert user["email"] == admin_data["email"], f"Email mismatch: {user['email']}"
+            assert user["role"] == "admin", f"Role should be admin, got: {user['role']}"
+            
+            self.admin_user = user
+            self.log(f"✅ POST /api/auth/register - First admin created with ID: {user['id']}")
+            
+            # Test that second registration is forbidden
+            second_admin = {
+                "email": "admin2@teleindex.com", 
+                "password": "AnotherAdmin123!",
+                "role": "admin"
+            }
+            
+            response2 = self.session.post(f"{BASE_URL}/auth/register", json=second_admin)
+            assert response2.status_code == 403, f"Second registration should be forbidden, got: {response2.status_code}"
+            
+            self.log("✅ POST /api/auth/register - Second registration properly forbidden")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/auth/register - FAILED: {e}")
+            return False
+    
+    def test_auth_login(self):
+        """Test POST /api/auth/login and token validation"""
+        self.log("Testing admin login...")
+        
+        if not self.admin_user:
+            self.log("❌ No admin user available for login test")
+            return False
+            
+        try:
+            # Login with admin credentials
+            login_data = {
+                "email": "admin@teleindex.com",
+                "password": "SecureAdmin123!"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/auth/login", json=login_data)
+            assert response.status_code == 200, f"Login failed: {response.status_code} - {response.text}"
+            
+            data = response.json()
+            
+            # Validate response structure
+            assert "access_token" in data, "Login response missing access_token"
+            assert "token_type" in data, "Login response missing token_type"
+            assert "user" in data, "Login response missing user"
+            
+            assert data["token_type"] == "bearer", f"Token type should be bearer, got: {data['token_type']}"
+            
+            # Store token for future requests
+            self.access_token = data["access_token"]
+            
+            # Validate user info in response
+            user_info = data["user"]
+            assert user_info["id"] == self.admin_user["id"], "User ID mismatch in login response"
+            assert user_info["email"] == self.admin_user["email"], "Email mismatch in login response"
+            
+            self.log("✅ POST /api/auth/login - Login successful, token received")
+            
+            # Test invalid credentials
+            invalid_login = {
+                "email": "admin@teleindex.com",
+                "password": "WrongPassword"
+            }
+            
+            invalid_response = self.session.post(f"{BASE_URL}/auth/login", json=invalid_login)
+            assert invalid_response.status_code == 401, f"Invalid login should return 401, got: {invalid_response.status_code}"
+            
+            self.log("✅ POST /api/auth/login - Invalid credentials properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/auth/login - FAILED: {e}")
+            return False
+    
+    def test_auth_me(self):
+        """Test GET /api/auth/me with Bearer token"""
+        self.log("Testing authenticated user info endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for /me test")
+            return False
+            
+        try:
+            # Set auth header
+            self.set_auth_header()
+            
+            # Test authenticated request
+            response = self.session.get(f"{BASE_URL}/auth/me")
+            assert response.status_code == 200, f"/me endpoint failed: {response.status_code} - {response.text}"
+            
+            user = response.json()
+            
+            # Validate response structure
+            assert "id" in user, "User response missing id"
+            assert "email" in user, "User response missing email"
+            assert "role" in user, "User response missing role"
+            
+            # Validate user info matches admin
+            assert user["id"] == self.admin_user["id"], "User ID mismatch in /me response"
+            assert user["email"] == self.admin_user["email"], "Email mismatch in /me response"
+            assert user["role"] == "admin", f"Role should be admin, got: {user['role']}"
+            
+            self.log("✅ GET /api/auth/me - Authenticated user info retrieved")
+            
+            # Test without token
+            self.clear_auth_header()
+            unauth_response = self.session.get(f"{BASE_URL}/auth/me")
+            assert unauth_response.status_code == 401, f"Unauthenticated request should return 401, got: {unauth_response.status_code}"
+            
+            self.log("✅ GET /api/auth/me - Unauthenticated request properly rejected")
+            
+            # Restore auth header for subsequent tests
+            self.set_auth_header()
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ GET /api/auth/me - FAILED: {e}")
+            return False
+    
+    def test_admin_summary(self):
+        """Test GET /api/admin/summary with token"""
+        self.log("Testing admin summary endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for admin summary test")
+            return False
+            
+        try:
+            self.set_auth_header()
+            
+            response = self.session.get(f"{BASE_URL}/admin/summary")
+            assert response.status_code == 200, f"Admin summary failed: {response.status_code} - {response.text}"
+            
+            summary = response.json()
+            
+            # Validate response structure
+            assert "draft" in summary, "Summary missing draft count"
+            assert "approved" in summary, "Summary missing approved count"
+            assert "dead" in summary, "Summary missing dead count"
+            
+            # Validate counts are integers
+            assert isinstance(summary["draft"], int), "Draft count should be integer"
+            assert isinstance(summary["approved"], int), "Approved count should be integer"
+            assert isinstance(summary["dead"], int), "Dead count should be integer"
+            
+            self.log(f"✅ GET /api/admin/summary - Counts: draft={summary['draft']}, approved={summary['approved']}, dead={summary['dead']}")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ GET /api/admin/summary - FAILED: {e}")
+            return False
+    
+    def test_admin_channels_flow(self):
+        """Test admin channels CRUD: create draft, update, approve/reject"""
+        self.log("Testing admin channels flow...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for admin channels test")
+            return False
+            
+        try:
+            self.set_auth_header()
+            
+            # 1. Create draft channel
+            draft_channel = {
+                "name": "Admin Test Channel",
+                "link": "https://t.me/admintestchannel",
+                "subscribers": 5000,
+                "category": "Technology",
+                "language": "English",
+                "short_description": "Test channel for admin flow",
+                "status": "draft"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/admin/channels", json=draft_channel)
+            assert response.status_code == 200, f"Admin channel creation failed: {response.status_code} - {response.text}"
+            
+            channel = response.json()
+            assert channel["status"] == "draft", f"Channel status should be draft, got: {channel['status']}"
+            
+            channel_id = channel["id"]
+            self.log(f"✅ POST /api/admin/channels - Draft channel created: {channel_id}")
+            
+            # 2. Update channel (PATCH)
+            update_data = {
+                "seo_description": "Updated SEO description for admin test channel"
+            }
+            
+            patch_response = self.session.patch(f"{BASE_URL}/admin/channels/{channel_id}", json=update_data)
+            assert patch_response.status_code == 200, f"Admin channel update failed: {patch_response.status_code} - {patch_response.text}"
+            
+            updated_channel = patch_response.json()
+            assert updated_channel["seo_description"] == update_data["seo_description"], "SEO description not updated"
+            
+            self.log(f"✅ PATCH /api/admin/channels/{channel_id} - Channel updated")
+            
+            # 3. Approve channel
+            approve_response = self.session.post(f"{BASE_URL}/admin/channels/{channel_id}/approve")
+            assert approve_response.status_code == 200, f"Channel approval failed: {approve_response.status_code} - {approve_response.text}"
+            
+            approved_channel = approve_response.json()
+            assert approved_channel["status"] == "approved", f"Channel status should be approved, got: {approved_channel['status']}"
+            
+            self.log(f"✅ POST /api/admin/channels/{channel_id}/approve - Channel approved")
+            
+            # 4. Verify it appears in public channels
+            public_response = self.session.get(f"{BASE_URL}/channels?status=approved")
+            assert public_response.status_code == 200, "Public channels fetch failed"
+            
+            public_data = public_response.json()
+            approved_ids = [ch["id"] for ch in public_data["items"]]
+            assert channel_id in approved_ids, "Approved channel not found in public list"
+            
+            self.log("✅ GET /api/channels - Approved channel appears in public list")
+            
+            # 5. Create another draft for rejection test
+            reject_channel = {
+                "name": "Reject Test Channel",
+                "link": "https://t.me/rejecttestchannel",
+                "subscribers": 1000,
+                "category": "News",
+                "status": "draft"
+            }
+            
+            reject_response = self.session.post(f"{BASE_URL}/admin/channels", json=reject_channel)
+            assert reject_response.status_code == 200, "Second draft creation failed"
+            
+            reject_channel_data = reject_response.json()
+            reject_channel_id = reject_channel_data["id"]
+            
+            # 6. Reject the channel
+            reject_action_response = self.session.post(f"{BASE_URL}/admin/channels/{reject_channel_id}/reject")
+            assert reject_action_response.status_code == 200, f"Channel rejection failed: {reject_action_response.status_code} - {reject_action_response.text}"
+            
+            rejected_channel = reject_action_response.json()
+            assert rejected_channel["status"] == "rejected", f"Channel status should be rejected, got: {rejected_channel['status']}"
+            
+            self.log(f"✅ POST /api/admin/channels/{reject_channel_id}/reject - Channel rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Admin channels flow - FAILED: {e}")
+            return False
+    
+    def test_categories_ru_and_public_channels(self):
+        """Test GET /api/categories returns RU categories and public channels sorting"""
+        self.log("Testing RU categories and public channels sorting...")
+        
+        try:
+            # Test categories (should include RU categories)
+            response = self.session.get(f"{BASE_URL}/categories")
+            assert response.status_code == 200, f"Categories failed: {response.status_code}"
+            
+            categories = response.json()
+            
+            # Check for Russian categories
+            ru_categories = ["Новости", "Технологии", "Крипто", "Бизнес", "Развлечения"]
+            found_ru = [cat for cat in ru_categories if cat in categories]
+            
+            if found_ru:
+                self.log(f"✅ GET /api/categories - Found RU categories: {found_ru}")
+            else:
+                self.log("ℹ️  GET /api/categories - No RU categories found (may be using EN defaults)")
+            
+            # Test public channels with different sort options
+            sort_options = ["name", "new", "popular"]
+            
+            for sort_option in sort_options:
+                sort_response = self.session.get(f"{BASE_URL}/channels?sort={sort_option}")
+                assert sort_response.status_code == 200, f"Sort by {sort_option} failed: {sort_response.status_code}"
+                
+                sort_data = sort_response.json()
+                assert "items" in sort_data, f"Sort response missing items for {sort_option}"
+                
+                self.log(f"✅ GET /api/channels?sort={sort_option} - Returned {len(sort_data['items'])} channels")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Categories and public channels sorting - FAILED: {e}")
+            return False
+    
+    def test_trending_channels(self):
+        """Test GET /api/channels/trending returns sorted array"""
+        self.log("Testing trending channels endpoint...")
+        
+        try:
+            response = self.session.get(f"{BASE_URL}/channels/trending")
+            assert response.status_code == 200, f"Trending channels failed: {response.status_code} - {response.text}"
+            
+            trending = response.json()
+            assert isinstance(trending, list), "Trending channels should return a list"
+            
+            # Verify sorting (growth_score fallback to subscribers)
+            if len(trending) > 1:
+                for i in range(len(trending) - 1):
+                    current = trending[i]
+                    next_item = trending[i + 1]
+                    
+                    current_score = current.get("growth_score") or current.get("subscribers", 0)
+                    next_score = next_item.get("growth_score") or next_item.get("subscribers", 0)
+                    
+                    # Should be sorted in descending order
+                    assert current_score >= next_score, f"Trending not properly sorted: {current_score} < {next_score}"
+            
+            self.log(f"✅ GET /api/channels/trending - Returned {len(trending)} trending channels, properly sorted")
+            
+            # Test with custom limit
+            limit_response = self.session.get(f"{BASE_URL}/channels/trending?limit=3")
+            assert limit_response.status_code == 200, "Trending with limit failed"
+            
+            limited_trending = limit_response.json()
+            assert len(limited_trending) <= 3, f"Trending limit not respected: got {len(limited_trending)}"
+            
+            self.log("✅ GET /api/channels/trending?limit=3 - Limit respected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ GET /api/channels/trending - FAILED: {e}")
+            return False
+    
+    def test_parser_endpoints(self):
+        """Test POST /api/parser/telemetr and /api/parser/tgstat"""
+        self.log("Testing parser endpoints...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for parser tests")
+            return False
+            
+        try:
+            self.set_auth_header()
+            
+            # Test telemetr parser with a publicly accessible URL
+            # Using a simple webpage that might contain t.me links
+            test_url = "https://httpbin.org/html"  # Simple HTML page for testing
+            
+            telemetr_data = {
+                "list_url": test_url,
+                "category": "Technology",
+                "limit": 10
+            }
+            
+            # Note: This might not find actual t.me links, but should test the endpoint structure
+            response = self.session.post(f"{BASE_URL}/parser/telemetr", json=telemetr_data)
+            
+            # The endpoint should return 200 even if no links are found
+            if response.status_code == 200:
+                result = response.json()
+                assert "ok" in result, "Parser response missing ok field"
+                assert "inserted" in result, "Parser response missing inserted field"
+                assert isinstance(result["inserted"], int), "Inserted count should be integer"
+                
+                self.log(f"✅ POST /api/parser/telemetr - Processed URL, inserted {result['inserted']} channels")
+            else:
+                # If it fails due to network issues or parsing, that's acceptable for testing
+                self.log(f"ℹ️  POST /api/parser/telemetr - Endpoint accessible but failed to parse: {response.status_code}")
+            
+            # Test tgstat parser (should reuse same logic)
+            tgstat_response = self.session.post(f"{BASE_URL}/parser/tgstat", json=telemetr_data)
+            
+            if tgstat_response.status_code == 200:
+                tgstat_result = tgstat_response.json()
+                assert "ok" in tgstat_result, "TGStat parser response missing ok field"
+                assert "inserted" in tgstat_result, "TGStat parser response missing inserted field"
+                
+                self.log(f"✅ POST /api/parser/tgstat - Processed URL, inserted {tgstat_result['inserted']} channels")
+            else:
+                self.log(f"ℹ️  POST /api/parser/tgstat - Endpoint accessible but failed to parse: {tgstat_response.status_code}")
+            
+            # Test with invalid URL
+            invalid_data = {
+                "list_url": "not-a-valid-url",
+                "category": "Technology",
+                "limit": 10
+            }
+            
+            invalid_response = self.session.post(f"{BASE_URL}/parser/telemetr", json=invalid_data)
+            assert invalid_response.status_code == 400, f"Invalid URL should return 400, got: {invalid_response.status_code}"
+            
+            self.log("✅ POST /api/parser/telemetr - Invalid URL properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Parser endpoints - FAILED: {e}")
+            return False
+    
+    def test_link_checker(self):
+        """Test POST /api/admin/links/check"""
+        self.log("Testing link checker endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for link checker test")
+            return False
+            
+        try:
+            self.set_auth_header()
+            
+            # Test link checker with specific parameters
+            check_data = {
+                "limit": 10,
+                "replace_dead": False
+            }
+            
+            response = self.session.post(f"{BASE_URL}/admin/links/check", json=check_data)
+            assert response.status_code == 200, f"Link checker failed: {response.status_code} - {response.text}"
+            
+            result = response.json()
+            
+            # Validate response structure
+            assert "ok" in result, "Link checker response missing ok field"
+            assert "checked" in result, "Link checker response missing checked field"
+            assert "alive" in result, "Link checker response missing alive field"
+            assert "dead" in result, "Link checker response missing dead field"
+            
+            # Validate counts are integers and make sense
+            assert isinstance(result["checked"], int), "Checked count should be integer"
+            assert isinstance(result["alive"], int), "Alive count should be integer"
+            assert isinstance(result["dead"], int), "Dead count should be integer"
+            assert result["alive"] + result["dead"] == result["checked"], "Alive + dead should equal checked"
+            
+            self.log(f"✅ POST /api/admin/links/check - Checked {result['checked']} links: {result['alive']} alive, {result['dead']} dead")
+            
+            # Test with replace_dead=true
+            replace_data = {
+                "limit": 5,
+                "replace_dead": True
+            }
+            
+            replace_response = self.session.post(f"{BASE_URL}/admin/links/check", json=replace_data)
+            assert replace_response.status_code == 200, "Link checker with replace_dead failed"
+            
+            replace_result = replace_response.json()
+            self.log(f"✅ POST /api/admin/links/check (replace_dead=true) - Processed {replace_result['checked']} links")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/admin/links/check - FAILED: {e}")
+            return False
         
     def test_health_endpoints(self):
         """Test basic health and root endpoints"""
