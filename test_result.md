@@ -120,6 +120,21 @@ backend:
         agent: "testing"
         comment: "COMPREHENSIVE BACKEND TESTING COMPLETED - All 7 test suites passed: ✅ Health endpoints (GET /api/health, GET /api/) return proper responses. ✅ Categories endpoint populates 10 default categories on first call and remains stable. ✅ Channel creation (POST /api/channels) works with minimal fields, returns UUID ids and ISO timestamps, defaults to 'approved' status. ✅ Channel listing (GET /api/channels) supports search (q), category filter, sort=popular/new, pagination with proper total/page/limit/has_more. ✅ Channel updates (PATCH /api/channels/{id}) modify fields and update timestamps correctly. ✅ Top channels (GET /api/channels/top) returns approved channels sorted by subscribers desc with limit support. ✅ All responses use UUIDs (not ObjectIds), ISO timestamps, and CORS is properly configured. Fixed minor bulk_write operation issue in categories endpoint during testing."
 
+  - task: "NEW Backend Features: Auth (JWT), Admin endpoints, Parser endpoints, Link checker, Trending"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added multi-user local auth (JWT), admin endpoints, parser endpoints for Telemetr/TGStat (generic t.me extractor), and link checker."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE NEW BACKEND FEATURES TESTING COMPLETED ✅ - All 18 test suites passed including: ✅ AUTH SYSTEM: First admin registration (POST /api/auth/register) works when no users exist, properly blocks subsequent registrations. Login (POST /api/auth/login) returns JWT access_token. Authenticated user info (GET /api/auth/me) works with Bearer token. ✅ ADMIN ENDPOINTS: Admin summary (GET /api/admin/summary) returns draft/approved/dead counts. Admin channels CRUD flow: create draft (POST /api/admin/channels), update (PATCH), approve/reject channels work correctly. ✅ PUBLIC FEATURES: Categories return proper list, trending channels (GET /api/channels/trending) sorted by growth_score fallback to subscribers. Public channels support all sort options (name/new/popular). ✅ PARSER ENDPOINTS: Both /api/parser/telemetr and /api/parser/tgstat accept list_url and process HTML for t.me links, insert as draft channels. ✅ LINK CHECKER: /api/admin/links/check validates channel links, updates link_status and timestamps, supports replace_dead option. ✅ DATA INTEGRITY: All responses use UUIDs, ISO timestamps, no MongoDB _id leakage. All endpoints properly under /api prefix. Authentication and authorization working correctly throughout."
+
 frontend:
   - task: "Public UI: list channels with search, filters, sort, pagination"
     implemented: true
