@@ -101,3 +101,48 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Build MVP for Telegram Channels Catalog with search, categories, manual admin add/moderate (no parser yet)"
+
+backend:
+  - task: "Core API: categories + channels CRUD + search + pagination"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented /api/channels (list, create, patch), /api/categories, /api/channels/top with UUID ids and ISO dates; ensured CORS and env usage."
+
+frontend:
+  - task: "Public UI: list channels with search, filters, sort, pagination"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Rebuilt App with Tailwind-based UI, fetches /api/categories and /api/channels using REACT_APP_BACKEND_URL."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 1
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Test backend endpoints: /api/categories returns defaults and /api/channels pagination works"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Please test backend endpoints defined above. No auth required. DB via MONGO_URL. Ensure UUIDs in id and ISO timestamps in created_at/updated_at."
