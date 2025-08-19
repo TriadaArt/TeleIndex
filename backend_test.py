@@ -17,6 +17,8 @@ class BackendTester:
     def __init__(self):
         self.session = requests.Session()
         self.created_channels = []  # Track created channels for cleanup
+        self.access_token = None  # Store JWT token for authenticated requests
+        self.admin_user = None  # Store admin user info
         
     def log(self, message):
         print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
