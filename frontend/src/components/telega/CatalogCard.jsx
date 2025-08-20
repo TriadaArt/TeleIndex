@@ -16,7 +16,7 @@ export default function CatalogCard({ item, onOpen }){
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="font-semibold text-base truncate" title={item.name}>{item.name}</h3>
+              <h3 className="tg-title truncate" title={item.name}>{item.name}</h3>
               {item.is_featured && <span className="tg-badge tg-badge-warn">Избранный</span>}
             </div>
             <div className="flex items-center gap-2 mt-1 text-xs text-gray-600 flex-wrap">
@@ -26,15 +26,21 @@ export default function CatalogCard({ item, onOpen }){
             </div>
           </div>
         </div>
-        <p className="text-sm text-gray-700 mt-2 leading-5 line-clamp-2">{item.short_description}</p>
-        <div className="mt-3 text-sm text-gray-700 grid grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-1">
+        <p className="tg-desc line-clamp-2">{item.short_description}</p>
+        <div className="tg-metrics">
           <span>👥 {ruShort(item.subscribers)}</span>
+          <span className="tg-dot" />
           <span>📈 ER {item.er}%</span>
+          <span className="tg-dot" />
           <span>💰 ₽ {Intl.NumberFormat('ru-RU').format(item.price_rub)}</span>
+          <span className="tg-dot" />
           <span>📊 CPM ₽ {item.cpm_rub}</span>
+          <span className="tg-dot" />
           <span>👀 Охваты {reach? ruShort(reach): '-'}</span>
+          <span className="tg-dot" />
           <span>🎯 CPV ₽ {cpv ?? '-'}</span>
-          <span className="col-span-2 md:col-span-1">🕒 Последний пост {daysAgo(item.last_post_at)} дн.</span>
+          <span className="tg-dot" />
+          <span>🕒 Последний пост {daysAgo(item.last_post_at)} дн.</span>
         </div>
         <div className="flex items-center justify-between mt-3">
           <button onClick={() => onOpen(item)} className="tg-btn-primary">Открыть</button>
