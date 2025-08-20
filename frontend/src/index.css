@@ -8,7 +8,7 @@
 }
 
 @layer components {
-  .tg-container { @apply max-w-6xl mx-auto px-4; }
+  .tg-container { @apply max-w-7xl mx-auto px-6; } /* шире рабочая зона */
   .tg-header { @apply tg-container py-3 flex items-center gap-3 border-b bg-white; }
 
   .tg-input { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
@@ -23,7 +23,7 @@
   .tg-chip-active { @apply bg-indigo-600 text-white border-indigo-600; }
 
   .tg-card { @apply rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition; }
-  .tg-card-pad { @apply p-3; }
+  .tg-card-pad { @apply px-4 py-2.5; } /* компактнее по вертикали */
   .tg-title { @apply font-semibold text-[15px] leading-5; }
   .tg-desc { @apply text-[13px] text-gray-700 mt-1 leading-5; }
   .tg-badge { @apply text-[10px] px-1.5 py-0.5 rounded border bg-gray-50; }
@@ -34,11 +34,11 @@
   .tg-metrics-row { @apply mt-2 text-[12.5px] text-gray-700 flex flex-wrap items-center gap-y-1; }
   .tg-sep { @apply mx-2 text-gray-300; }
 
-  .tg-price-wrap { @apply hidden md:flex w-32; }
+  .tg-price-wrap { @apply hidden md:flex w-44; } /* шире панель цены */
   .tg-price-panel { @apply flex flex-col justify-between rounded-xl overflow-hidden border border-indigo-200 w-full; }
-  .tg-price-top { @apply px-2 py-1.5 bg-white border-b; }
-  .tg-price-bottom { @apply px-2.5 py-2 bg-indigo-600 text-white flex items-center justify-between; }
-  .tg-price { @apply text-[15px] font-semibold leading-4; }
+  .tg-price-top { @apply px-2.5 py-1.5 bg-white border-b; }
+  .tg-price-bottom { @apply px-3 py-2 bg-indigo-600 text-white flex items-center justify-between; }
+  .tg-price { @apply text-[16px] font-semibold leading-4; }
   .tg-format-select, .tg-qty-select { @apply tg-select h-8 pr-8 text-[12.5px]; }
 
   .tg-pager { @apply flex items-center justify-between mt-6; }
