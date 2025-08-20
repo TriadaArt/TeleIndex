@@ -242,11 +242,10 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
       <Header onGoAdmin={onGoAdmin} q={q} setQ={setQ} scrollToCats={scrollToCats} />
       <CategoryBar ref={catRef} categories={cats.data} active={category} setActive={setCategory} />
       <SortBar sort={sort} setSort={setSort} />
-      <TrendStrip items={trending.data || []} onOpen={onOpenDetail} />
-      <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* Sidebar */}
-        <aside className="lg:col-span-1 space-y-3">
-          <div className="lg:sticky lg:top-20">
+        <aside className="space-y-3 min-w-[280px]">
+          <div className="lg:sticky lg:top-24">
             <div className="p-4 rounded-2xl border bg-white shadow-sm space-y-3">
               <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск каналов..." className="w-full h-11 rounded-xl border px-4" />
               <div>
