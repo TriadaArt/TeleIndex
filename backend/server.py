@@ -667,15 +667,19 @@ async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends
             "avatar_url": None,
             "subscribers": 0,
             "category": payload.category,
-            "language": "Русский",
+            "language": "Russian",
             "short_description": None,
             "seo_description": None,
             "status": "draft",
             "created_at": now,
             "updated_at": now,
         }
-        await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
-        inserted += 1
+        try:
+            await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
+            inserted += 1
+        except Exception as e:
+            print(f"Error inserting channel {channel['name']}: {e}")
+            continue
     return {"ok": True, "inserted": inserted}
 
 # -------------------- Link checker & demo seed --------------------
