@@ -172,6 +172,10 @@ frontend:
 
   - task: "Frontend: Full hybrid catalog + admin flow including First-admin registration, Admin tabs, Import, Approve/Reject workflow, Link checker, Public catalog UI"
     implemented: true
+      - working: "NA"
+        agent: "main"
+        comment: "Migrated to Telega-style layout with fixed left filter sidebar, trending widget, revamped cards, and BrowserRouter routes. Ready for comprehensive frontend testing and screenshots (desktop/mobile/admin/detail)."
+
     working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 1
