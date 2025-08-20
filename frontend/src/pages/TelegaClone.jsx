@@ -4,6 +4,18 @@ import CatalogGrid from "../components/telega/CatalogGrid";
 import Pagination from "../components/telega/Pagination";
 import { telegaDemo } from "../data/telegaDemo";
 
+// expand demo to 48 items temporarily to showcase pagination
+const expandTo48 = (arr) => {
+  const out = [];
+  let i = 0;
+  while (out.length < 48) {
+    const base = arr[i % arr.length];
+    out.push({ ...base, id: `${base.id}-${out.length+1}` });
+    i++;
+  }
+  return out;
+};
+
 function applyFilters(list, { q, category, ranges, flags, sort }){
   let arr = [...list];
   if (q) {
