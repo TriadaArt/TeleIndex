@@ -180,11 +180,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All major functionality verified and working"
-  stuck_tasks: []
-  test_all: false
-  test_priority: "high_first"
-  current_focus:
     - "Backend filter params: min/max subscribers, price, ER + featured/alive toggles"
     - "Frontend: migrate to BrowserRouter /c/:id and add sidebar filters"
   stuck_tasks: []
