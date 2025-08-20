@@ -407,7 +407,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
                   <label>CPM ₽<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.cpm_rub || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { cpm_rub: Number(e.target.value || 0) }); }} /></label>
                   <label>Рост 30д %<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.growth_30d || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { growth_30d: Number(e.target.value || 0) }); }} /></label>
                   <label>Язык<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.language || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { language: e.target.value }); }} /></label>
-                  <label>Страна<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.country || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id]}, { country: e.target.value }); }} /></label>
+                  <label>Страна<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.country || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { country: e.target.value }); }} /></label>
                   <label>Город<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.city || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { city: e.target.value }); }} /></label>
                   <label>Последний пост ISO<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.last_post_at || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { last_post_at: e.target.value }); }} /></label>
                 </div>
