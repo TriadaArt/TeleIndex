@@ -305,23 +305,24 @@ async def create_channel(payload: ChannelCreate):
     await db.channels.insert_one(prepare_for_mongo(item))
     return ChannelResponse(**item)
 
-@api.get("/channels/{channel_id}", response_model=ChannelResponse)
-async def get_channel(channel_id: str):
-    doc = await db.channels.find_one({"id": channel_id})
-    if not doc:
-        raise HTTPException(404, detail="Channel not found")
-    return ChannelResponse(**parse_from_mongo(doc))
+@api.get("/channels/trending", response_model=List[ChannelResponse])
+async def trending_channels(limit: int = Query(4, ge=1, le=8)):
+    # Prefer featured, then highest growth_30d, then subscribers
+    featured = await db.channels.find({"status": "approved", "is_featured": True}).sort("updated_at", -1).limit(limit).to_list(length=limit)
+    out = featured[:]
+    if len(out) < limit:
+        left = limit - len(out)
+        extra = await db.channels.find({"status": "approved", "is_featured": {"$ne": True}}).sort([
+            ("growth_30d", -1), ("subscribers", -1)
+        ]).limit(left).to_list(length=left)
+        out.extend(extra)
+    return [ChannelResponse(**parse_from_mongo(i)) for i in out]
 
-@api.patch("/channels/{channel_id}", response_model=ChannelResponse)
-async def update_channel(channel_id: str, payload: ChannelUpdate):
-    existing = await db.channels.find_one({"id": channel_id})
-    if not existing:
-        raise HTTPException(404, detail="Channel not found")
-    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
-    updates["updated_at"] = utcnow_iso()
-    await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
-    doc = await db.channels.find_one({"id": channel_id})
-    return ChannelResponse(**parse_from_mongo(doc))
+@api.get("/channels/top", response_model=List[ChannelResponse])
+async def top_channels(limit: int = Query(10, ge=1, le=50)):
+    cursor = db.channels.find({"status": "approved"}).sort("subscribers", -1).limit(limit)
+    items_raw = await cursor.to_list(length=limit)
+    return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
 
 @api.get("/channels", response_model=PaginatedChannels)
 async def list_channels(
@@ -362,24 +363,23 @@ async def list_channels(
     items = [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
     return PaginatedChannels(items=items, total=total, page=page, limit=limit, has_more=(skip + len(items)) < total)
 
-@api.get("/channels/top", response_model=List[ChannelResponse])
-async def top_channels(limit: int = Query(10, ge=1, le=50)):
-    cursor = db.channels.find({"status": "approved"}).sort("subscribers", -1).limit(limit)
-    items_raw = await cursor.to_list(length=limit)
-    return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
+@api.get("/channels/{channel_id}", response_model=ChannelResponse)
+async def get_channel(channel_id: str):
+    doc = await db.channels.find_one({"id": channel_id})
+    if not doc:
+        raise HTTPException(404, detail="Channel not found")
+    return ChannelResponse(**parse_from_mongo(doc))
 
-@api.get("/channels/trending", response_model=List[ChannelResponse])
-async def trending_channels(limit: int = Query(4, ge=1, le=8)):
-    # Prefer featured, then highest growth_30d, then subscribers
-    featured = await db.channels.find({"status": "approved", "is_featured": True}).sort("updated_at", -1).limit(limit).to_list(length=limit)
-    out = featured[:]
-    if len(out) < limit:
-        left = limit - len(out)
-        extra = await db.channels.find({"status": "approved", "is_featured": {"$ne": True}}).sort([
-            ("growth_30d", -1), ("subscribers", -1)
-        ]).limit(left).to_list(length=left)
-        out.extend(extra)
-    return [ChannelResponse(**parse_from_mongo(i)) for i in out]
+@api.patch("/channels/{channel_id}", response_model=ChannelResponse)
+async def update_channel(channel_id: str, payload: ChannelUpdate):
+    existing = await db.channels.find_one({"id": channel_id})
+    if not existing:
+        raise HTTPException(404, detail="Channel not found")
+    updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    updates["updated_at"] = utcnow_iso()
+    await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
+    doc = await db.channels.find_one({"id": channel_id})
+    return ChannelResponse(**parse_from_mongo(doc))
 
 # -------------------- Admin --------------------
 
