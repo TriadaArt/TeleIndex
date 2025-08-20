@@ -1,2 +1,4 @@
 export function ruShort(n){ if(n==null) return "-"; try{ const v=Number(n); if(v>=1_000_000) return (Math.round(v/100_000)/10).toString().replace('.',',')+" млн"; if(v>=1_000) return (Math.round(v/100)/10).toString().replace('.',',')+" тыс"; return Intl.NumberFormat('ru-RU').format(v);}catch{ return String(n);} }
 export function daysAgo(iso){ if(!iso) return "-"; try{ const d=new Date(iso); return String(Math.floor((Date.now()-d.getTime())/(1000*60*60*24))); }catch{ return "-"; } }
+export function computeReach(price, cpm){ try{ const p=Number(price||0), m=Number(cpm||0); if(!p||!m) return null; return Math.round((p/m)*1000); }catch{ return null; } }
+export function computeCpv(cpm){ try{ const m=Number(cpm||0); if(!m) return null; return Math.round((m/1000)*10000)/10000; }catch{ return null; } }

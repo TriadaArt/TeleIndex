@@ -16,22 +16,34 @@ const expandTo48 = (arr) => {
   return out;
 };
 
-function applyFilters(list, { q, category, ranges, flags, sort }){
+function applyFilters(list, { q, selectedCats, ranges, flags, sort, selects }){
   let arr = [...list];
   if (q) {
     const s = q.trim().toLowerCase();
     arr = arr.filter(x => (x.name||'').toLowerCase().includes(s) || (x.short_description||'').toLowerCase().includes(s));
   }
-  if (category) arr = arr.filter(x => x.category === category);
-  const { minSubs, maxSubs, minPrice, maxPrice, minEr, maxEr } = ranges;
+  if (selectedCats && selectedCats.length>0) arr = arr.filter(x => selectedCats.includes(x.category));
+  if (selects.social) arr = arr.filter(x => (x.social||'Telegram')===selects.social);
+  if (selects.genderBloggerM || selects.genderBloggerF) arr = arr.filter(x => (selects.genderBloggerM && x.blogger_gender==='Мужской') || (selects.genderBloggerF && x.blogger_gender==='Женский'));
+  if (selects.genderAudienceM || selects.genderAudienceF) arr = arr.filter(x => (selects.genderAudienceM && x.audience_gender==='Мужской') || (selects.genderAudienceF && x.audience_gender==='Женский'));
+  if (selects.country) arr = arr.filter(x => x.country===selects.country);
+  if (selects.city) arr = arr.filter(x => x.city===selects.city);
+
+  const { minSubs, maxSubs, minPrice, maxPrice, minEr, maxEr, minReach, maxReach, minCpv, maxCpv } = ranges;
   if (minSubs) arr = arr.filter(x => x.subscribers >= Number(minSubs));
   if (maxSubs) arr = arr.filter(x => x.subscribers <= Number(maxSubs));
   if (minPrice) arr = arr.filter(x => x.price_rub >= Number(minPrice));
   if (maxPrice) arr = arr.filter(x => x.price_rub <= Number(maxPrice));
   if (minEr) arr = arr.filter(x => x.er >= Number(minEr));
   if (maxEr) arr = arr.filter(x => x.er <= Number(maxEr));
+  // demo reachable metrics computed from cpm/price
+  const reachOf = (x) => Math.round((x.price_rub/(x.cpm_rub||1))*1000);
+  const cpvOf = (x) => (x.cpm_rub||0)/1000;
+  if (minReach) arr = arr.filter(x => reachOf(x) >= Number(minReach));
+  if (maxReach) arr = arr.filter(x => reachOf(x) <= Number(maxReach));
+  if (minCpv) arr = arr.filter(x => cpvOf(x) >= Number(minCpv));
+  if (maxCpv) arr = arr.filter(x => cpvOf(x) <= Number(maxCpv));
   if (flags.featured) arr = arr.filter(x => x.is_featured);
-  // alive флаг пропускаем, тк демо ссылки все валидны
 
   switch (sort) {
     case 'name': arr.sort((a,b)=> a.name.localeCompare(b.name)); break;
@@ -44,21 +56,20 @@ function applyFilters(list, { q, category, ranges, flags, sort }){
 
 export default function TelegaClone(){
   const [q, setQ] = useState("");
-  const [category, setCategory] = useState("");
   const [ranges, setRanges] = useState({});
   const [flags, setFlags] = useState({ featured: false, alive: false });
   const [sort, setSort] = useState('popular');
   const [page, setPage] = useState(1);
+  const [selects, setSelects] = useState({ social: 'Telegram', categories: [] });
   const limit = 24;
 
   const source = React.useMemo(()=> expandTo48(telegaDemo), []);
   const categories = useMemo(()=> Array.from(new Set(source.map(x=>x.category))), [source]);
-  const filtered = useMemo(()=> applyFilters(source, { q, category, ranges, flags, sort }), [q, category, ranges, flags, sort, source]);
+  const filtered = useMemo(()=> applyFilters(source, { q, selectedCats: selects.categories, ranges, flags, sort, selects }), [q, selects, ranges, flags, sort, source]);
   const start = (page-1)*limit;
   const items = filtered.slice(start, start+limit);
 
-  // Reset page on filters change
-  React.useEffect(()=> setPage(1), [q, category, ranges, flags, sort]);
+  React.useEffect(()=> setPage(1), [q, selects, ranges, flags, sort]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -70,8 +81,8 @@ export default function TelegaClone(){
         <div className="text-sm text-gray-600">Каталог</div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <FilterSidebar q={q} setQ={setQ} categories={categories} activeCategory={category} setActiveCategory={setCategory} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} />
+      <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
+        <FilterSidebar q={q} setQ={setQ} categories={categories} activeCategory={null} setActiveCategory={()=>{}} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {[{k:'popular',label:'Популярные'},{k:'new',label:'Новые'},{k:'name',label:'По имени'},{k:'price',label:'Цена'},{k:'er',label:'ER'}].map(t=> (

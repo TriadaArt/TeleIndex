@@ -1,8 +1,10 @@
 import React from "react";
-import { ruShort, daysAgo } from "./helpers";
+import { ruShort, daysAgo, computeReach, computeCpv } from "./helpers";
 
 export default function CatalogCard({ item, onOpen }){
   const initials = (item?.name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+  const reach = item.reach_avg ?? computeReach(item.price_rub, item.cpm_rub);
+  const cpv = item.cpv_rub ?? computeCpv(item.cpm_rub);
   return (
     <div className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition overflow-hidden">
       <div className="p-4">
@@ -25,12 +27,13 @@ export default function CatalogCard({ item, onOpen }){
           </div>
         </div>
         <p className="text-sm text-gray-700 mt-2 line-clamp-2">{item.short_description}</p>
-        <div className="mt-3 text-sm text-gray-700 flex items-center flex-wrap gap-x-4 gap-y-1">
+        <div className="mt-3 text-sm text-gray-700 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-1">
           <span>👥 {ruShort(item.subscribers)}</span>
           <span>📈 ER {item.er}%</span>
           <span>💰 ₽ {Intl.NumberFormat('ru-RU').format(item.price_rub)}</span>
           <span>📊 CPM ₽ {item.cpm_rub}</span>
-          <span>📉 Рост 30д {item.growth_30d}%</span>
+          <span>👀 Охваты {reach? ruShort(reach): '-'}</span>
+          <span>🎯 CPV ₽ {cpv ?? '-'}</span>
           <span>🕒 Последний пост {daysAgo(item.last_post_at)} дн.</span>
         </div>
         <div className="flex items-center justify-between mt-3">
