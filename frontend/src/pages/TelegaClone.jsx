@@ -6,13 +6,13 @@ import { telegaDemo } from "../data/telegaDemo";
 
 const expandTo48 = (arr) => { const out = []; let i=0; while(out.length<48){ const base=arr[i%arr.length]; out.push({ ...base, id: `${base.id}-${out.length+1}`}); i++; } return out; };
 
-function applyFilters(list, { q, selectedCats, ranges, flags, sort, selects }){
+function applyFilters(list, { q, ranges, flags, sort, selects }){
   let arr = [...list];
   if (q) { const s = q.trim().toLowerCase(); arr = arr.filter(x => (x.name||'').toLowerCase().includes(s) || (x.short_description||'').toLowerCase().includes(s)); }
-  if (selectedCats && selectedCats.length>0) arr = arr.filter(x => selectedCats.includes(x.category));
+  if (selects.category) arr = arr.filter(x => x.category === selects.category);
   if (selects.social) arr = arr.filter(x => (x.social||'Telegram')===selects.social);
-  if (selects.genderBloggerM || selects.genderBloggerF) arr = arr.filter(x => (selects.genderBloggerM && x.blogger_gender==='Мужской') || (selects.genderBloggerF && x.blogger_gender==='Женский'));
-  if (selects.genderAudienceM || selects.genderAudienceF) arr = arr.filter(x => (selects.genderAudienceM && x.audience_gender==='Мужской') || (selects.genderAudienceF && x.audience_gender==='Женский'));
+  if (selects.genderBlogger) arr = arr.filter(x => x.blogger_gender===selects.genderBlogger);
+  if (selects.genderAudience) arr = arr.filter(x => x.audience_gender===selects.genderAudience);
   if (selects.country) arr = arr.filter(x => x.country===selects.country);
   if (selects.city) arr = arr.filter(x => x.city===selects.city);
   const { minSubs, maxSubs, minPrice, maxPrice, minEr, maxEr, minReach, maxReach, minCpv, maxCpv } = ranges;
@@ -39,12 +39,12 @@ export default function TelegaClone(){
   const [flags, setFlags] = useState({ featured: false, alive: false });
   const [sort, setSort] = useState('popular');
   const [page, setPage] = useState(1);
-  const [selects, setSelects] = useState({ social: 'Telegram', categories: [] });
+  const [selects, setSelects] = useState({ social: 'Telegram', category: '', genderBlogger: '', genderAudience: '', country: '', city: '' });
   const limit = 24;
 
   const source = React.useMemo(()=> expandTo48(telegaDemo), []);
   const categories = useMemo(()=> Array.from(new Set(source.map(x=>x.category))), [source]);
-  const filtered = useMemo(()=> applyFilters(source, { q, selectedCats: selects.categories, ranges, flags, sort, selects }), [q, selects, ranges, flags, sort, source]);
+  const filtered = useMemo(()=> applyFilters(source, { q, ranges, flags, sort, selects }), [q, selects, ranges, flags, sort, source]);
   const start = (page-1)*limit;
   const items = filtered.slice(start, start+limit);
   React.useEffect(()=> setPage(1), [q, selects, ranges, flags, sort]);
@@ -59,8 +59,8 @@ export default function TelegaClone(){
         <div className="text-sm text-gray-600">Каталог</div>
       </div>
 
-      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[320px_740px] gap-6">
-        <FilterSidebar q={q} setQ={setQ} categories={categories} activeCategory={null} setActiveCategory={()=>{}} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
+      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[320px_760px] gap-6">
+        <FilterSidebar q={q} setQ={setQ} categories={categories} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-3">
             {[{k:'popular',label:'Популярные'},{k:'new',label:'Новые'},{k:'name',label:'По имени'},{k:'price',label:'Цена'},{k:'er',label:'ER'}].map(t=> (

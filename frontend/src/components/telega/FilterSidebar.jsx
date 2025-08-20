@@ -1,16 +1,10 @@
 import React from "react";
 
-export default function FilterSidebar({ q, setQ, categories, activeCategory, setActiveCategory, ranges, setRanges, flags, setFlags, selects, setSelects }){
+export default function FilterSidebar({ q, setQ, categories, ranges, setRanges, flags, setFlags, selects, setSelects }){
   const onRange = (k, v) => setRanges({ ...ranges, [k]: v });
-  const onFlag = (k) => setFlags({ ...flags, [k]: !flags[k] });
   const onSelect = (k, v) => setSelects({ ...selects, [k]: v });
 
-  const [showCats, setShowCats] = React.useState(false);
-  const toggleCat = (c) => {
-    const arr = new Set(selects.categories || []);
-    if (arr.has(c)) arr.delete(c); else arr.add(c);
-    setSelects({ ...selects, categories: Array.from(arr) });
-  };
+  const [openCat, setOpenCat] = React.useState(false);
 
   return (
     <aside className="space-y-3 min-w-[320px]">
@@ -18,25 +12,27 @@ export default function FilterSidebar({ q, setQ, categories, activeCategory, set
         <div className="tg-sidebar">
           <div className="text-sm font-semibold">Фильтр</div>
 
-          <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск каналов..." className="tg-input-lg w-full" />
+          <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск..." className="tg-input-lg w-full" />
 
-          <div className="space-y-2">
+          {/* Категория: выпадающее меню со скроллом */}
+          <div>
             <div className="tg-section">Категория</div>
-            <button type="button" className="tg-input w-full text-left" onClick={()=>setShowCats(!showCats)}>
-              { (selects.categories && selects.categories.length>0) ? selects.categories.join(', ') : 'Выбрать категории' }
-            </button>
-            {showCats && (
-              <div className="border rounded-xl p-2 space-y-1 max-h-48 overflow-auto">
-                {(categories||[]).map(c => (
-                  <label key={c} className="flex items-center gap-2 text-sm">
-                    <input type="checkbox" className="tg-checkbox" checked={(selects.categories||[]).includes(c)} onChange={()=>toggleCat(c)} /> {c}
-                  </label>
-                ))}
-              </div>
-            )}
+            <div className="tg-dropdown">
+              <button type="button" className="tg-input w-full text-left" onClick={()=>setOpenCat(!openCat)}>
+                {selects.category || 'Выбрать категории'}
+              </button>
+              {openCat && (
+                <div className="tg-dropdown-menu" onMouseLeave={()=>setOpenCat(false)}>
+                  {(categories||[]).map(c => (
+                    <div key={c} className={`tg-dropdown-item ${selects.category===c?'tg-dropdown-item-active':''}`} onClick={()=>{ onSelect('category', c); setOpenCat(false); }}>{c}</div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-2">
+          {/* Соцсеть */}
+          <div>
             <div className="tg-section">Социальная сеть</div>
             <select className="tg-select w-full" value={selects.social||'Telegram'} onChange={(e)=>onSelect('social', e.target.value)}>
               <option>Telegram</option>
@@ -46,18 +42,27 @@ export default function FilterSidebar({ q, setQ, categories, activeCategory, set
             </select>
           </div>
 
-          <div className="space-y-1">
+          {/* Пол блогера: округлые кнопки */}
+          <div>
             <div className="tg-section">Пол блогера</div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!selects.genderBloggerM} onChange={()=>onSelect('genderBloggerM', !selects.genderBloggerM)} /> Мужской</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!selects.genderBloggerF} onChange={()=>onSelect('genderBloggerF', !selects.genderBloggerF)} /> Женский</label>
+            <div className="tg-pills">
+              {['Мужской','Женский'].map(g => (
+                <button key={g} className={`tg-pill ${selects.genderBlogger===g?'tg-pill-active':''}`} onClick={()=>onSelect('genderBlogger', selects.genderBlogger===g? '': g)}>{g}</button>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-1">
+          {/* Пол аудитории: округлые кнопки */}
+          <div>
             <div className="tg-section">Пол аудитории</div>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!selects.genderAudienceM} onChange={()=>onSelect('genderAudienceM', !selects.genderAudienceM)} /> Мужской</label>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!selects.genderAudienceF} onChange={()=>onSelect('genderAudienceF', !selects.genderAudienceF)} /> Женский</label>
+            <div className="tg-pills">
+              {['Мужской','Женский'].map(g => (
+                <button key={g} className={`tg-pill ${selects.genderAudience===g?'tg-pill-active':''}`} onClick={()=>onSelect('genderAudience', selects.genderAudience===g? '': g)}>{g}</button>
+              ))}
+            </div>
           </div>
 
+          {/* Диапазоны */}
           <div>
             <div className="tg-section">Количество подписчиков</div>
             <div className="grid grid-cols-2 gap-2">
@@ -90,7 +95,7 @@ export default function FilterSidebar({ q, setQ, categories, activeCategory, set
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <div className="tg-section">Страна блогера</div>
             <select className="tg-select w-full" value={selects.country||''} onChange={(e)=>onSelect('country', e.target.value)}>
               <option value="">Выберите страну</option>
@@ -101,7 +106,7 @@ export default function FilterSidebar({ q, setQ, categories, activeCategory, set
             </select>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <div className="tg-section">Город блогера</div>
             <select className="tg-select w-full" value={selects.city||''} onChange={(e)=>onSelect('city', e.target.value)}>
               <option value="">Выберите город</option>
@@ -116,8 +121,8 @@ export default function FilterSidebar({ q, setQ, categories, activeCategory, set
             </select>
           </div>
 
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!flags.featured} onChange={()=>onFlag('featured')} /> Только избранные</label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!flags.alive} onChange={()=>onFlag('alive')} /> Только живые ссылки</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!flags.featured} onChange={()=>setFlags({...flags, featured: !flags.featured})} /> Только избранные</label>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" className="tg-checkbox" checked={!!flags.alive} onChange={()=>setFlags({...flags, alive: !flags.alive})} /> Только живые ссылки</label>
         </div>
       </div>
     </aside>
