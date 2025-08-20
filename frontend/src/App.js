@@ -7,7 +7,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function classNames(...c) { return c.filter(Boolean).join(" "); }
-function formatNum(n) { if (n == null) return "-"; if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M"; if (n >= 1_000) return (n / 1_000).toFixed(1) + "K"; return String(n); }
+function ruCompact(n){ try { if (n == null) return "-"; return Intl.NumberFormat('ru-RU',{notation:'compact',compactDisplay:'short'}).format(n); } catch { if (n >= 1_000_000) return (n/1_000_000).toFixed(1).replace('.',',')+" млн"; if (n>=1_000) return (n/1_000).toFixed(1).replace('.',',')+" тыс"; return String(n); } }
 function daysAgo(iso) { if (!iso) return "-"; try { const d = new Date(iso); const diff = Math.floor((Date.now() - d.getTime())/(1000*60*60*24)); return String(diff); } catch { return "-"; } }
 
 axios.interceptors.request.use((config) => { const t = localStorage.getItem("token"); if (t) config.headers.Authorization = `Bearer ${t}`; return config; });
