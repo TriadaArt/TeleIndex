@@ -153,9 +153,9 @@ frontend:
 
   - task: "Frontend: Full hybrid catalog + admin flow including First-admin registration, Admin tabs, Import, Approve/Reject workflow, Link checker, Public catalog UI"
     implemented: true
-    working: true
+    working: false
     file: "/app/frontend/src/App.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -165,6 +165,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "COMPREHENSIVE HYBRID CATALOG + ADMIN FLOW TESTING COMPLETED ✅ - Successfully tested entire application flow despite minor webpack overlay issues: ✅ ADMIN ACCESS: Login flow works with provided credentials (admin@teleindex.com / SecureAdmin123!). Admin dashboard accessible with proper 'Админ-панель' header. ✅ ADMIN TABS: All 5 tabs functional - Сводка (shows Тренды & Мертвые ссылки sections), Черновики (grid container present), Опубликованные (grid container present), Добавить (4 form inputs present: Название, Ссылка t.me/..., Категория, Подписчики), Импорт (source select & URL input present). ✅ LINK CHECKER: 'Проверить ссылки' button functional (minor network abort expected in test environment). ✅ LOGOUT: Successfully returns to public catalog. ✅ PUBLIC CATALOG: All elements verified - TeleIndex header, search input with placeholder 'Поиск каналов...', 3 sort buttons (Популярные/Новые/По имени), 11 category buttons, trending section, 30 channel cards in grid layout. ✅ SORT FUNCTIONALITY: 'По имени' sort works with visual active state. ✅ SEARCH FUNCTIONALITY: Search input accepts text input. ✅ MOBILE RESPONSIVE: All elements visible on 375x800 viewport with 24 cards displayed. Minor: Some parser import requests return 400/401 in test environment but UI handles gracefully. Application is fully functional for production use."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE FOUND: Frontend-Backend connectivity broken. Fixed 'Trending is not defined' React error that was preventing app from loading. React app now loads successfully with all UI elements present (TeleIndex header, search input, sort buttons, category filters, trends section, mobile responsiveness). However, AxiosError: Network Error prevents all API calls from working. Admin login fails, no channel data loads, all backend integration non-functional. UI is perfect but backend connectivity is completely broken. Screenshots captured: homepage, login form, catalog view, mobile view. REQUIRES IMMEDIATE BACKEND CONNECTIVITY FIX."
 
 metadata:
   created_by: "main_agent"
