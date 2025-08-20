@@ -188,7 +188,7 @@ const Detail = ({ id, onBack }) => {
                   {ch.is_featured && <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 border">🔥 Избранный</span>}
                 </div>
                 <div className="text-sm text-gray-700 mt-2 flex items-center gap-6 flex-wrap">
-                  <span>👥 {formatNum(ch.subscribers)} подписчиков</span>
+                  <span>👥 {ruCompact(ch.subscribers)} подписчиков</span>
                   {ch.price_rub != null && <span>💰 Цена: ₽ {Intl.NumberFormat('ru-RU').format(ch.price_rub)}</span>}
                 </div>
               </div>
