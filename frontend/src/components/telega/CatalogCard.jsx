@@ -24,8 +24,8 @@ export default function CatalogCard({ item }){
   return (
     <div className="tg-card overflow-hidden">
       <div className="tg-card-pad">
-        <div className="flex gap-4 items-stretch">
-          {/* Left content */}
+        <div className="flex gap-4">
+          {/* Left block: avatar, title, tags, description */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
@@ -46,43 +46,42 @@ export default function CatalogCard({ item }){
               </div>
             </div>
             <p className="tg-desc line-clamp-2">{item.short_description}</p>
-
-            {/* Metrics tiles like Telega */}
-            <div className="tg-metrics-bar">
-              <div className="tg-metric-tile">
-                <div className="tg-metric-label"><Icon name="users" />Подписчики</div>
-                <div className="tg-metric-value">{ruShort(item.subscribers)}</div>
-              </div>
-              <div className="tg-metric-tile">
-                <div className="tg-metric-label"><Icon name="views" />Просмотры</div>
-                <div className="tg-metric-value">{reach ? ruShort(reach) : '-'}</div>
-                <div className="tg-metric-sub"><Icon name="er" />ER {item.er}%</div>
-              </div>
-              <div className="tg-metric-tile">
-                <div className="tg-metric-label"><Icon name="cpv" />CPV</div>
-                <div className="tg-metric-value">{cpv ?? '-' } ₽</div>
-              </div>
-            </div>
           </div>
 
-          {/* Right price panel */}
-          <div className="tg-price-wrap">
-            <div className="tg-price-panel">
-              <div className="tg-price-top space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <select className="tg-format-select">
-                    <option>1/24</option>
-                    <option>2/24</option>
-                  </select>
-                  <select className="tg-qty-select">
-                    <option>1</option>
-                    <option>2</option>
-                  </select>
+          {/* Right block: metrics (compact) + price panel below on md */}
+          <div className="flex flex-col gap-2 items-stretch">
+            <div className="tg-metrics-right">
+              <div className="tg-metric-kv"><Icon name="users" /><span className="tg-metric-subtle">Подписчики</span></div>
+              <div className="tg-metric-val">{ruShort(item.subscribers)}</div>
+              <div className="tg-metric-kv"><Icon name="views" /><span className="tg-metric-subtle">Просмотры</span></div>
+              <div className="tg-metric-val">{reach ? ruShort(reach) : '-'}</div>
+              <div className="tg-metric-kv"><Icon name="er" /><span className="tg-metric-subtle">ER</span></div>
+              <div className="tg-metric-val">{item.er}%</div>
+              <div className="tg-metric-kv"><Icon name="cpm" /><span className="tg-metric-subtle">CPM</span></div>
+              <div className="tg-metric-val">₽ {item.cpm_rub}</div>
+              <div className="tg-metric-kv"><Icon name="cpv" /><span className="tg-metric-subtle">CPV</span></div>
+              <div className="tg-metric-val">₽ {cpv ?? '-'}</div>
+              <div className="tg-metric-kv"><Icon name="time" /><span className="tg-metric-subtle">Пост</span></div>
+              <div className="tg-metric-val">{daysAgo(item.last_post_at)} дн.</div>
+            </div>
+            <div className="tg-price-wrap">
+              <div className="tg-price-panel">
+                <div className="tg-price-top">
+                  <div className="grid grid-cols-2 gap-2">
+                    <select className="tg-format-select">
+                      <option>1/24</option>
+                      <option>2/24</option>
+                    </select>
+                    <select className="tg-qty-select">
+                      <option>1</option>
+                      <option>2</option>
+                    </select>
+                  </div>
                 </div>
-              </div>
-              <div className="tg-price-bottom">
-                <div className="tg-price">{Intl.NumberFormat('ru-RU').format(item.price_rub)} ₽</div>
-                <div className="text-sm opacity-90">🛒</div>
+                <div className="tg-price-bottom">
+                  <div className="tg-price">{Intl.NumberFormat('ru-RU').format(item.price_rub)} ₽</div>
+                  <div className="text-sm opacity-90">🛒</div>
+                </div>
               </div>
             </div>
           </div>
