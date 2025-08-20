@@ -11,9 +11,10 @@ root.render(
   <React.StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<TelegaClone />} />
         <Route path="/telega-clone" element={<TelegaClone />} />
-        <Route path="*" element={<App />} />
+        {/* Delegate all other routes (admin, login, detail, etc.) to legacy App router */}
+        <Route path="/*" element={<App />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>,
