@@ -135,6 +135,21 @@ backend:
         agent: "testing"
         comment: "COMPREHENSIVE NEW BACKEND FEATURES TESTING COMPLETED ✅ - All 18 test suites passed including: ✅ AUTH SYSTEM: First admin registration (POST /api/auth/register) works when no users exist, properly blocks subsequent registrations. Login (POST /api/auth/login) returns JWT access_token. Authenticated user info (GET /api/auth/me) works with Bearer token. ✅ ADMIN ENDPOINTS: Admin summary (GET /api/admin/summary) returns draft/approved/dead counts. Admin channels CRUD flow: create draft (POST /api/admin/channels), update (PATCH), approve/reject channels work correctly. ✅ PUBLIC FEATURES: Categories return proper list, trending channels (GET /api/channels/trending) sorted by growth_score fallback to subscribers. Public channels support all sort options (name/new/popular). ✅ PARSER ENDPOINTS: Both /api/parser/telemetr and /api/parser/tgstat accept list_url and process HTML for t.me links, insert as draft channels. ✅ LINK CHECKER: /api/admin/links/check validates channel links, updates link_status and timestamps, supports replace_dead option. ✅ DATA INTEGRITY: All responses use UUIDs, ISO timestamps, no MongoDB _id leakage. All endpoints properly under /api prefix. Authentication and authorization working correctly throughout."
 
+  - task: "Updated /api/channels filter parameters: min/max subscribers, price, ER + featured/alive toggles"
+    implemented: true
+    working: true
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Added backend numeric range filters on /api/channels (min/max subscribers, price, ER) and only_featured/only_alive toggles. Updated catalog UI to Telega-style with left sidebar filters and kept 24/pg pagination."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE NEW FILTER PARAMETERS TESTING COMPLETED ✅ - All 19 test suites passed including new filter functionality: ✅ NUMERIC RANGE FILTERS: min_subscribers, max_subscribers, min_price, max_price, min_er, max_er all work correctly and can be combined. Tested with values like min_subscribers=100000 (returned 10 channels), max_subscribers=200000 (returned 24 channels), combined range min_subscribers=50000&max_subscribers=300000 (returned 12 channels). ✅ PRICE FILTERS: min_price=15000 (returned 8 channels), max_price=30000 (returned 10 channels) work correctly. ✅ ER FILTERS: min_er=3.0 (returned 10 channels), max_er=6.0 (returned 7 channels) work correctly. ✅ BOOLEAN TOGGLES: only_featured=true limits to is_featured channels (returned 5 featured channels), only_alive=true limits to link_status='alive' channels (returned 24 alive channels after updating test data). ✅ COMBINED FILTERS: Complex queries combining q, category, min_subscribers, max_price, only_featured, sort, and pagination work correctly together. ✅ SORT INTEGRATION: Price sort (sort=price) and ER sort (sort=er) work correctly with new filters. ✅ ALL EXISTING FUNCTIONALITY: All 19 existing endpoints continue to work perfectly including auth, admin CRUD, trending, parsers, seed-demo, link checker. All routes properly start with /api and backend binds to 0.0.0.0:8001. No regressions detected."
+
 frontend:
   - task: "Public UI: list channels with search, filters, sort, pagination"
     implemented: true
