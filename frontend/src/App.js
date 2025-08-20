@@ -425,22 +425,32 @@ const Admin = ({ onLogout, onOpenDetail }) => {
   );
 };
 
-// -------------------- App Router (hash) --------------------
+// -------------------- App Router (react-router) --------------------
 
 function App() {
-  const [route, setRoute] = useState(window.location.hash);
+  const navigate = useNavigate();
   const [canFirst, setCanFirst] = useState(false);
-  useEffect(() => { const onHash = () => setRoute(window.location.hash); window.addEventListener('hashchange', onHash); return () => window.removeEventListener('hashchange', onHash); }, []);
   useEffect(() => { if (!localStorage.getItem("token")) axios.get(`${API}/auth/can-register`).then((res) => { if (res.data && res.data.allowed) setCanFirst(true); }); }, []);
 
-  const goAdmin = () => { window.location.hash = localStorage.getItem('token') ? '#/admin' : (canFirst ? '#/first' : '#/login'); };
-  const openDetail = (ch) => { window.location.hash = `#/c/${ch.id}`; };
+  const goAdmin = () => { navigate(localStorage.getItem('token') ? '/admin' : (canFirst ? '/first' : '/login')); };
+  const openDetail = (ch) => { navigate(`/c/${ch.id}`); };
 
-  if (route.startsWith('#/admin')) return <Admin onLogout={() => { localStorage.removeItem("token"); window.location.hash = '#/'; }} onOpenDetail={openDetail} />;
-  if (route.startsWith('#/login')) return <Login onLoggedIn={() => (window.location.hash = '#/admin')} onBack={() => (window.location.hash = '#/')} />;
-  if (route.startsWith('#/first') && canFirst) return <FirstAdmin onDone={() => (window.location.hash = '#/admin')} onBackToCatalog={() => (window.location.hash = '#/')} />;
-  if (route.startsWith('#/c/')) { const id = route.replace('#/c/', ''); return <Detail id={id} onBack={() => (window.location.hash = '#/')} />; }
-  return <Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />;
+  return (
+    <Routes>
+      <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
+      <Route path="/c/:id" element={<RouteDetail />} />
+      <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
+      <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
+      {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
+      <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
+    </Routes>
+  );
 }
+
+const RouteDetail = () => {
+  const navigate = useNavigate();
+  const id = window.location.pathname.replace('/c/', '');
+  return <Detail id={id} onBack={() => navigate('/')} />;
+};
 
 export default App;
