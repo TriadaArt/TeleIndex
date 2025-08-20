@@ -163,7 +163,16 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
         <CategoryBar categories={cats} active={category} setActive={setCategory} />
         <section className="mt-6">
           <h2 className="text-lg font-semibold mb-3">Тренды</h2>
-          <Trending />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {trending && trending.length > 0 ? (
+              trending.map((item) => (<Card key={item.id} item={item} onOpen={onOpenDetail} />))
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <div className="mx-auto h-12 w-12 rounded-2xl bg-gray-100 border flex items-center justify-center">📈</div>
+                <p className="mt-2 text-gray-600 text-sm">Загрузка трендов...</p>
+              </div>
+            )}
+          </div>
         </section>
         <section className="mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
