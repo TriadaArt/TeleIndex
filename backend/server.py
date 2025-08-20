@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Depends, Body
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
@@ -145,6 +145,10 @@ class UserLogin(BaseModel):
 class UserResponse(UserBase):
     id: str
     created_at: str
+
+class PasteLinksPayload(BaseModel):
+    links: List[str]
+    category: Optional[str] = None
 
 async def create_indexes():
     try:
@@ -445,6 +449,37 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
 async def parse_tgstat(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
     return await parse_telemetr(list_url=list_url, category=category, limit=limit, user=user)
 
+@api.post("/parser/links")
+async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends(get_current_admin)):
+    if not payload.links:
+        return {"ok": True, "inserted": 0}
+    now = utcnow_iso()
+    inserted = 0
+    for raw in payload.links:
+        link = (raw or "").strip()
+        if not link:
+            continue
+        if not (link.startswith("http") or link.startswith("t.me")):
+            link = f"t.me/{link}"
+        name = link.rsplit('/', 1)[-1]
+        channel = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "link": link,
+            "avatar_url": None,
+            "subscribers": 0,
+            "category": payload.category,
+            "language": "ru",
+            "short_description": None,
+            "seo_description": None,
+            "status": "draft",
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
+        inserted += 1
+    return {"ok": True, "inserted": inserted}
+
 # Link checker
 @api.post("/admin/links/check")
 async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[str, Any] = Depends(get_current_admin)):
@@ -478,6 +513,32 @@ async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[s
             alive += 1
         await db.channels.update_one({"id": ch["id"]}, {"$set": updates})
     return {"ok": True, "checked": len(items), "alive": alive, "dead": dead}
+
+# Demo seed (admin)
+@api.post("/admin/seed-demo")
+async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
+    now = utcnow_iso()
+    sample = [
+        {"name": "Новости России", "link": "https://t.me/rian_ru", "subscribers": 1000000, "category": "Новости"},
+        {"name": "Технологии Сегодня", "link": "https://t.me/tech", "subscribers": 250000, "category": "Технологии"},
+        {"name": "Крипто Daily", "link": "https://t.me/crypto", "subscribers": 180000, "category": "Крипто"},
+        {"name": "Бизнес Аналитика", "link": "https://t.me/business", "subscribers": 120000, "category": "Бизнес"},
+        {"name": "Развлечения 24", "link": "https://t.me/fun", "subscribers": 95000, "category": "Развлечения"},
+    ]
+    inserted = 0
+    for s in sample:
+        doc = {
+            "id": str(uuid.uuid4()),
+            **s,
+            "language": "ru",
+            "status": "approved",
+            "created_at": now,
+            "updated_at": now,
+            "short_description": "Демо канал",
+        }
+        await db.channels.update_one({"link": s["link"]}, {"$setOnInsert": prepare_for_mongo(doc)}, upsert=True)
+        inserted += 1
+    return {"ok": True, "inserted": inserted}
 
 app.include_router(api)
 app.add_middleware(

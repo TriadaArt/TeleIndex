@@ -132,15 +132,14 @@ const Catalog = ({ onGoAdmin }) => {
   );
 };
 
-const FirstAdmin = ({ onDone }) => {
+const FirstAdmin = ({ onDone, onBackToCatalog }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const submit = async (e) => {
     e.preventDefault(); setErr("");
     try {
-      const { data: reg } = await axios.post(`${API}/auth/register`, { email, password, role: "admin" });
-      // auto-login
+      await axios.post(`${API}/auth/register`, { email, password, role: "admin" });
       const { data: login } = await axios.post(`${API}/auth/login`, { email, password });
       localStorage.setItem("token", login.access_token);
       onDone();
@@ -153,7 +152,10 @@ const FirstAdmin = ({ onDone }) => {
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full h-11 rounded-xl border px-4 mb-2" />
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" className="w-full h-11 rounded-xl border px-4 mb-2" />
         {err && <div className="text-red-600 text-sm mb-2">{err}</div>}
-        <button className="w-full h-11 rounded-xl bg-indigo-600 text-white">Создать и войти</button>
+        <div className="flex gap-2">
+          <button className="flex-1 h-11 rounded-xl bg-indigo-600 text-white">Создать и войти</button>
+          <button type="button" onClick={onBackToCatalog} className="h-11 rounded-xl border px-4">Отмена</button>
+        </div>
       </form>
     </div>
   );
@@ -193,6 +195,7 @@ const Admin = ({ onLogout }) => {
   const [manual, setManual] = useState({ name: "", link: "", category: "", subscribers: 0 });
   const [importUrl, setImportUrl] = useState("");
   const [importSource, setImportSource] = useState("telemetr");
+  const [pasteLinks, setPasteLinks] = useState("");
   const { data: trending } = useFetch(`${API}/channels/trending`, []);
 
   const reload = async () => {
@@ -207,13 +210,16 @@ const Admin = ({ onLogout }) => {
   const reject = async (id) => { await axios.post(`${API}/admin/channels/${id}/reject`); reload(); };
   const saveManual = async (e) => { e.preventDefault(); await axios.post(`${API}/admin/channels`, { ...manual, status: "draft" }); setManual({ name: "", link: "", category: "", subscribers: 0 }); reload(); };
   const runImport = async () => { const ep = importSource === "telemetr" ? "telemetr" : "tgstat"; await axios.post(`${API}/parser/${ep}`, null, { params: { list_url: importUrl } }); reload(); };
+  const runPasteImport = async () => { const links = pasteLinks.split(/\n|,|;|\s+/).map(s => s.trim()).filter(Boolean); if (links.length === 0) return; await axios.post(`${API}/parser/links`, { links }); setPasteLinks(""); reload(); };
   const runLinkCheck = async () => { await axios.post(`${API}/admin/links/check`, null, { params: { limit: 50, replace_dead: false } }); reload(); };
+  const seedDemo = async () => { await axios.post(`${API}/admin/seed-demo`); reload(); };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Админ-панель</h2>
         <div className="flex items-center gap-3">
+          <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={seedDemo}>Заполнить демо</button>
           <div className="text-sm text-gray-600">Мертвые ссылки: {deadInfo.dead}</div>
           <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={runLinkCheck}>Проверить ссылки</button>
           <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={onLogout}>Выйти</button>
@@ -259,13 +265,19 @@ const Admin = ({ onLogout }) => {
         )}
 
         {tab === "import" && (
-          <div className="bg-white p-4 rounded-2xl border shadow-sm grid grid-cols-1 md:grid-cols-4 gap-3">
-            <select className="h-11 rounded-xl border px-4" value={importSource} onChange={(e) => setImportSource(e.target.value)}>
-              <option value="telemetr">Telemetr</option>
-              <option value="tgstat">TGStat</option>
-            </select>
-            <input className="h-11 rounded-xl border px-4 md:col-span-2" placeholder="URL списка для парсинга" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} />
-            <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runImport}>Запустить</button>
+          <div className="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <select className="h-11 rounded-xl border px-4" value={importSource} onChange={(e) => setImportSource(e.target.value)}>
+                <option value="telemetr">Telemetr</option>
+                <option value="tgstat">TGStat</option>
+              </select>
+              <input className="h-11 rounded-xl border px-4 md:col-span-2" placeholder="URL списка для парсинга" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} />
+              <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runImport}>Запустить</button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <textarea className="h-24 rounded-xl border px-4 py-2 md:col-span-3" placeholder="Вставьте t.me ссылки (через перенос строки, запятую или пробел)" value={pasteLinks} onChange={(e) => setPasteLinks(e.target.value)} />
+              <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runPasteImport}>Импорт из ссылок</button>
+            </div>
           </div>
         )}
 
@@ -282,6 +294,7 @@ const Admin = ({ onLogout }) => {
                 </div>
               </div>
             ))}
+            {drafts.length === 0 && <div className="text-sm text-gray-600">Черновиков нет</div>}
           </div>
         )}
 
@@ -297,6 +310,7 @@ const Admin = ({ onLogout }) => {
                 </div>
               </div>
             ))}
+            {approved.length === 0 && <div className="text-sm text-gray-600">Опубликованных каналов нет</div>}
           </div>
         )}
       </div>
@@ -313,7 +327,7 @@ function App() {
   }, []);
   if (view === "admin") return <Admin onLogout={() => { localStorage.removeItem("token"); setView("catalog"); }} />;
   if (view === "login") return <Login onLoggedIn={() => setView("admin")} onBack={() => setView("catalog")} />;
-  if (view === "first" && canFirst) return <FirstAdmin onDone={() => setView("admin")} />;
+  if (view === "first" && canFirst) return <FirstAdmin onDone={() => setView("admin")} onBackToCatalog={() => setView("catalog")} />;
   return <Catalog onGoAdmin={() => setView(localStorage.getItem("token") ? "admin" : (canFirst ? "first" : "login"))} />;
 }
 
