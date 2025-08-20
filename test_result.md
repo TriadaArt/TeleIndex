@@ -134,6 +134,10 @@ backend:
       - working: true
         agent: "testing"
         comment: "COMPREHENSIVE NEW BACKEND FEATURES TESTING COMPLETED ✅ - All 18 test suites passed including: ✅ AUTH SYSTEM: First admin registration (POST /api/auth/register) works when no users exist, properly blocks subsequent registrations. Login (POST /api/auth/login) returns JWT access_token. Authenticated user info (GET /api/auth/me) works with Bearer token. ✅ ADMIN ENDPOINTS: Admin summary (GET /api/admin/summary) returns draft/approved/dead counts. Admin channels CRUD flow: create draft (POST /api/admin/channels), update (PATCH), approve/reject channels work correctly. ✅ PUBLIC FEATURES: Categories return proper list, trending channels (GET /api/channels/trending) sorted by growth_score fallback to subscribers. Public channels support all sort options (name/new/popular). ✅ PARSER ENDPOINTS: Both /api/parser/telemetr and /api/parser/tgstat accept list_url and process HTML for t.me links, insert as draft channels. ✅ LINK CHECKER: /api/admin/links/check validates channel links, updates link_status and timestamps, supports replace_dead option. ✅ DATA INTEGRITY: All responses use UUIDs, ISO timestamps, no MongoDB _id leakage. All endpoints properly under /api prefix. Authentication and authorization working correctly throughout."
+      - working: true
+        agent: "testing"
+        comment: "All new channel filters tested: min/max subscribers, price, ER; only_featured and only_alive toggles; combined with search/category/sort/pagination. No regressions found."
+
 
   - task: "Updated /api/channels filter parameters: min/max subscribers, price, ER + featured/alive toggles"
     implemented: true
