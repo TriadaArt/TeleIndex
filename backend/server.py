@@ -14,6 +14,7 @@ from passlib.context import CryptContext
 from jose import jwt, JWTError
 import re
 import requests
+from urllib.parse import urljoin, urlparse
 
 try:
     from bs4 import BeautifulSoup
@@ -396,32 +397,137 @@ async def admin_reject_channel(channel_id: str, user: Dict[str, Any] = Depends(g
     doc = await db.channels.find_one({"id": channel_id})
     return ChannelResponse(**parse_from_mongo(doc))
 
-# Parser endpoints
+# -------------------- Scraper helpers --------------------
 
-def extract_tme_links_from_html(html: str) -> List[Dict[str, Any]]:
-    if not BeautifulSoup:
-        return []
+def absolutize(src: Optional[str], base: str) -> Optional[str]:
+    if not src:
+        return None
+    if src.startswith("//"):
+        return (urlparse(base).scheme or "https") + ":" + src
+    if src.startswith("http"):
+        return src
+    try:
+        return urljoin(base, src)
+    except Exception:
+        return src
+
+
+def extract_card_generic(card, base_url: str) -> Dict[str, Any]:
+    # Find link
+    link = None
+    a = card.select_one('a[href*="t.me"], a[href*="telegram.me"]')
+    if a and a.get('href'):
+        link = a.get('href').strip()
+    else:
+        # try to find @username text
+        text = card.get_text(" ", strip=True)
+        m = re.search(r"@([A-Za-z0-9_]{4,})", text)
+        if m:
+            link = f"https://t.me/{m.group(1)}"
+    if not link:
+        return {}
+    # Name
+    name = None
+    for sel in ['.title', 'h3', 'h2', 'h4', 'a', '.name']:
+        el = card.select_one(sel)
+        if el and el.get_text(strip=True):
+            name = el.get_text(strip=True)
+            break
+    if not name:
+        name = link.rsplit('/', 1)[-1]
+    # Avatar
+    img = card.select_one('img')
+    avatar = None
+    if img:
+        avatar = img.get('src') or img.get('data-src') or img.get('data-original') or img.get('data-lazy')
+    avatar = absolutize(avatar, base_url)
+    # Subscribers
+    subs_text = card.get_text(" ", strip=True).lower()
+    m2 = re.search(r"([\d\s.,]+)\s*(подписчик|подписчиков|subs|subscribers)", subs_text)
+    subs = to_int(m2.group(1)) if m2 else 0
+    # Category
+    cat = None
+    for el in card.select('.tag, .badge, .label, .category, [class*="tag"], [class*="badge"], [class*="category"]'):
+        t = el.get_text(strip=True)
+        if t:
+            cat = t
+            break
+    return {"name": name, "link": link, "avatar_url": avatar, "subscribers": subs, "category": cat}
+
+
+def parse_telemetr_html(html: str, base_url: str) -> List[Dict[str, Any]]:
+    soup = BeautifulSoup(html, "lxml")
+    candidates = soup.select('article, .card, .channel, .list-item, .ch-list, .list, .row, .col, div')
+    results = []
+    for c in candidates:
+        data = extract_card_generic(c, base_url)
+        if data:
+            results.append(data)
+    # de-dup by link
+    uniq = {}
+    for it in results:
+        uniq[it['link']] = it
+    return list(uniq.values())
+
+
+def parse_tgstat_html(html: str, base_url: str) -> List[Dict[str, Any]]:
     soup = BeautifulSoup(html, "lxml")
     results = []
-    for a in soup.select('a[href*="t.me"]'):
-        href = a.get("href", "").strip()
-        if not href:
+    # Direct t.me links
+    for a in soup.select('a[href*="t.me"], a[href*="telegram.me"]'):
+        card = a
+        for _ in range(3):
+            if card.parent:
+                card = card.parent
+        data = extract_card_generic(card, base_url)
+        if data:
+            results.append(data)
+    # tgstat channel cards linking to /channel/@username
+    for a in soup.select('a[href*="/channel/"]'):
+        href = a.get('href', '')
+        m = re.search(r"/@([A-Za-z0-9_]{4,})", href)
+        if not m:
             continue
-        name = a.get_text(strip=True) or a.get("title") or None
-        parent_text = a.parent.get_text(" ", strip=True) if a.parent else ""
-        m = re.search(r"([\d\s,.]+)\s*(k|m|тыс|млн)?", parent_text.lower())
-        subs_text = m.group(0) if m else ""
-        subscribers = to_int(subs_text) or 0
-        results.append({"name": name or href, "link": href, "subscribers": subscribers})
-    return results
+        username = m.group(1)
+        # Climb to parent as card
+        card = a
+        for _ in range(3):
+            if card.parent:
+                card = card.parent
+        data = extract_card_generic(card, base_url)
+        if not data:
+            data = {"name": username, "link": f"https://t.me/{username}", "avatar_url": None, "subscribers": 0, "category": None}
+        else:
+            data['link'] = f"https://t.me/{username}"
+        results.append(data)
+    uniq = {}
+    for it in results:
+        uniq[it['link']] = it
+    return list(uniq.values())
+
+
+def parse_telega_html(html: str, base_url: str) -> List[Dict[str, Any]]:
+    soup = BeautifulSoup(html, "lxml")
+    results = []
+    # Many cards with anchor to t.me or have @username in text
+    for card in soup.select('article, .card, .channel, .list-item, .card-body, .row, div'):
+        data = extract_card_generic(card, base_url)
+        if data:
+            results.append(data)
+    uniq = {}
+    for it in results:
+        uniq[it['link']] = it
+    return list(uniq.values())
+
+# -------------------- Parser endpoints --------------------
 
 @api.post("/parser/telemetr")
 async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
     try:
-        resp = requests.get(list_url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
+        resp = requests.get(list_url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
         if resp.status_code != 200:
             raise HTTPException(400, detail=f"Fetch failed: {resp.status_code}")
-        items = extract_tme_links_from_html(resp.text)
+        items = parse_telemetr_html(resp.text, list_url) if BeautifulSoup else []
         inserted = 0
         now = utcnow_iso()
         for it in items[:limit]:
@@ -429,9 +535,9 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
                 "id": str(uuid.uuid4()),
                 "name": it.get("name") or "Без названия",
                 "link": it.get("link"),
-                "avatar_url": None,
+                "avatar_url": it.get("avatar_url"),
                 "subscribers": int(it.get("subscribers") or 0),
-                "category": category,
+                "category": category or it.get("category"),
                 "language": "ru",
                 "short_description": None,
                 "seo_description": None,
@@ -447,8 +553,65 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
 
 @api.post("/parser/tgstat")
 async def parse_tgstat(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
-    return await parse_telemetr(list_url=list_url, category=category, limit=limit, user=user)
+    try:
+        resp = requests.get(list_url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
+        if resp.status_code != 200:
+            raise HTTPException(400, detail=f"Fetch failed: {resp.status_code}")
+        items = parse_tgstat_html(resp.text, list_url) if BeautifulSoup else []
+        inserted = 0
+        now = utcnow_iso()
+        for it in items[:limit]:
+            channel = {
+                "id": str(uuid.uuid4()),
+                "name": it.get("name") or "Без названия",
+                "link": it.get("link"),
+                "avatar_url": it.get("avatar_url"),
+                "subscribers": int(it.get("subscribers") or 0),
+                "category": category or it.get("category"),
+                "language": "ru",
+                "short_description": None,
+                "seo_description": None,
+                "status": "draft",
+                "created_at": now,
+                "updated_at": now,
+            }
+            await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
+            inserted += 1
+        return {"ok": True, "inserted": inserted}
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
 
+@api.post("/parser/telega")
+async def parse_telega(list_url: str, category: Optional[str] = None, limit: int = 50, user: Dict[str, Any] = Depends(get_current_admin)):
+    try:
+        resp = requests.get(list_url, timeout=20, headers={"User-Agent": "Mozilla/5.0"})
+        if resp.status_code != 200:
+            raise HTTPException(400, detail=f"Fetch failed: {resp.status_code}")
+        items = parse_telega_html(resp.text, list_url) if BeautifulSoup else []
+        inserted = 0
+        now = utcnow_iso()
+        for it in items[:limit]:
+            channel = {
+                "id": str(uuid.uuid4()),
+                "name": it.get("name") or "Без названия",
+                "link": it.get("link"),
+                "avatar_url": it.get("avatar_url"),
+                "subscribers": int(it.get("subscribers") or 0),
+                "category": category or it.get("category"),
+                "language": "ru",
+                "short_description": None,
+                "seo_description": None,
+                "status": "draft",
+                "created_at": now,
+                "updated_at": now,
+            }
+            await db.channels.update_one({"link": channel["link"]}, {"$setOnInsert": prepare_for_mongo(channel)}, upsert=True)
+            inserted += 1
+        return {"ok": True, "inserted": inserted}
+    except Exception as e:
+        raise HTTPException(400, detail=str(e))
+
+# Parse pasted links
 @api.post("/parser/links")
 async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends(get_current_admin)):
     if not payload.links:
@@ -480,7 +643,7 @@ async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends
         inserted += 1
     return {"ok": True, "inserted": inserted}
 
-# Link checker
+# Link checker & demo seed
 @api.post("/admin/links/check")
 async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[str, Any] = Depends(get_current_admin)):
     cursor = db.channels.find({"status": {"$in": ["approved", "draft"]}}).sort("link_last_checked", 1).limit(limit)
@@ -514,7 +677,6 @@ async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[s
         await db.channels.update_one({"id": ch["id"]}, {"$set": updates})
     return {"ok": True, "checked": len(items), "alive": alive, "dead": dead}
 
-# Demo seed (admin)
 @api.post("/admin/seed-demo")
 async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
     now = utcnow_iso()

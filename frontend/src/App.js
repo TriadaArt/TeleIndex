@@ -209,7 +209,7 @@ const Admin = ({ onLogout }) => {
   const approve = async (id) => { await axios.post(`${API}/admin/channels/${id}/approve`); reload(); };
   const reject = async (id) => { await axios.post(`${API}/admin/channels/${id}/reject`); reload(); };
   const saveManual = async (e) => { e.preventDefault(); await axios.post(`${API}/admin/channels`, { ...manual, status: "draft" }); setManual({ name: "", link: "", category: "", subscribers: 0 }); reload(); };
-  const runImport = async () => { const ep = importSource === "telemetr" ? "telemetr" : "tgstat"; await axios.post(`${API}/parser/${ep}`, null, { params: { list_url: importUrl } }); reload(); };
+  const runImport = async () => { const ep = importSource === "telemetr" ? "telemetr" : (importSource === "tgstat" ? "tgstat" : "telega"); await axios.post(`${API}/parser/${ep}`, null, { params: { list_url: importUrl } }); reload(); };
   const runPasteImport = async () => { const links = pasteLinks.split(/\n|,|;|\s+/).map(s => s.trim()).filter(Boolean); if (links.length === 0) return; await axios.post(`${API}/parser/links`, { links }); setPasteLinks(""); reload(); };
   const runLinkCheck = async () => { await axios.post(`${API}/admin/links/check`, null, { params: { limit: 50, replace_dead: false } }); reload(); };
   const seedDemo = async () => { await axios.post(`${API}/admin/seed-demo`); reload(); };
@@ -266,16 +266,17 @@ const Admin = ({ onLogout }) => {
 
         {tab === "import" && (
           <div className="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <select className="h-11 rounded-xl border px-4" value={importSource} onChange={(e) => setImportSource(e.target.value)}>
                 <option value="telemetr">Telemetr</option>
                 <option value="tgstat">TGStat</option>
+                <option value="telega">Telega.in</option>
               </select>
-              <input className="h-11 rounded-xl border px-4 md:col-span-2" placeholder="URL списка для парсинга" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} />
+              <input className="h-11 rounded-xl border px-4 md:col-span-3" placeholder="URL списка для парсинга" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} />
               <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runImport}>Запустить</button>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-              <textarea className="h-24 rounded-xl border px-4 py-2 md:col-span-3" placeholder="Вставьте t.me ссылки (через перенос строки, запятую или пробел)" value={pasteLinks} onChange={(e) => setPasteLinks(e.target.value)} />
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <textarea className="h-24 rounded-xl border px-4 py-2 md:col-span-4" placeholder="Вставьте t.me ссылки (через перенос строки, запятую или пробел)" value={pasteLinks} onChange={(e) => setPasteLinks(e.target.value)} />
               <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runPasteImport}>Импорт из ссылок</button>
             </div>
           </div>
