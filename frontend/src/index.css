@@ -8,27 +8,22 @@
 }
 
 @layer components {
-  /* Layout */
   .tg-container { @apply max-w-6xl mx-auto px-4; }
   .tg-header { @apply tg-container py-3 flex items-center gap-3 border-b bg-white; }
 
-  /* Inputs */
   .tg-input { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
   .tg-input-lg { @apply h-11 rounded-xl border border-gray-300 px-4 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
   .tg-select { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none pr-8; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 10px center; }
   .tg-checkbox { @apply h-4 w-4 rounded border border-gray-300 text-indigo-600 focus:ring-indigo-500; }
 
-  /* Sidebar */
   .tg-sidebar { @apply p-4 rounded-xl border border-gray-200 bg-white shadow-sm space-y-3; }
   .tg-section { @apply text-sm font-medium mb-2; }
 
-  /* Chips & Buttons */
   .tg-chip { @apply px-3 py-1.5 rounded-full border text-sm bg-white hover:bg-gray-50 transition; }
   .tg-chip-active { @apply bg-indigo-600 text-white border-indigo-600; }
   .tg-btn { @apply px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm; }
   .tg-btn-primary { @apply px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700; }
 
-  /* Cards */
   .tg-card { @apply rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition; }
   .tg-card-pad { @apply p-4; }
   .tg-title { @apply font-semibold text-base leading-5; }
@@ -36,12 +31,7 @@
   .tg-badge { @apply text-[10px] px-1.5 py-0.5 rounded border bg-gray-50; }
   .tg-badge-warn { @apply bg-yellow-100; }
 
-  /* Metrics row */
-  .tg-metrics { @apply mt-3 text-[13px] text-gray-700 flex flex-wrap items-center gap-x-3 gap-y-1; }
+  .tg-metrics { @apply mt-3 text-[13px] text-gray-700 flex flex-wrap items-center gap-x-4 gap-y-1; }
   .tg-dot::before { content: '•'; @apply mx-1 text-gray-400; }
-
-  /* Pagination */
-  .tg-pager { @apply flex items-center justify-between mt-6; }
-  .tg-page-btn { @apply px-3 py-1.5 rounded-lg border text-sm bg-white hover:bg-gray-50; }
-  .tg-page-active { @apply bg-indigo-600 text-white border-indigo-600; }
+  .tg-icon { @apply inline-block align-middle mr-1.5 text-gray-500; }
 }
