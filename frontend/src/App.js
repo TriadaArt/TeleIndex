@@ -33,9 +33,9 @@ const Header = ({ onGoAdmin, q, setQ, scrollToCats }) => (
 const CategoryBar = React.forwardRef(({ categories, active, setActive }, ref) => (
   <div ref={ref} className="max-w-6xl mx-auto px-4 mt-3 overflow-x-auto">
     <div className="flex items-center gap-2">
-      <button className={classNames("px-3 py-1.5 rounded-full border text-sm", !active ? "bg-indigo-600 text-white border-indigo-600" : "bg-white")} onClick={() => setActive("")}>Все</button>
+      <button className={classNames("chip", !active && "chip-active")} onClick={() => setActive("")}>Все</button>
       {(categories || []).map((c) => (
-        <button key={c} className={classNames("px-3 py-1.5 rounded-full border text-sm", active === c ? "bg-indigo-600 text-white border-indigo-600" : "bg-white") } onClick={() => setActive(c)}>{c}</button>
+        <button key={c} className={classNames("chip", active === c && "chip-active") } onClick={() => setActive(c)}>{c}</button>
       ))}
     </div>
   </div>
@@ -51,7 +51,7 @@ const SortBar = ({ sort, setSort }) => (
         { k: "price", label: "Цена" },
         { k: "er", label: "ER" },
       ].map((t) => (
-        <button key={t.k} onClick={() => setSort(t.k)} className={classNames("px-3 py-1.5 rounded-lg border text-sm", sort === t.k ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-gray-50")}>{t.label}</button>
+        <button key={t.k} onClick={() => setSort(t.k)} className={classNames("chip", sort === t.k && "chip-active")}>{t.label}</button>
       ))}
     </div>
   </div>
@@ -65,20 +65,20 @@ const TrendStrip = ({ items, onOpen }) => (
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
       {(items || []).map((it) => (
-        <div key={it.id} className="rounded-2xl border bg-white shadow-sm hover:shadow-md transition p-3">
+        <div key={it.id} className="card card-pad">
           <div className="flex items-center gap-3">
             {it.avatar_url ? <img src={it.avatar_url} alt={it.name} className="h-10 w-10 rounded-xl object-cover border" /> : <div className="h-10 w-10 rounded-xl flex items-center justify-center text-white bg-indigo-500 font-semibold">{(it.name||'?').slice(0,2).toUpperCase()}</div>}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <div className="truncate font-medium" title={it.name}>{it.name}</div>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 border">В тренде</span>
+                <span className="badge badge-yellow">В тренде</span>
               </div>
               <div className="text-xs text-gray-600">👥 {ruShort(it.subscribers)}</div>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between">
-            <button onClick={() => onOpen(it)} className="text-xs px-2 py-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Открыть</button>
-            <a href={it.link.startsWith("http") ? it.link : `https://${it.link}`} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-lg border">Перейти</a>
+            <button onClick={() => onOpen(it)} className="btn-primary">Открыть</button>
+            <a href={it.link.startsWith("http") ? it.link : `https://${it.link}`} target="_blank" rel="noreferrer" className="btn">Перейти</a>
           </div>
         </div>
       ))}
@@ -89,18 +89,18 @@ const TrendStrip = ({ items, onOpen }) => (
 const Card = ({ item, onOpen }) => {
   const initials = (item?.name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
   return (
-    <div className="rounded-2xl border bg-white shadow-sm hover:shadow-md transition overflow-hidden">
-      <div className="p-4">
+    <div className="card overflow-hidden">
+      <div className="card-pad">
         <div className="flex items-center gap-3">
           {item.avatar_url ? (
-            <img src={item.avatar_url} alt={item.name} className="h-14 w-14 rounded-xl object-cover border" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+            <img src={item.avatar_url} alt={item.name} className="h-18 w-18 h-14 w-14 rounded-xl object-cover border" onError={(e) => { e.currentTarget.style.display = "none"; }} />
           ) : (
             <div className="h-14 w-14 rounded-xl items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{initials}</div>
           )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold truncate" title={item.name}>{item.name}</h3>
-              {item.is_featured && <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 border">Избранный</span>}
+              {item.is_featured && <span className="badge badge-yellow">Избранный</span>}
             </div>
             <div className="flex items-center gap-2 mt-1 text-xs text-gray-600 flex-wrap">
               {item.category && <span className="px-2 py-0.5 rounded-full bg-gray-100 border">{item.category}</span>}
@@ -109,7 +109,7 @@ const Card = ({ item, onOpen }) => {
             </div>
           </div>
         </div>
-        <p className="text-sm text-gray-700 mt-2 line-clamp-3">{item.short_description || item.seo_description || "Описание отсутствует"}</p>
+        <p className="text-sm text-gray-700 mt-2 line-clamp-2">{item.short_description || item.seo_description || "Описание отсутствует"}</p>
         <div className="mt-3 text-sm text-gray-700 flex items-center flex-wrap gap-x-4 gap-y-1">
           <span>👥 {ruShort(item.subscribers)}</span>
           <span>📈 ER {item.er != null ? `${item.er}%` : "-"}</span>
@@ -119,8 +119,8 @@ const Card = ({ item, onOpen }) => {
           <span>🕒 Последний пост {daysAgo(item.last_post_at)} дн.</span>
         </div>
         <div className="flex items-center justify-between mt-3">
-          <button onClick={() => onOpen(item)} className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Открыть</button>
-          <a href={item.link.startsWith("http") ? item.link : `https://${item.link}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm">Перейти</a>
+          <button onClick={() => onOpen(item)} className="btn-primary">Открыть</button>
+          <a href={item.link.startsWith("http") ? item.link : `https://${item.link}`} target="_blank" rel="noreferrer" className="btn">Перейти</a>
         </div>
       </div>
     </div>
@@ -134,14 +134,14 @@ const Pagination = ({ page, total, limit, onChange }) => {
   const end = Math.min(pages, start + 4);
   for (let i = start; i <= end; i++) items.push(i);
   return (
-    <div className="flex items-center justify-between mt-6">
-      <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm disabled:opacity-50" disabled={page <= 1} onClick={() => onChange(page - 1)}>Назад</button>
+    <div className="pagination flex items-center justify-between mt-6">
+      <button className="btn" disabled={page <= 1} onClick={() => onChange(page - 1)}>Назад</button>
       <div className="flex items-center gap-2">
         {items.map((p) => (
-          <button key={p} className={classNames("px-3 py-1.5 rounded-lg border text-sm", p === page ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-gray-50")} onClick={() => onChange(p)}>{p}</button>
+          <button key={p} className={classNames("btn", p === page && "active")} onClick={() => onChange(p)}>{p}</button>
         ))}
       </div>
-      <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm disabled:opacity-50" disabled={page >= pages} onClick={() => onChange(page + 1)}>Вперёд</button>
+      <button className="btn" disabled={page >= pages} onClick={() => onChange(page + 1)}>Вперёд</button>
     </div>
   );
 };
@@ -176,7 +176,7 @@ const Detail = ({ id, onBack }) => {
         {loading || !ch ? (
           <div className="h-48 rounded-2xl bg-gray-100 animate-pulse border" />
         ) : (
-          <div className="rounded-2xl border bg-white shadow-sm p-6">
+          <div className="card card-pad">
             <div className="flex items-start gap-4">
               {ch.avatar_url ? <img src={ch.avatar_url} alt={ch.name} className="h-20 w-20 rounded-xl object-cover border" /> : <div className="h-20 w-20 rounded-xl items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{(ch.name||'?').slice(0,2).toUpperCase()}</div>}
               <div className="min-w-0 flex-1">
@@ -192,7 +192,7 @@ const Detail = ({ id, onBack }) => {
                   {ch.price_rub != null && <span>💰 Цена: ₽ {Intl.NumberFormat('ru-RU').format(ch.price_rub)}</span>}
                 </div>
               </div>
-              <a href={ch.link.startsWith('http') ? ch.link : `https://${ch.link}`} target="_blank" rel="noreferrer" className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Перейти в Telegram</a>
+              <a href={ch.link.startsWith('http') ? ch.link : `https://${ch.link}`} target="_blank" rel="noreferrer" className="btn-primary">Перейти в Telegram</a>
             </div>
             <div className="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <div className="p-3 rounded-xl border bg-gray-50 text-sm">📈 ER<br/><span className="font-semibold">{ch.er != null ? `${ch.er}%` : '-'}</span></div>
@@ -246,14 +246,14 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
         {/* Sidebar */}
         <aside className="space-y-3 min-w-[280px]">
           <div className="lg:sticky lg:top-24">
-            <div className="p-4 rounded-2xl border bg-white shadow-sm space-y-3">
+            <div className="sidebar">
               <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск каналов..." className="w-full h-11 rounded-xl border px-4" />
               <div>
                 <div className="text-sm font-medium mb-2">Категории</div>
                 <div className="flex flex-wrap gap-2">
-                  <button className={classNames("px-3 py-1.5 rounded-full border text-sm", !category ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-gray-50")} onClick={()=>setCategory("")}>Все</button>
+                  <button className={classNames("chip", !category && "chip-active")} onClick={()=>setCategory("")}>Все</button>
                   {(cats.data||[]).map(c => (
-                    <button key={c} className={classNames("px-3 py-1.5 rounded-full border text-sm", category===c?"bg-indigo-600 text-white border-indigo-600":"bg-white hover:bg-gray-50")} onClick={()=>setCategory(c)}>{c}</button>
+                    <button key={c} className={classNames("chip", category===c && "chip-active")} onClick={()=>setCategory(c)}>{c}</button>
                   ))}
                 </div>
               </div>
@@ -307,8 +307,6 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
   );
 };
 
-// -------------------- Admin --------------------
-
 const FirstAdmin = ({ onDone, onBackToCatalog }) => { const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [err, setErr] = useState(""); const submit = async (e) => { e.preventDefault(); setErr(""); try { await axios.post(`${API}/auth/register`, { email, password, role: "admin" }); const { data: login } = await axios.post(`${API}/auth/login`, { email, password }); localStorage.setItem("token", login.access_token); onDone(); } catch (e) { setErr("Не удалось создать администратора. Возможно, регистрация отключена."); } }; return (<div className="min-h-screen flex items-center justify-center bg-gray-50 p-4"><form onSubmit={submit} className="w-full max-w-sm bg-white p-6 rounded-2xl border shadow-sm"><h2 className="text-lg font-semibold mb-4">Создание первого администратора</h2><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full h-11 rounded-xl border px-4 mb-2" /><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" className="w-full h-11 rounded-xl border px-4 mb-2" />{err && <div className="text-red-600 text-sm mb-2">{err}</div>}<div className="flex gap-2"><button className="flex-1 h-11 rounded-xl bg-indigo-600 text-white">Создать и войти</button><button type="button" onClick={onBackToCatalog} className="h-11 rounded-xl border px-4">Отмена</button></div></form></div>); };
 
 const Login = ({ onLoggedIn, onBack }) => { const [email, setEmail] = useState(""); const [password, setPassword] = useState(""); const [err, setErr] = useState(""); const submit = async (e) => { e.preventDefault(); setErr(""); try { const { data } = await axios.post(`${API}/auth/login`, { email, password }); localStorage.setItem("token", data.access_token); onLoggedIn(); } catch { setErr("Неверные учетные данные"); } }; return (<div className="min-h-screen flex items-center justify-center bg-gray-50 p-4"><form onSubmit={submit} className="w-full max-w-sm bg-white p-6 rounded-2xl border shadow-sm"><h2 className="text-lg font-semibold mb-4">Вход администратора</h2><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" className="w-full h-11 rounded-xl border px-4 mb-2" /><input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Пароль" className="w-full h-11 rounded-xl border px-4 mb-2" />{err && <div className="text-red-600 text-sm mb-2">{err}</div>}<div className="flex gap-2"><button className="flex-1 h-11 rounded-xl bg-indigo-600 text-white">Войти</button><button type="button" className="h-11 rounded-xl border px-4" onClick={onBack}>Назад</button></div></form></div>); };
@@ -352,27 +350,27 @@ const Admin = ({ onLogout, onOpenDetail }) => {
       <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <h2 className="text-xl font-semibold">Админ-панель</h2>
         <div className="flex items-center gap-3">
-          <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={seedDemo}>Заполнить демо</button>
+          <button className="btn" onClick={seedDemo}>Заполнить демо</button>
           <div className="text-sm text-gray-600">Мертвые ссылки: {deadInfo.dead}</div>
-          <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={runLinkCheck}>Проверить ссылки</button>
-          <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={onLogout}>Выйти</button>
+          <button className="btn" onClick={runLinkCheck}>Проверить ссылки</button>
+          <button className="btn" onClick={onLogout}>Выйти</button>
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center gap-2 mb-4 flex-wrap">
           {[{ k: "summary", label: "Сводка" }, { k: "drafts", label: "Черновики" }, { k: "approved", label: "Опубликованные" }, { k: "add", label: "Добавить" }, { k: "import", label: "Импорт" }].map((t) => (
-            <button key={t.k} onClick={() => setTab(t.k)} className={classNames("px-3 py-1.5 rounded-lg border text-sm", tab === t.k ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-gray-50")}>{t.label}</button>
+            <button key={t.k} onClick={() => setTab(t.k)} className={classNames("chip", tab === t.k && "chip-active")}>{t.label}</button>
           ))}
         </div>
 
         {tab === "summary" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 bg-white p-4 rounded-2xl border shadow-sm">
+            <div className="lg:col-span-2 card card-pad">
               <h3 className="font-semibold mb-3">Тренды</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">{(trending || []).map((it) => (<Card key={it.id} item={it} onOpen={onOpenDetail} />))}</div>
             </div>
-            <div className="bg-white p-4 rounded-2xl border shadow-sm">
+            <div className="card card-pad">
               <h3 className="font-semibold mb-3">Счётчики</h3>
               <div className="grid grid-cols-3 gap-3 text-center text-sm">
                 <div className="p-3 rounded-xl border bg-gray-50">Черновики<br/><span className="font-semibold">{deadInfo.draft ?? '-'}</span></div>
@@ -384,7 +382,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
                 {(deadList || []).map((d) => (
                   <div key={d.id} className="p-2 rounded-xl border flex items-center justify-between">
                     <div className="text-sm truncate mr-2">{d.name}</div>
-                    <a href={d.link.startsWith("http") ? d.link : `https://${d.link}`} target="_blank" rel="noreferrer" className="text-xs px-2 py-1 rounded-lg border">Открыть</a>
+                    <a href={d.link.startsWith("http") ? d.link : `https://${d.link}`} target="_blank" rel="noreferrer" className="btn">Открыть</a>
                   </div>
                 ))}
                 {(!deadList || deadList.length === 0) && (<div className="text-sm text-gray-500">Нет проблемных ссылок</div>)}
@@ -394,7 +392,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
         )}
 
         {tab === "add" && (
-          <form onSubmit={saveManual} className="bg-white p-4 rounded-2xl border shadow-sm grid grid-cols-1 md:grid-cols-3 gap-3">
+          <form onSubmit={saveManual} className="card card-pad grid grid-cols-1 md:grid-cols-3 gap-3">
             <input className="h-11 rounded-xl border px-4" placeholder="Название" value={manual.name} onChange={(e) => setManual({ ...manual, name: e.target.value })} />
             <input className="h-11 rounded-xl border px-4" placeholder="Ссылка t.me/..." value={manual.link} onChange={(e) => setManual({ ...manual, link: e.target.value })} />
             <input className="h-11 rounded-xl border px-4" placeholder="Аватар URL" value={manual.avatar_url} onChange={(e) => setManual({ ...manual, avatar_url: e.target.value })} />
@@ -409,12 +407,12 @@ const Admin = ({ onLogout, onOpenDetail }) => {
             <input className="h-11 rounded-xl border px-4" placeholder="Рост 30д %" type="number" step="0.1" value={manual.growth_30d} onChange={(e) => setManual({ ...manual, growth_30d: e.target.value })} />
             <input className="h-11 rounded-xl border px-4" placeholder="Последний пост (ISO)" value={manual.last_post_at} onChange={(e) => setManual({ ...manual, last_post_at: e.target.value })} />
             <input className="h-11 rounded-xl border px-4 md:col-span-3" placeholder="Короткое описание" value={manual.short_description} onChange={(e) => setManual({ ...manual, short_description: e.target.value })} />
-            <button className="h-11 rounded-xl bg-indigo-600 text-white md:col-span-3">Сохранить черновик</button>
+            <button className="btn-primary md:col-span-3">Сохранить черновик</button>
           </form>
         )}
 
         {tab === "import" && (
-          <div className="bg-white p-4 rounded-2xl border shadow-sm space-y-3">
+          <div className="card card-pad space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <select className="h-11 rounded-xl border px-4" value={importSource} onChange={(e) => setImportSource(e.target.value)}>
                 <option value="telemetr">Telemetr</option>
@@ -422,11 +420,11 @@ const Admin = ({ onLogout, onOpenDetail }) => {
                 <option value="telega">Telega.in</option>
               </select>
               <input className="h-11 rounded-xl border px-4 md:col-span-3" placeholder="URL списка для парсинга" value={importUrl} onChange={(e) => setImportUrl(e.target.value)} />
-              <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runImport}>Запустить</button>
+              <button className="btn-primary" onClick={runImport}>Запустить</button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <textarea className="h-24 rounded-xl border px-4 py-2 md:col-span-4" placeholder="Вставьте t.me ссылки (через перенос строки, запятую или пробел)" value={pasteLinks} onChange={(e) => setPasteLinks(e.target.value)} />
-              <button className="h-11 rounded-xl bg-indigo-600 text-white" onClick={runPasteImport}>Импорт из ссылок</button>
+              <button className="btn-primary" onClick={runPasteImport}>Импорт из ссылок</button>
             </div>
           </div>
         )}
@@ -434,13 +432,13 @@ const Admin = ({ onLogout, onOpenDetail }) => {
         {tab === "drafts" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {drafts.map((d) => (
-              <div key={d.id} className="bg-white p-4 rounded-2xl border shadow-sm">
+              <div key={d.id} className="card card-pad">
                 <div className="flex items-center justify-between"><div className="font-semibold">{d.name}</div><div className="text-xs text-gray-500">{d.category || "-"}</div></div>
                 <div className="text-sm text-gray-600 mt-1">{d.link}</div>
                 <textarea className="w-full h-24 rounded-xl border px-3 py-2 mt-2" placeholder="SEO-описание" defaultValue={d.seo_description || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { seo_description: e.target.value }); }} />
                 <div className="flex items-center gap-2 mt-2">
-                  <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={() => approve(d.id)}>Опубликовать</button>
-                  <button className="px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm" onClick={() => reject(d.id)}>Отклонить</button>
+                  <button className="btn" onClick={() => approve(d.id)}>Опубликовать</button>
+                  <button className="btn" onClick={() => reject(d.id)}>Отклонить</button>
                 </div>
               </div>
             ))}
@@ -451,7 +449,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
         {tab === "approved" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {approved.map((d) => (
-              <div key={d.id} className="bg-white p-4 rounded-2xl border shadow-sm">
+              <div key={d.id} className="card card-pad">
                 <div className="flex items-center justify-between"><div className="font-semibold">{d.name}</div><div className="text-xs text-gray-500">{d.category || "-"}</div></div>
                 <div className="text-sm text-gray-600 mt-1">{d.link}</div>
                 <div className="grid grid-cols-2 gap-2 mt-2 text-sm">
@@ -466,7 +464,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
                   <label>Последний пост ISO<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.last_post_at || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { last_post_at: e.target.value }); }} /></label>
                 </div>
                 <div className="flex items-center gap-2 mt-2">
-                  <button className="ml-auto px-2 py-1 text-xs rounded-lg border" onClick={() => onOpenDetail(d)}>Открыть</button>
+                  <button className="ml-auto btn" onClick={() => onOpenDetail(d)}>Открыть</button>
                 </div>
               </div>
             ))}
@@ -477,8 +475,6 @@ const Admin = ({ onLogout, onOpenDetail }) => {
     </div>
   );
 };
-
-// -------------------- App Router (react-router) --------------------
 
 function App() {
   const navigate = useNavigate();

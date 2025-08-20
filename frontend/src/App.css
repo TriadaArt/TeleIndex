@@ -4,3 +4,16 @@ html, body, #root { height: 100%; }
 img { display: block; }
 
 .line-clamp-2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+
+/* Telega-like UI helpers */
+.chip { @apply px-3 py-1.5 rounded-full border text-sm bg-white hover:bg-gray-50; }
+.chip-active { @apply bg-indigo-600 text-white border-indigo-600; }
+.badge { @apply text-[10px] px-1.5 py-0.5 rounded border bg-gray-50; }
+.badge-yellow { @apply bg-yellow-100; }
+.card { @apply rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition; }
+.card-pad { @apply p-4; }
+.sidebar { @apply p-4 rounded-xl border border-gray-200 bg-white shadow-sm space-y-3; }
+.btn { @apply px-3 py-1.5 rounded-lg border bg-white hover:bg-gray-50 text-sm; }
+.btn-primary { @apply px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700; }
+.pagination button { @apply px-3 py-1.5 rounded-lg border text-sm bg-white hover:bg-gray-50; }
+.pagination .active { @apply bg-indigo-600 text-white border-indigo-600; }
