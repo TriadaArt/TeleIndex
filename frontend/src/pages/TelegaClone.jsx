@@ -51,8 +51,9 @@ export default function TelegaClone(){
   const [page, setPage] = useState(1);
   const limit = 24;
 
-  const categories = useMemo(()=> Array.from(new Set(telegaDemo.map(x=>x.category))), []);
-  const filtered = useMemo(()=> applyFilters(telegaDemo, { q, category, ranges, flags, sort }), [q, category, ranges, flags, sort]);
+  const source = React.useMemo(()=> expandTo48(telegaDemo), []);
+  const categories = useMemo(()=> Array.from(new Set(source.map(x=>x.category))), [source]);
+  const filtered = useMemo(()=> applyFilters(source, { q, category, ranges, flags, sort }), [q, category, ranges, flags, sort, source]);
   const start = (page-1)*limit;
   const items = filtered.slice(start, start+limit);
 
