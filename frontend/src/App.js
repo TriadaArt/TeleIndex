@@ -73,7 +73,7 @@ const TrendStrip = ({ items, onOpen }) => (
                 <div className="truncate font-medium" title={it.name}>{it.name}</div>
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-yellow-100 border">В тренде</span>
               </div>
-              <div className="text-xs text-gray-600">👥 {ruCompact(it.subscribers)}</div>
+              <div className="text-xs text-gray-600">👥 {ruShort(it.subscribers)}</div>
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between">
