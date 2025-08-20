@@ -1249,6 +1249,7 @@ class BackendTester:
             ("Categories", self.test_categories_endpoint),
             ("Create Channel", self.test_create_channel),
             ("List Channels", self.test_list_channels),
+            ("NEW Filter Parameters", self.test_new_filter_parameters),
             ("Update Channel", self.test_update_channel),
             ("Top Channels", self.test_top_channels),
             ("CORS & JSON", self.test_cors_and_json_format),
