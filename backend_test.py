@@ -11,7 +11,7 @@ from datetime import datetime
 import time
 
 # Use the external URL from frontend/.env for testing
-BASE_URL = "https://tgcatalog.preview.emergentagent.com/api"
+BASE_URL = "https://channelio.preview.emergentagent.com/api"
 
 class BackendTester:
     def __init__(self):
