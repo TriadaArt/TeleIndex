@@ -283,9 +283,10 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
             </div>
           </div>
         </aside>
-        {/* Grid */}
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Main content with Trending + Grid */}
+        <div>
+          <div className="mb-4"><TrendStrip items={trending.data || []} onOpen={onOpenDetail} /></div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {loading ? (
               Array.from({ length: 9 }).map((_, i) => (<div key={i} className="h-44 rounded-2xl bg-gray-100 animate-pulse border" />))
             ) : channels && channels.items && channels.items.length > 0 ? (
