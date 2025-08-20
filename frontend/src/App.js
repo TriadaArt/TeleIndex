@@ -151,6 +151,7 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
   const [page, setPage] = useState(1);
   const limit = 24;
   const { data: cats } = useFetch(`${API}/categories`, []);
+  const { data: trending } = useFetch(`${API}/channels/trending`, []);
   const channelsUrl = useMemo(() => { const p = new URLSearchParams(); if (q) p.set("q", q); if (category) p.set("category", category); if (sort) p.set("sort", sort); p.set("page", String(page)); p.set("limit", String(limit)); return `${API}/channels?${p.toString()}`; }, [q, category, sort, page]);
   const { data: channels, loading } = useFetch(channelsUrl, [channelsUrl]);
   useEffect(() => { setPage(1); }, [q, category, sort]);
