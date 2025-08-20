@@ -25,13 +25,12 @@ export default function CatalogCard({ item, onOpen }){
     <div className="tg-card overflow-hidden">
       <div className="tg-card-pad">
         <div className="flex gap-4 items-stretch">
-          {/* Left content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
-                <img src={item.avatar_url} alt={item.name} className="h-12 w-12 rounded-full object-cover border border-gray-200" onError={()=>setImgOk(false)} />
+                <img src={item.avatar_url} alt={item.name} className="h-14 w-14 rounded-full object-cover border border-gray-200" onError={()=>setImgOk(false)} />
               ) : (
-                <div className="h-12 w-12 rounded-full items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{initials}</div>
+                <div className="h-14 w-14 rounded-full items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{initials}</div>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -56,9 +55,8 @@ export default function CatalogCard({ item, onOpen }){
             </div>
           </div>
 
-          {/* Right price panel */}
-          <div className="w-40 hidden md:flex">
-            <div className="tg-price-panel w-full">
+          <div className="tg-price-wrap">
+            <div className="tg-price-panel">
               <div className="tg-price-top space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   <select className="tg-format-select">
