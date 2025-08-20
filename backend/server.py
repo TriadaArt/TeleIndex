@@ -332,18 +332,53 @@ async def list_channels(
     sort: Literal["popular", "new", "name", "price", "er"] = "popular",
     page: int = Query(1, ge=1),
     limit: int = Query(24, ge=1, le=48),
+    min_subscribers: Optional[int] = Query(None, ge=0),
+    max_subscribers: Optional[int] = Query(None, ge=0),
+    min_price: Optional[int] = Query(None, ge=0),
+    max_price: Optional[int] = Query(None, ge=0),
+    min_er: Optional[float] = Query(None, ge=0),
+    max_er: Optional[float] = Query(None, ge=0),
+    only_featured: Optional[bool] = False,
+    only_alive: Optional[bool] = False,
 ):
     query: Dict[str, Any] = {}
     if status:
         query["status"] = status
     if category:
         query["category"] = category
+    if only_featured:
+        query["is_featured"] = True
+    if only_alive:
+        query["link_status"] = "alive"
     if q:
         query["$or"] = [
             {"name": {"$regex": q, "$options": "i"}},
             {"short_description": {"$regex": q, "$options": "i"}},
             {"seo_description": {"$regex": q, "$options": "i"}},
         ]
+
+    # numeric ranges
+    if min_subscribers is not None or max_subscribers is not None:
+        rng: Dict[str, Any] = {}
+        if min_subscribers is not None:
+            rng["$gte"] = int(min_subscribers)
+        if max_subscribers is not None:
+            rng["$lte"] = int(max_subscribers)
+        query["subscribers"] = rng
+    if min_price is not None or max_price is not None:
+        rng: Dict[str, Any] = {}
+        if min_price is not None:
+            rng["$gte"] = int(min_price)
+        if max_price is not None:
+            rng["$lte"] = int(max_price)
+        query["price_rub"] = rng
+    if min_er is not None or max_er is not None:
+        rng: Dict[str, Any] = {}
+        if min_er is not None:
+            rng["$gte"] = float(min_er)
+        if max_er is not None:
+            rng["$lte"] = float(max_er)
+        query["er"] = rng
 
     if sort == "popular":
         sort_spec = [("subscribers", -1)]
