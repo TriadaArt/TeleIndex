@@ -58,7 +58,7 @@ export default function TelegaClone(){
         <div className="text-sm text-gray-600">Каталог</div>
       </div>
 
-      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[340px_880px] gap-8">{/* шире контент */}
+      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[360px_920px] gap-8">
         <FilterSidebar q={q} setQ={setQ} categories={[...new Set(source.map(x=>x.category))]} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-3">
@@ -66,7 +66,7 @@ export default function TelegaClone(){
               <button key={t.k} onClick={()=>setSort(t.k)} className={`tg-chip ${sort===t.k?'tg-chip-active':''}`}>{t.label}</button>
             ))}
           </div>
-          <CatalogGrid items={items} onOpen={(it)=> window.open(`/c/${it.id}`, '_self')} />
+          <CatalogGrid items={items} />
           <div className="tg-pager">
             <button className="tg-page-btn" disabled={page<=1} onClick={()=>setPage(page-1)}>Назад</button>
             <div className="flex items-center gap-2">
