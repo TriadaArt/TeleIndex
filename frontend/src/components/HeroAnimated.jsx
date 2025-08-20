@@ -3,14 +3,19 @@ import React from "react";
 export default function HeroAnimated(){
   return (
     <div className="tg-hero">
+      {/* Polygonal background + three animated diamonds */}
       <svg className="tg-hero-poly" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="pgrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.08" />
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.06" />
+          </linearGradient>
+          <linearGradient id="dg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.9" />
+            <stop offset="100%" stopColor="#fff" stopOpacity="0.4" />
           </linearGradient>
         </defs>
-        {/* polygonal tiles */}
+        {/* polygon tiles */}
         <polygon points="0,0 25,0 18,18 0,24" fill="url(#pgrad)" />
         <polygon points="25,0 55,0 50,16 32,22" fill="url(#pgrad)" />
         <polygon points="55,0 100,0 100,18 78,22" fill="url(#pgrad)" />
@@ -18,14 +23,41 @@ export default function HeroAnimated(){
         <polygon points="20,20 50,16 44,36 18,40" fill="url(#pgrad)" />
         <polygon points="50,16 78,22 68,40 44,36" fill="url(#pgrad)" />
         <polygon points="78,22 100,18 100,40 68,40" fill="url(#pgrad)" />
-        {/* tiny animated diamonds */}
-        <rect className="poly-diamond" x="12" y="18" width="1.6" height="1.6" transform="rotate(45 12.8 18.8)" />
-        <rect className="poly-diamond s" x="34" y="28" width="1.2" height="1.2" transform="rotate(45 34.6 28.6)" />
-        <rect className="poly-diamond l" x="56" y="22" width="2" height="2" transform="rotate(45 57 23)" />
-        <rect className="poly-diamond" x="72" y="34" width="1.6" height="1.6" transform="rotate(45 72.8 34.8)" />
-        <rect className="poly-diamond s" x="18" y="40" width="1.2" height="1.2" transform="rotate(45 18.6 40.6)" />
-        <rect className="poly-diamond" x="86" y="16" width="1.6" height="1.6" transform="rotate(45 86.8 16.8)" />
+
+        {/* Three Telegram-like diamonds (outline with facets), each 10% smaller via CSS scale(0.9) in swim animations */}
+        <g className="tg-diamond-group swim1" transform="translate(18 26)">
+          <polygon points="10,0 20,8 10,16 0,8" fill="none" stroke="url(#dg2)" strokeWidth="1.2" />
+          <polyline points="10,0 10,16" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="0,8 20,8" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="6,4 14,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+          <polyline points="14,4 6,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+        </g>
+        <g className="tg-diamond-group swim2" transform="translate(44 18)">
+          <polygon points="10,0 20,8 10,16 0,8" fill="none" stroke="url(#dg2)" strokeWidth="1.2" />
+          <polyline points="10,0 10,16" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="0,8 20,8" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="6,4 14,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+          <polyline points="14,4 6,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+        </g>
+        <g className="tg-diamond-group swim3" transform="translate(72 30)">
+          <polygon points="10,0 20,8 10,16 0,8" fill="none" stroke="url(#dg2)" strokeWidth="1.2" />
+          <polyline points="10,0 10,16" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="0,8 20,8" stroke="url(#dg2)" strokeWidth="0.8" opacity="0.6" />
+          <polyline points="6,4 14,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+          <polyline points="14,4 6,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.5" />
+        </g>
       </svg>
+
+      {/* Right sparkles (animated bright points) */}
+      <div className="tg-sparkles">
+        <span className="tg-sparkle l" style={{top:'20%', left:'10%'}} />
+        <span className="tg-sparkle" style={{top:'35%', left:'25%'}} />
+        <span className="tg-sparkle s" style={{top:'50%', left:'15%'}} />
+        <span className="tg-sparkle" style={{top:'65%', left:'5%'}} />
+        <span className="tg-sparkle l" style={{top:'40%', left:'30%'}} />
+        <span className="tg-sparkle s" style={{top:'55%', left:'22%'}} />
+      </div>
+
       <div className="tg-hero-inner">
         <div className="text-white/90 text-xs uppercase tracking-wide">TeleIndex</div>
         <h2 className="tg-hero-title">Каталог Telegram‑каналов</h2>
