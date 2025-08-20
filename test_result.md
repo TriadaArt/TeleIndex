@@ -173,7 +173,8 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Frontend E2E: First-admin (if allowed) or Admin login -> Admin tabs (Summary, Drafts, Approved, Add, Import) -> Seed demo -> Import (Paste links + Telemetr/TGStat/Telega URL) -> Edit SEO & Approve -> Link checker -> Logout -> Public catalog cards/pagination/detail page verification"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
