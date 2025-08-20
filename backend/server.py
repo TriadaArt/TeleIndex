@@ -702,7 +702,7 @@ async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends
             "avatar_url": None,
             "subscribers": 0,
             "category": payload.category,
-            "language": "Russian",
+            "language": "Русский",
             "short_description": None,
             "seo_description": None,
             "status": "draft",
