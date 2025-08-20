@@ -8,21 +8,19 @@
 }
 
 @layer components {
-  .tg-container { @apply max-w-[1320px] mx-auto px-6; }
+  .tg-container { @apply max-w-[1280px] mx-auto px-6; }
   .tg-header { @apply tg-container py-3 flex items-center gap-3 border-b bg-white; }
 
-  /* Hero gradient with animated dots and diamond */
+  /* Hero polygonal abstraction with animated diamonds */
   .tg-hero { @apply relative overflow-hidden; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%); }
   .tg-hero-inner { @apply tg-container py-10 text-white relative z-10; }
   .tg-hero-title { @apply text-2xl md:text-3xl font-semibold; }
   .tg-hero-sub { @apply mt-2 text-white/90 text-sm md:text-base; }
-  .tg-hero-dots { position: absolute; inset: 0; pointer-events: none; }
-  .tg-dot { position: absolute; width: 8px; height: 8px; border-radius: 9999px; background: rgba(255,255,255,0.25); animation: dot-float 9s ease-in-out infinite; filter: blur(0.2px); }
-  .tg-dot.s { width: 5px; height: 5px; opacity: .6; animation-duration: 7s; }
-  .tg-dot.l { width: 10px; height: 10px; opacity: .35; animation-duration: 12s; }
-  .tg-diamond { position: absolute; right: 10%; top: 30%; width: 120px; height: 120px; opacity: .35; animation: diamond-float 14s ease-in-out infinite; }
-  @keyframes dot-float { 0%,100%{ transform: translate(0,0);} 50%{ transform: translate(10px,-12px);} }
-  @keyframes diamond-float { 0%,100%{ transform: translate(0,0) rotate(0deg);} 50%{ transform: translate(-8px,10px) rotate(3deg);} }
+  .tg-hero-poly { position:absolute; inset:0; opacity:.35; }
+  .poly-diamond { fill: rgba(255,255,255,.85); transform-origin: center; animation: diamond-move 12s ease-in-out infinite; }
+  .poly-diamond.s { opacity:.6; animation-duration: 9s; }
+  .poly-diamond.l { opacity:.9; animation-duration: 15s; }
+  @keyframes diamond-move { 0%,100% { transform: translate(0,0) rotate(45deg); } 50% { transform: translate(8px,-10px) rotate(47deg); } }
 
   .tg-input { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
   .tg-input-lg { @apply h-11 rounded-xl border border-gray-300 px-4 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
@@ -44,17 +42,14 @@
 
   .tg-icon { @apply inline-block align-middle mr-1.5 text-gray-500; }
 
-  /* 3-column grid to avoid overlap: left content | metrics | price */
+  /* 2-column grid: left content (with metrics row) | price */
   .tg-card-grid { @apply grid gap-3 items-stretch; grid-template-columns: 1fr; }
-  @screen md { .tg-card-grid { grid-template-columns: 1fr 300px; } }
-  @screen lg { .tg-card-grid { grid-template-columns: 1fr 320px 200px; } }
+  @screen md { .tg-card-grid { grid-template-columns: 1fr 200px; } }
+  @screen lg { .tg-card-grid { grid-template-columns: 1fr 220px; } }
 
-  .tg-metrics-right { @apply rounded-xl border border-indigo-100 bg-indigo-50/60 p-3 grid grid-cols-2 gap-2 text-[12.5px] text-gray-700; }
-  .tg-metric-kv { @apply flex items-center gap-1; }
-  .tg-metric-val { @apply font-semibold text-[13.5px]; }
-  .tg-metric-subtle { @apply text-gray-600; }
+  .tg-metrics-row { @apply mt-2 text-[12.5px] text-gray-700 flex flex-wrap items-center gap-y-1; }
+  .tg-sep { @apply mx-2 text-gray-300; }
 
-  .tg-price-wrap { @apply hidden md:block; }
   .tg-price-panel { @apply flex flex-col justify-between rounded-xl overflow-hidden border border-indigo-200 w-full; }
   .tg-price-top { @apply px-2.5 py-1.5 bg-white border-b; }
   .tg-price-bottom { @apply px-3 py-2 bg-indigo-600 text-white flex items-center justify-between; }

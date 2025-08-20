@@ -23,12 +23,7 @@ function applyFilters(list, { q, ranges, flags, sort, selects }){
   if (maxPrice) arr = arr.filter(x => x.price_rub <= Number(maxPrice));
   if (minEr) arr = arr.filter(x => x.er >= Number(minEr));
   if (maxEr) arr = arr.filter(x => x.er <= Number(maxEr));
-  const reachOf = (x) => Math.round((x.price_rub/(x.cpm_rub||1))*1000);
-  const cpvOf = (x) => (x.cpm_rub||0)/1000;
-  if (minReach) arr = arr.filter(x => reachOf(x) >= Number(minReach));
-  if (maxReach) arr = arr.filter(x => reachOf(x) <= Number(maxReach));
-  if (minCpv) arr = arr.filter(x => cpvOf(x) >= Number(minCpv));
-  if (maxCpv) arr = arr.filter(x => cpvOf(x) <= Number(maxCpv));
+  // reach/cpv intentionally simplified in demo metrics row
   if (flags.featured) arr = arr.filter(x => x.is_featured);
   switch (sort) { case 'name': arr.sort((a,b)=> a.name.localeCompare(b.name)); break; case 'price': arr.sort((a,b)=> (b.price_rub||0)-(a.price_rub||0)); break; case 'er': arr.sort((a,b)=> (b.er||0)-(a.er||0)); break; default: arr.sort((a,b)=> (b.subscribers||0)-(a.subscribers||0)); }
   return arr;
@@ -61,7 +56,7 @@ export default function TelegaClone(){
         <div className="text-sm text-gray-600">Каталог</div>
       </div>
 
-      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[360px_920px] gap-8">
+      <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[340px_820px] gap-6">
         <FilterSidebar q={q} setQ={setQ} categories={[...new Set(source.map(x=>x.category))]} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-3">

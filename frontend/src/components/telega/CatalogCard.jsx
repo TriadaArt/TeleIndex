@@ -1,5 +1,5 @@
 import React from "react";
-import { ruShort, daysAgo, computeReach, computeCpv } from "./helpers";
+import { ruShort, daysAgo } from "./helpers";
 
 const Icon = ({ name }) => {
   const cls = "tg-icon";
@@ -17,15 +17,13 @@ const Icon = ({ name }) => {
 
 export default function CatalogCard({ item }){
   const initials = (item?.name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
-  const reach = item.reach_avg ?? computeReach(item.price_rub, item.cpm_rub);
-  const cpv = item.cpv_rub ?? computeCpv(item.cpm_rub);
   const [imgOk, setImgOk] = React.useState(true);
 
   return (
     <div className="tg-card overflow-hidden">
       <div className="tg-card-pad">
         <div className="tg-card-grid">
-          {/* Left content */}
+          {/* Left content with compact metrics row at bottom */}
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
@@ -46,27 +44,22 @@ export default function CatalogCard({ item }){
               </div>
             </div>
             <p className="tg-desc line-clamp-2">{item.short_description}</p>
-          </div>
-
-          {/* Metrics column (fixed width on md+/lg) */}
-          <div>
-            <div className="tg-metrics-right">
-              <div className="tg-metric-kv"><Icon name="users" /><span className="tg-metric-subtle">Подписчики</span></div>
-              <div className="tg-metric-val">{ruShort(item.subscribers)}</div>
-              <div className="tg-metric-kv"><Icon name="views" /><span className="tg-metric-subtle">Просмотры</span></div>
-              <div className="tg-metric-val">{reach ? ruShort(reach) : '-'}</div>
-              <div className="tg-metric-kv"><Icon name="er" /><span className="tg-metric-subtle">ER</span></div>
-              <div className="tg-metric-val">{item.er}%</div>
-              <div className="tg-metric-kv"><Icon name="cpm" /><span className="tg-metric-subtle">CPM</span></div>
-              <div className="tg-metric-val">₽ {item.cpm_rub}</div>
-              <div className="tg-metric-kv"><Icon name="cpv" /><span className="tg-metric-subtle">CPV</span></div>
-              <div className="tg-metric-val">₽ {cpv ?? '-'}</div>
-              <div className="tg-metric-kv"><Icon name="time" /><span className="tg-metric-subtle">Пост</span></div>
-              <div className="tg-metric-val">{daysAgo(item.last_post_at)} дн.</div>
+            <div className="tg-metrics-row">
+              <span><Icon name="users" />{item.subscribers != null ? Intl.NumberFormat('ru-RU').format(item.subscribers) : '-'}</span>
+              <span className="tg-sep">•</span>
+              <span><Icon name="views" />Просм.</span>
+              <span className="tg-sep">•</span>
+              <span><Icon name="er" />ER {item.er ?? '-'}%</span>
+              <span className="tg-sep">•</span>
+              <span><Icon name="cpm" />CPM ₽ {item.cpm_rub ?? '-'}</span>
+              <span className="tg-sep">•</span>
+              <span><Icon name="cpv" />CPV</span>
+              <span className="tg-sep">•</span>
+              <span><Icon name="time" />{daysAgo(item.last_post_at)} дн.</span>
             </div>
           </div>
 
-          {/* Price column (separate, avoids overlap) */}
+          {/* Price column */}
           <div>
             <div className="tg-price-panel">
               <div className="tg-price-top">
