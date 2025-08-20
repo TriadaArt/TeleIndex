@@ -111,7 +111,7 @@ const Card = ({ item, onOpen }) => {
         </div>
         <p className="text-sm text-gray-700 mt-2 line-clamp-3">{item.short_description || item.seo_description || "Описание отсутствует"}</p>
         <div className="mt-3 text-sm text-gray-700 flex items-center flex-wrap gap-x-4 gap-y-1">
-          <span>👥 {ruCompact(item.subscribers)}</span>
+          <span>👥 {ruShort(item.subscribers)}</span>
           <span>📈 ER {item.er != null ? `${item.er}%` : "-"}</span>
           <span>💰 ₽ {item.price_rub != null ? Intl.NumberFormat('ru-RU').format(item.price_rub) : "-"}</span>
           <span>📊 CPM ₽ {item.cpm_rub != null ? item.cpm_rub : "-"}</span>
