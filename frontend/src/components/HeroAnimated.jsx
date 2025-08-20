@@ -26,7 +26,7 @@ export default function HeroAnimated(){
         <polygon points="78,22 100,18 100,40 68,40" fill="url(#pgrad)" />
 
         {/* Three Telegram-like diamonds (smaller, elegant) */}
-        <g className="tg-diamond-group swim1" transform="translate(18 10)">
+        <g className="tg-diamond-group swim1" transform="translate(18 -10)">
           <polygon points="8,0 16,6 8,12 0,6" fill="none" stroke="url(#dg2)" strokeWidth="0.9" />
           <polyline points="8,0 8,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.6" />
           <polyline points="0,6 16,6" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.6" />
