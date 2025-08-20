@@ -43,9 +43,11 @@ def utcnow_iso() -> str:
 
 
 def to_int(value: str) -> Optional[int]:
-    if not value:
+    if value is None:
         return None
-    s = value.strip().lower()
+    s = str(value).strip().lower()
+    if s == "" or s == "none":
+        return None
     mult = 1
     if any(k in s for k in ["m", "млн", "million", "миллион"]):
         mult = 1_000_000
@@ -63,9 +65,19 @@ def to_int(value: str) -> Optional[int]:
         return None
 
 
+def to_float(value: str) -> Optional[float]:
+    if value is None:
+        return None
+    s = str(value).strip().replace(",", ".")
+    try:
+        return float(s)
+    except Exception:
+        return None
+
+
 def prepare_for_mongo(data: Dict[str, Any]) -> Dict[str, Any]:
     data = dict(data)
-    for k in ["created_at", "updated_at", "link_last_checked", "dead_at"]:
+    for k in ["created_at", "updated_at", "link_last_checked", "dead_at", "last_post_at"]:
         if isinstance(data.get(k), datetime):
             data[k] = data[k].astimezone(timezone.utc).isoformat()
     return data
@@ -92,18 +104,24 @@ class ChannelBase(BaseModel):
     name: str
     link: str
     avatar_url: Optional[str] = None
-    subscribers: int = 0
     category: Optional[str] = None
     language: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    subscribers: int = 0
+    er: Optional[float] = None
+    price_rub: Optional[int] = None
+    cpm_rub: Optional[float] = None
+    growth_30d: Optional[float] = None
+    last_post_at: Optional[str] = None
     short_description: Optional[str] = None
     seo_description: Optional[str] = None
     status: ChannelStatus = "approved"
-    growth_score: Optional[float] = None
     is_featured: bool = False
+    growth_score: Optional[float] = None
     link_status: Optional[Literal["alive", "dead"]] = None
     link_last_checked: Optional[str] = None
     dead_at: Optional[str] = None
-    price: Optional[float] = None
 
 class ChannelCreate(ChannelBase):
     name: str
@@ -113,16 +131,22 @@ class ChannelUpdate(BaseModel):
     name: Optional[str] = None
     link: Optional[str] = None
     avatar_url: Optional[str] = None
-    subscribers: Optional[int] = None
     category: Optional[str] = None
     language: Optional[str] = None
+    country: Optional[str] = None
+    city: Optional[str] = None
+    subscribers: Optional[int] = None
+    er: Optional[float] = None
+    price_rub: Optional[int] = None
+    cpm_rub: Optional[float] = None
+    growth_30d: Optional[float] = None
+    last_post_at: Optional[str] = None
     short_description: Optional[str] = None
     seo_description: Optional[str] = None
     status: Optional[ChannelStatus] = None
-    growth_score: Optional[float] = None
     is_featured: Optional[bool] = None
+    growth_score: Optional[float] = None
     link_status: Optional[Literal["alive", "dead"]] = None
-    price: Optional[float] = None
 
 class ChannelResponse(ChannelBase):
     id: str
@@ -163,7 +187,8 @@ async def create_indexes():
         await db.channels.create_index("id", unique=True)
         await db.channels.create_index([("status", 1), ("subscribers", -1)])
         await db.channels.create_index([("created_at", -1)])
-        # Important: avoid Mongo text "language" override collision with our "language" field
+        await db.channels.create_index([("price_rub", -1)])
+        await db.channels.create_index([("er", -1)])
         await db.channels.create_index(
             [("name", "text"), ("short_description", "text"), ("seo_description", "text")],
             default_language="ru",
@@ -303,7 +328,7 @@ async def list_channels(
     q: Optional[str] = None,
     category: Optional[str] = None,
     status: Optional[ChannelStatus] = "approved",
-    sort: Literal["popular", "new", "name"] = "popular",
+    sort: Literal["popular", "new", "name", "price", "er"] = "popular",
     page: int = Query(1, ge=1),
     limit: int = Query(24, ge=1, le=48),
 ):
@@ -323,6 +348,10 @@ async def list_channels(
         sort_spec = [("subscribers", -1)]
     elif sort == "name":
         sort_spec = [("name", 1)]
+    elif sort == "price":
+        sort_spec = [("price_rub", -1)]
+    elif sort == "er":
+        sort_spec = [("er", -1)]
     else:
         sort_spec = [("created_at", -1)]
 
@@ -340,10 +369,17 @@ async def top_channels(limit: int = Query(10, ge=1, le=50)):
     return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
 
 @api.get("/channels/trending", response_model=List[ChannelResponse])
-async def trending_channels(limit: int = Query(6, ge=1, le=20)):
-    cursor = db.channels.find({"status": "approved"}).sort([("growth_score", -1), ("subscribers", -1)]).limit(limit)
-    items_raw = await cursor.to_list(length=limit)
-    return [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
+async def trending_channels(limit: int = Query(4, ge=1, le=8)):
+    # Prefer featured, then highest growth_30d, then subscribers
+    featured = await db.channels.find({"status": "approved", "is_featured": True}).sort("updated_at", -1).limit(limit).to_list(length=limit)
+    out = featured[:]
+    if len(out) < limit:
+        left = limit - len(out)
+        extra = await db.channels.find({"status": "approved", "is_featured": {"$ne": True}}).sort([
+            ("growth_30d", -1), ("subscribers", -1)
+        ]).limit(left).to_list(length=left)
+        out.extend(extra)
+    return [ChannelResponse(**parse_from_mongo(i)) for i in out]
 
 # -------------------- Admin --------------------
 
@@ -538,7 +574,7 @@ async def parse_telemetr(list_url: str, category: Optional[str] = None, limit: i
                 "avatar_url": it.get("avatar_url"),
                 "subscribers": int(it.get("subscribers") or 0),
                 "category": category or it.get("category"),
-                "language": "ru",
+                "language": "Русский",
                 "short_description": None,
                 "seo_description": None,
                 "status": "draft",
@@ -568,7 +604,7 @@ async def parse_tgstat(list_url: str, category: Optional[str] = None, limit: int
                 "avatar_url": it.get("avatar_url"),
                 "subscribers": int(it.get("subscribers") or 0),
                 "category": category or it.get("category"),
-                "language": "ru",
+                "language": "Русский",
                 "short_description": None,
                 "seo_description": None,
                 "status": "draft",
@@ -598,7 +634,7 @@ async def parse_telega(list_url: str, category: Optional[str] = None, limit: int
                 "avatar_url": it.get("avatar_url"),
                 "subscribers": int(it.get("subscribers") or 0),
                 "category": category or it.get("category"),
-                "language": "ru",
+                "language": "Русский",
                 "short_description": None,
                 "seo_description": None,
                 "status": "draft",
@@ -631,7 +667,7 @@ async def parse_links(payload: PasteLinksPayload, user: Dict[str, Any] = Depends
             "avatar_url": None,
             "subscribers": 0,
             "category": payload.category,
-            "language": "ru",
+            "language": "Русский",
             "short_description": None,
             "seo_description": None,
             "status": "draft",
@@ -680,24 +716,26 @@ async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[s
 @api.post("/admin/seed-demo")
 async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
     now = utcnow_iso()
-    sample = [
-        {"name": "Новости России", "link": "https://t.me/rian_ru", "subscribers": 1000000, "category": "Новости"},
-        {"name": "Технологии Сегодня", "link": "https://t.me/tech", "subscribers": 250000, "category": "Технологии"},
-        {"name": "Крипто Daily", "link": "https://t.me/crypto", "subscribers": 180000, "category": "Крипто"},
-        {"name": "Бизнес Аналитика", "link": "https://t.me/business", "subscribers": 120000, "category": "Бизнес"},
-        {"name": "Развлечения 24", "link": "https://t.me/fun", "subscribers": 95000, "category": "Развлечения"},
+    demo = [
+        {"name":"Новости 24/7","link":"https://t.me/demo_news247","avatar_url":"https://picsum.photos/id/1011/200/200","category":"Новости","language":"Русский","country":"Россия","city":"Москва","subscribers":412000,"er":5.2,"price_rub":18000,"cpm_rub":450.0,"growth_30d":3.8,"last_post_at":"2025-08-18T10:00:00Z","short_description":"Круглосуточные главные события, коротко и по делу.","is_featured":True},
+        {"name":"Tech Insight RU","link":"https://t.me/demo_techinsight","avatar_url":"https://picsum.photos/id/1027/200/200","category":"Технологии","language":"Русский","country":"Россия","city":"Санкт-Петербург","subscribers":156000,"er":4.3,"price_rub":25000,"cpm_rub":520.0,"growth_30d":6.2,"last_post_at":"2025-08-17T12:30:00Z","short_description":"Глубокая аналитика ИТ-рынка, тренды и обзоры продуктов.","is_featured":True},
+        {"name":"КриптоРадар","link":"https://t.me/demo_cryptoradar","avatar_url":"https://picsum.photos/id/1005/200/200","category":"Крипто","language":"Русский","country":"Казахстан","city":"Алматы","subscribers":98000,"er":6.1,"price_rub":22000,"cpm_rub":390.0,"growth_30d":12.5,"last_post_at":"2025-08-18T08:45:00Z","short_description":"Сигналы, аналитика и разборы альткоинов без воды.","is_featured":True},
+        {"name":"Бизнес-Практика","link":"https://t.me/demo_bizpractice","avatar_url":"https://picsum.photos/id/1012/200/200","category":"Бизнес","language":"Русский","country":"Россия","city":"Екатеринбург","subscribers":203000,"er":3.4,"price_rub":30000,"cpm_rub":560.0,"growth_30d":2.1,"last_post_at":"2025-08-16T19:10:00Z","short_description":"Стратегии роста, кейсы, рабочие инструменты для SMB.","is_featured":False},
+        {"name":"Развлечения Сегодня","link":"https://t.me/demo_fun_today","avatar_url":"https://picsum.photos/id/1035/200/200","category":"Развлечения","language":"Русский","country":"Украина","city":"Киев","subscribers":320000,"er":7.5,"price_rub":15000,"cpm_rub":280.0,"growth_30d":4.6,"last_post_at":"2025-08-18T14:20:00Z","short_description":"Мемы, тренды и самое смешное за сутки.","is_featured":False},
+        {"name":"Маркетинг PRO","link":"https://t.me/demo_marketing_pro","avatar_url":"https://picsum.photos/id/1025/200/200","category":"Маркетинг","language":"Русский","country":"Россия","city":"Казань","subscribers":87000,"er":4.9,"price_rub":18000,"cpm_rub":430.0,"growth_30d":5.9,"last_post_at":"2025-08-17T09:05:00Z","short_description":"CRM, воронки, креативы и рост конверсий на практике.","is_featured":False},
+        {"name":"FinTalk Аналитика","link":"https://t.me/demo_fintalk","avatar_url":"https://picsum.photos/id/1001/200/200","category":"Финансы","language":"Русский","country":"Беларусь","city":"Минск","subscribers":142000,"er":3.8,"price_rub":27000,"cpm_rub":600.0,"growth_30d":1.4,"last_post_at":"2025-08-15T20:40:00Z","short_description":"Рынки, облигации, портфельные идеи и отчёты.","is_featured":False},
+        {"name":"Product Sense","link":"https://t.me/demo_product_sense","avatar_url":"https://picsum.photos/id/1010/200/200","category":"Технологии","language":"Русский","country":"Россия","city":"Новосибирск","subscribers":64000,"er":5.6,"price_rub":16000,"cpm_rub":410.0,"growth_30d":7.1,"last_post_at":"2025-08-18T07:55:00Z","short_description":"Продукт-менеджмент: метрики, JTBD, A/B и рост.","is_featured":False},
+        {"name":"Городская Афиша","link":"https://t.me/demo_city_afisha","avatar_url":"https://picsum.photos/id/1043/200/200","category":"Развлечения","language":"Русский","country":"Россия","city":"Сочи","subscribers":118000,"er":6.8,"price_rub":12000,"cpm_rub":300.0,"growth_30d":3.2,"last_post_at":"2025-08-18T11:30:00Z","short_description":"Куда сходить: концерты, выставки, кино и фестивали.","is_featured":False},
+        {"name":"Startup Digest RU","link":"https://t.me/demo_startup_digest","avatar_url":"https://picsum.photos/id/1015/200/200","category":"Бизнес","language":"Русский","country":"Россия","city":"Москва","subscribers":53000,"er":4.1,"price_rub":14000,"cpm_rub":380.0,"growth_30d":9.4,"last_post_at":"2025-08-16T16:25:00Z","short_description":"Раунды, питчи, инструменты и гранты для фаундеров.","is_featured":False},
     ]
     inserted = 0
-    for s in sample:
+    for s in demo:
         doc = {
             "id": str(uuid.uuid4()),
             **s,
-            "language": "ru",
             "status": "approved",
             "created_at": now,
             "updated_at": now,
-            "short_description": "Демо канал",
-            "price": None,
         }
         await db.channels.update_one({"link": s["link"]}, {"$setOnInsert": prepare_for_mongo(doc)}, upsert=True)
         inserted += 1
