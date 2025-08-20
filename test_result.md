@@ -199,6 +199,9 @@ agent_communication:
     message: "BACKEND TESTING COMPLETE ✅ - All MVP endpoints fully functional. Fixed minor MongoDB bulk_write syntax issue in categories endpoint. All 7 test suites passed including health checks, categories population, channel CRUD operations, search/filtering, pagination, sorting, and data format validation. Backend APIs are production-ready with proper UUID usage, ISO timestamps, and CORS configuration. Ready for frontend integration testing or deployment."
   - agent: "testing"
     message: "FRONTEND UI TESTING COMPLETE ✅ - Comprehensive testing of TeleIndex app at https://tgcatalog.preview.emergentagent.com completed successfully. All 6 requirements verified."
+  - agent: "main"
+    message: "Implemented clean URLs with React Router; added 404.html SPA fallback. Added backend numeric range filters on /api/channels (min/max subscribers, price, ER) and only_featured/only_alive toggles. Updated catalog UI to Telega-style with left sidebar filters and kept 24/pg pagination. Ready for backend retest, then frontend E2E."
+
   - agent: "testing"
     message: "NEW BACKEND FEATURES TESTING COMPLETE ✅ - Comprehensive testing of all new backend features completed successfully. All 18 test suites passed including authentication system (JWT), admin endpoints, parser endpoints, link checker, and trending functionality. All endpoints properly secured, data integrity maintained with UUIDs and ISO timestamps. Backend is fully functional and ready for production use."
   - agent: "testing"
