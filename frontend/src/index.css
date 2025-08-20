@@ -23,9 +23,9 @@
   .swim1 { animation: swim1 14s ease-in-out infinite; }
   .swim2 { animation: swim2 16s ease-in-out infinite; }
   .swim3 { animation: swim3 18s ease-in-out infinite; }
-  @keyframes swim1 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(10px,-8px) rotate(3deg) scale(0.8);} }
-  @keyframes swim2 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(-8px,10px) rotate(-2deg) scale(0.8);} }
-  @keyframes swim3 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(6px,6px) rotate(1.5deg) scale(0.8);} }
+  @keyframes swim1 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.5);} 50%{ transform: translate(10px,-8px) rotate(3deg) scale(0.5);} }
+  @keyframes swim2 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.5);} 50%{ transform: translate(-8px,10px) rotate(-2deg) scale(0.5);} }
+  @keyframes swim3 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.5);} 50%{ transform: translate(6px,6px) rotate(1.5deg) scale(0.5);} }
 
   /* Right sparkles (animated bright points) */
   .tg-sparkles { position:absolute; right:0; top:0; bottom:0; width:40%; pointer-events:none; }
