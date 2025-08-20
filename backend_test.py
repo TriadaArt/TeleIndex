@@ -800,6 +800,245 @@ class BackendTester:
         except Exception as e:
             self.log(f"❌ GET /api/channels - FAILED: {e}")
             return False
+    
+    def test_new_filter_parameters(self):
+        """Test NEW filter parameters: min/max subscribers, price, ER, only_featured, only_alive"""
+        self.log("Testing NEW filter parameters...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for filter parameter tests")
+            return False
+            
+        try:
+            self.set_auth_header()
+            
+            # First, seed demo data to have channels with various metrics
+            seed_response = self.session.post(f"{BASE_URL}/admin/seed-demo")
+            if seed_response.status_code == 200:
+                self.log("✅ Seed demo data populated for filter testing")
+            else:
+                self.log("ℹ️  Seed demo may already exist, continuing with existing data")
+            
+            # Create test channels with specific metrics for filtering
+            test_channels_with_metrics = [
+                {
+                    "name": "High Subscriber Channel",
+                    "link": "https://t.me/highsubschannel",
+                    "subscribers": 500000,
+                    "er": 8.5,
+                    "price_rub": 50000,
+                    "category": "Technology",
+                    "is_featured": True,
+                    "link_status": "alive"
+                },
+                {
+                    "name": "Low Subscriber Channel", 
+                    "link": "https://t.me/lowsubschannel",
+                    "subscribers": 1000,
+                    "er": 2.1,
+                    "price_rub": 5000,
+                    "category": "News",
+                    "is_featured": False,
+                    "link_status": "dead"
+                },
+                {
+                    "name": "Medium Channel",
+                    "link": "https://t.me/mediumchannel",
+                    "subscribers": 50000,
+                    "er": 5.0,
+                    "price_rub": 20000,
+                    "category": "Business",
+                    "is_featured": True,
+                    "link_status": "alive"
+                }
+            ]
+            
+            created_test_channels = []
+            for channel_data in test_channels_with_metrics:
+                try:
+                    response = self.session.post(f"{BASE_URL}/admin/channels", json=channel_data)
+                    if response.status_code == 200:
+                        created_test_channels.append(response.json())
+                        # Approve the channel
+                        channel_id = response.json()["id"]
+                        approve_response = self.session.post(f"{BASE_URL}/admin/channels/{channel_id}/approve")
+                        if approve_response.status_code == 200:
+                            self.log(f"✅ Created and approved test channel: {channel_data['name']}")
+                except Exception as e:
+                    self.log(f"ℹ️  Could not create test channel {channel_data['name']}: {e}")
+            
+            # Clear auth for public endpoint testing
+            self.clear_auth_header()
+            
+            # Test 1: min_subscribers filter
+            min_subs_response = self.session.get(f"{BASE_URL}/channels?min_subscribers=100000")
+            assert min_subs_response.status_code == 200, f"min_subscribers filter failed: {min_subs_response.status_code}"
+            min_subs_data = min_subs_response.json()
+            
+            for item in min_subs_data["items"]:
+                assert item["subscribers"] >= 100000, f"min_subscribers filter failed: {item['subscribers']} < 100000"
+            
+            self.log(f"✅ GET /api/channels?min_subscribers=100000 - Returned {len(min_subs_data['items'])} channels")
+            
+            # Test 2: max_subscribers filter
+            max_subs_response = self.session.get(f"{BASE_URL}/channels?max_subscribers=200000")
+            assert max_subs_response.status_code == 200, f"max_subscribers filter failed: {max_subs_response.status_code}"
+            max_subs_data = max_subs_response.json()
+            
+            for item in max_subs_data["items"]:
+                assert item["subscribers"] <= 200000, f"max_subscribers filter failed: {item['subscribers']} > 200000"
+            
+            self.log(f"✅ GET /api/channels?max_subscribers=200000 - Returned {len(max_subs_data['items'])} channels")
+            
+            # Test 3: Combined min/max subscribers
+            range_subs_response = self.session.get(f"{BASE_URL}/channels?min_subscribers=50000&max_subscribers=300000")
+            assert range_subs_response.status_code == 200, "Combined min/max subscribers filter failed"
+            range_subs_data = range_subs_response.json()
+            
+            for item in range_subs_data["items"]:
+                assert 50000 <= item["subscribers"] <= 300000, f"Subscriber range filter failed: {item['subscribers']}"
+            
+            self.log(f"✅ GET /api/channels?min_subscribers=50000&max_subscribers=300000 - Returned {len(range_subs_data['items'])} channels")
+            
+            # Test 4: min_price filter
+            min_price_response = self.session.get(f"{BASE_URL}/channels?min_price=15000")
+            assert min_price_response.status_code == 200, "min_price filter failed"
+            min_price_data = min_price_response.json()
+            
+            for item in min_price_data["items"]:
+                if item.get("price_rub") is not None:
+                    assert item["price_rub"] >= 15000, f"min_price filter failed: {item['price_rub']} < 15000"
+            
+            self.log(f"✅ GET /api/channels?min_price=15000 - Returned {len(min_price_data['items'])} channels")
+            
+            # Test 5: max_price filter
+            max_price_response = self.session.get(f"{BASE_URL}/channels?max_price=30000")
+            assert max_price_response.status_code == 200, "max_price filter failed"
+            max_price_data = max_price_response.json()
+            
+            for item in max_price_data["items"]:
+                if item.get("price_rub") is not None:
+                    assert item["price_rub"] <= 30000, f"max_price filter failed: {item['price_rub']} > 30000"
+            
+            self.log(f"✅ GET /api/channels?max_price=30000 - Returned {len(max_price_data['items'])} channels")
+            
+            # Test 6: min_er filter
+            min_er_response = self.session.get(f"{BASE_URL}/channels?min_er=3.0")
+            assert min_er_response.status_code == 200, "min_er filter failed"
+            min_er_data = min_er_response.json()
+            
+            for item in min_er_data["items"]:
+                if item.get("er") is not None:
+                    assert item["er"] >= 3.0, f"min_er filter failed: {item['er']} < 3.0"
+            
+            self.log(f"✅ GET /api/channels?min_er=3.0 - Returned {len(min_er_data['items'])} channels")
+            
+            # Test 7: max_er filter
+            max_er_response = self.session.get(f"{BASE_URL}/channels?max_er=6.0")
+            assert max_er_response.status_code == 200, "max_er filter failed"
+            max_er_data = max_er_response.json()
+            
+            for item in max_er_data["items"]:
+                if item.get("er") is not None:
+                    assert item["er"] <= 6.0, f"max_er filter failed: {item['er']} > 6.0"
+            
+            self.log(f"✅ GET /api/channels?max_er=6.0 - Returned {len(max_er_data['items'])} channels")
+            
+            # Test 8: only_featured=true filter
+            featured_response = self.session.get(f"{BASE_URL}/channels?only_featured=true")
+            assert featured_response.status_code == 200, "only_featured filter failed"
+            featured_data = featured_response.json()
+            
+            for item in featured_data["items"]:
+                assert item.get("is_featured") is True, f"only_featured filter failed: is_featured={item.get('is_featured')}"
+            
+            self.log(f"✅ GET /api/channels?only_featured=true - Returned {len(featured_data['items'])} featured channels")
+            
+            # Test 9: only_alive=true filter (first update some channels to have link_status)
+            self.set_auth_header()
+            
+            # Update some channels to have link_status for testing
+            all_channels_response = self.session.get(f"{BASE_URL}/admin/channels?limit=5")
+            if all_channels_response.status_code == 200:
+                admin_channels = all_channels_response.json()["items"]
+                for i, channel in enumerate(admin_channels[:3]):
+                    status = "alive" if i % 2 == 0 else "dead"
+                    update_response = self.session.patch(f"{BASE_URL}/admin/channels/{channel['id']}", 
+                                                       json={"link_status": status})
+                    if update_response.status_code == 200:
+                        self.log(f"✅ Updated channel {channel['name']} link_status to {status}")
+            
+            self.clear_auth_header()
+            
+            # Test only_alive filter
+            alive_response = self.session.get(f"{BASE_URL}/channels?only_alive=true")
+            assert alive_response.status_code == 200, "only_alive filter failed"
+            alive_data = alive_response.json()
+            
+            for item in alive_data["items"]:
+                assert item.get("link_status") == "alive", f"only_alive filter failed: link_status={item.get('link_status')}"
+            
+            self.log(f"✅ GET /api/channels?only_alive=true - Returned {len(alive_data['items'])} alive channels")
+            
+            # Test 10: Combined filters with existing parameters
+            complex_filter_response = self.session.get(
+                f"{BASE_URL}/channels?q=tech&category=Technology&min_subscribers=10000&max_price=40000&only_featured=false&sort=popular&page=1&limit=10"
+            )
+            assert complex_filter_response.status_code == 200, "Complex combined filter failed"
+            complex_data = complex_filter_response.json()
+            
+            # Validate combined filters
+            for item in complex_data["items"]:
+                # Check search term
+                name_match = "tech" in item["name"].lower()
+                desc_match = item.get("short_description") and "tech" in item["short_description"].lower()
+                assert name_match or desc_match, f"Search filter failed in combined query: {item['name']}"
+                
+                # Check category
+                assert item.get("category") == "Technology", f"Category filter failed in combined query: {item.get('category')}"
+                
+                # Check min_subscribers
+                assert item["subscribers"] >= 10000, f"min_subscribers failed in combined query: {item['subscribers']}"
+                
+                # Check max_price (if price exists)
+                if item.get("price_rub") is not None:
+                    assert item["price_rub"] <= 40000, f"max_price failed in combined query: {item['price_rub']}"
+            
+            self.log(f"✅ Complex combined filter query - Returned {len(complex_data['items'])} channels")
+            
+            # Test 11: Price and ER sort with new filters
+            price_sort_response = self.session.get(f"{BASE_URL}/channels?sort=price&min_price=10000")
+            assert price_sort_response.status_code == 200, "Price sort with filter failed"
+            price_sort_data = price_sort_response.json()
+            
+            # Verify price sorting (descending) and filter
+            if len(price_sort_data["items"]) > 1:
+                for i in range(len(price_sort_data["items"]) - 1):
+                    current_price = price_sort_data["items"][i].get("price_rub", 0)
+                    next_price = price_sort_data["items"][i + 1].get("price_rub", 0)
+                    assert current_price >= next_price, f"Price sort failed: {current_price} < {next_price}"
+            
+            self.log(f"✅ GET /api/channels?sort=price&min_price=10000 - Price sorting with filter works")
+            
+            # Test 12: ER sort with new filters
+            er_sort_response = self.session.get(f"{BASE_URL}/channels?sort=er&min_er=2.0")
+            assert er_sort_response.status_code == 200, "ER sort with filter failed"
+            er_sort_data = er_sort_response.json()
+            
+            # Verify ER sorting (descending) and filter
+            if len(er_sort_data["items"]) > 1:
+                for i in range(len(er_sort_data["items"]) - 1):
+                    current_er = er_sort_data["items"][i].get("er", 0)
+                    next_er = er_sort_data["items"][i + 1].get("er", 0)
+                    assert current_er >= next_er, f"ER sort failed: {current_er} < {next_er}"
+            
+            self.log(f"✅ GET /api/channels?sort=er&min_er=2.0 - ER sorting with filter works")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ NEW filter parameters - FAILED: {e}")
+            return False
             
     def test_update_channel(self):
         """Test PATCH /api/channels/{id}"""
