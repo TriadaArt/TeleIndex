@@ -153,7 +153,7 @@ frontend:
 
   - task: "Frontend: Full hybrid catalog + admin flow including First-admin registration, Admin tabs, Import, Approve/Reject workflow, Link checker, Public catalog UI"
     implemented: true
-    working: false
+    working: true
     file: "/app/frontend/src/App.js"
     stuck_count: 1
     priority: "high"
@@ -168,6 +168,9 @@ frontend:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE FOUND: Frontend-Backend connectivity broken. Fixed 'Trending is not defined' React error that was preventing app from loading. React app now loads successfully with all UI elements present (TeleIndex header, search input, sort buttons, category filters, trends section, mobile responsiveness). However, AxiosError: Network Error prevents all API calls from working. Admin login fails, no channel data loads, all backend integration non-functional. UI is perfect but backend connectivity is completely broken. Screenshots captured: homepage, login form, catalog view, mobile view. REQUIRES IMMEDIATE BACKEND CONNECTIVITY FIX."
+      - working: true
+        agent: "testing"
+        comment: "COMPREHENSIVE E2E TESTING COMPLETED SUCCESSFULLY ✅ - Fixed critical backend issues and completed full end-to-end testing: ✅ BACKEND FIXES: Fixed trending endpoint routing issue (moved specific endpoints before generic {id} endpoint), fixed MongoDB language override error (changed 'Русский' to 'Russian' in seed-demo and parser/links endpoints). ✅ HOME PAGE: Header with logo, search input, categories button, admin button all present. Sort bar shows 5 toggles (Популярные/Новые/По имени/Цена/ER). Trending section displays up to 4 items with proper featured badges. ✅ ADMIN FUNCTIONALITY: Login works with admin@teleindex.com / SecureAdmin123!. Admin panel accessible with all 5 tabs (Сводка, Черновики, Опубликованные, Добавить, Импорт). Seed demo function works and populates approved channels. ✅ PUBLIC CATALOG: Grid cards show avatar/initials, name, featured badge, tags (category/language/country/city), 2-3 line description, metrics row (👥, ER, ₽ price, CPM, Рост 30д, Последний пост), action buttons (Открыть/Перейти). Pagination visible and functional. Detail view navigation works via hash routes (#/c/:id). ✅ SORT FUNCTIONALITY: Price and ER sort buttons work and trigger proper API calls (/api/channels?sort=price, sort=er) with visual order changes. ✅ MOBILE RESPONSIVENESS: 375x800 viewport shows proper responsive layout with 28 cards displayed. All core functionality verified and working in production environment."
 
 metadata:
   created_by: "main_agent"
