@@ -3,6 +3,7 @@ import FilterSidebar from "../components/telega/FilterSidebar";
 import CatalogGrid from "../components/telega/CatalogGrid";
 import Pagination from "../components/telega/Pagination";
 import { telegaDemo } from "../data/telegaDemo";
+import HeroAnimated from "../components/HeroAnimated";
 
 const expandTo48 = (arr) => { const out = []; let i=0; while(out.length<48){ const base=arr[i%arr.length]; out.push({ ...base, id: `${base.id}-${out.length+1}`}); i++; } return out; };
 
@@ -50,13 +51,7 @@ export default function TelegaClone(){
 
   return (
     <div className="min-h-screen">
-      <div className="tg-hero">
-        <div className="tg-hero-inner">
-          <div className="text-white/90 text-xs uppercase tracking-wide">TeleIndex</div>
-          <h2 className="tg-hero-title">Каталог Telegram‑каналов</h2>
-          <p className="tg-hero-sub">Подборка проверенных блогеров. Метрики, цены и охваты — в одном месте.</p>
-        </div>
-      </div>
+      <HeroAnimated />
 
       <div className="tg-header">
         <div className="flex items-center gap-2 mr-auto">

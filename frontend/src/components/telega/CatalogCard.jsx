@@ -24,9 +24,9 @@ export default function CatalogCard({ item }){
   return (
     <div className="tg-card overflow-hidden">
       <div className="tg-card-pad">
-        <div className="flex gap-4">
-          {/* Left block: avatar, title, tags, description */}
-          <div className="flex-1 min-w-0">
+        <div className="tg-card-grid">
+          {/* Left content */}
+          <div className="min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
                 <img src={item.avatar_url} alt={item.name} className="h-12 w-12 rounded-full object-cover border border-gray-200" onError={()=>setImgOk(false)} />
@@ -48,8 +48,8 @@ export default function CatalogCard({ item }){
             <p className="tg-desc line-clamp-2">{item.short_description}</p>
           </div>
 
-          {/* Right block: metrics (compact) + price panel below on md */}
-          <div className="flex flex-col gap-2 items-stretch">
+          {/* Metrics column (fixed width on md+/lg) */}
+          <div>
             <div className="tg-metrics-right">
               <div className="tg-metric-kv"><Icon name="users" /><span className="tg-metric-subtle">Подписчики</span></div>
               <div className="tg-metric-val">{ruShort(item.subscribers)}</div>
@@ -64,24 +64,26 @@ export default function CatalogCard({ item }){
               <div className="tg-metric-kv"><Icon name="time" /><span className="tg-metric-subtle">Пост</span></div>
               <div className="tg-metric-val">{daysAgo(item.last_post_at)} дн.</div>
             </div>
-            <div className="tg-price-wrap">
-              <div className="tg-price-panel">
-                <div className="tg-price-top">
-                  <div className="grid grid-cols-2 gap-2">
-                    <select className="tg-format-select">
-                      <option>1/24</option>
-                      <option>2/24</option>
-                    </select>
-                    <select className="tg-qty-select">
-                      <option>1</option>
-                      <option>2</option>
-                    </select>
-                  </div>
+          </div>
+
+          {/* Price column (separate, avoids overlap) */}
+          <div>
+            <div className="tg-price-panel">
+              <div className="tg-price-top">
+                <div className="grid grid-cols-2 gap-2">
+                  <select className="tg-format-select">
+                    <option>1/24</option>
+                    <option>2/24</option>
+                  </select>
+                  <select className="tg-qty-select">
+                    <option>1</option>
+                    <option>2</option>
+                  </select>
                 </div>
-                <div className="tg-price-bottom">
-                  <div className="tg-price">{Intl.NumberFormat('ru-RU').format(item.price_rub)} ₽</div>
-                  <div className="text-sm opacity-90">🛒</div>
-                </div>
+              </div>
+              <div className="tg-price-bottom">
+                <div className="tg-price">{Intl.NumberFormat('ru-RU').format(item.price_rub)} ₽</div>
+                <div className="text-sm opacity-90">🛒</div>
               </div>
             </div>
           </div>
