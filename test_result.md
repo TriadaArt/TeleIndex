@@ -177,8 +177,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Frontend E2E: First-admin (if allowed) or Admin login -> Admin tabs (Summary, Drafts, Approved, Add, Import) -> Seed demo -> Import (Paste links + Telemetr/TGStat/Telega URL) -> Edit SEO & Approve -> Link checker -> Logout -> Public catalog cards/pagination/detail page verification"
-  stuck_tasks: []
+    - "CRITICAL: Fix frontend-backend connectivity - AxiosError Network Error preventing all API calls"
+  stuck_tasks:
+    - "Frontend: Full hybrid catalog + admin flow including First-admin registration, Admin tabs, Import, Approve/Reject workflow, Link checker, Public catalog UI"
   test_all: false
   test_priority: "high_first"
 
