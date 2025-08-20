@@ -217,12 +217,22 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
   const [category, setCategory] = useState("");
   const [sort, setSort] = useState("popular");
   const [page, setPage] = useState(1);
+  // sidebar filters
+  const [minSubs, setMinSubs] = useState("");
+  const [maxSubs, setMaxSubs] = useState("");
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [minEr, setMinEr] = useState("");
+  const [maxEr, setMaxEr] = useState("");
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [onlyAlive, setOnlyAlive] = useState(false);
+
   const limit = 24;
   const cats = useFetch(`${API}/categories`, []);
   const trending = useFetch(`${API}/channels/trending?limit=4`, []);
-  const channelsUrl = useMemo(() => { const p = new URLSearchParams(); if (q) p.set("q", q); if (category) p.set("category", category); if (sort) p.set("sort", sort); p.set("page", String(page)); p.set("limit", String(limit)); return `${API}/channels?${p.toString()}`; }, [q, category, sort, page]);
+  const channelsUrl = useMemo(() => { const p = new URLSearchParams(); if (q) p.set("q", q); if (category) p.set("category", category); if (sort) p.set("sort", sort); if (minSubs) p.set("min_subscribers", String(minSubs)); if (maxSubs) p.set("max_subscribers", String(maxSubs)); if (minPrice) p.set("min_price", String(minPrice)); if (maxPrice) p.set("max_price", String(maxPrice)); if (minEr) p.set("min_er", String(minEr)); if (maxEr) p.set("max_er", String(maxEr)); if (onlyFeatured) p.set("only_featured", "true"); if (onlyAlive) p.set("only_alive", "true"); p.set("page", String(page)); p.set("limit", String(limit)); return `${API}/channels?${p.toString()}`; }, [q, category, sort, page, minSubs, maxSubs, minPrice, maxPrice, minEr, maxEr, onlyFeatured, onlyAlive]);
   const { data: channels, loading } = useFetch(channelsUrl, [channelsUrl]);
-  useEffect(() => { setPage(1); }, [q, category, sort]);
+  useEffect(() => { setPage(1); }, [q, category, sort, minSubs, maxSubs, minPrice, maxPrice, minEr, maxEr, onlyFeatured, onlyAlive]);
 
   const catRef = React.useRef(null);
   const scrollToCats = () => { if (catRef.current) catRef.current.scrollIntoView({ behavior: 'smooth' }); };
@@ -233,22 +243,65 @@ const Catalog = ({ onGoAdmin, onOpenDetail }) => {
       <CategoryBar ref={catRef} categories={cats.data} active={category} setActive={setCategory} />
       <SortBar sort={sort} setSort={setSort} />
       <TrendStrip items={trending.data || []} onOpen={onOpenDetail} />
-      <div className="max-w-6xl mx-auto px-4 mt-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            Array.from({ length: 9 }).map((_, i) => (<div key={i} className="h-44 rounded-2xl bg-gray-100 animate-pulse border" />))
-          ) : channels && channels.items && channels.items.length > 0 ? (
-            channels.items.map((item) => (<Card key={item.id} item={item} onOpen={onOpenDetail} />))
-          ) : (
-            <div className="col-span-full text-center py-16">
-              <div className="mx-auto h-16 w-16 rounded-2xl bg-gray-100 border flex items-center justify-center">🔎</div>
-              <p className="mt-4 text-gray-700">Ничего не найдено. Измените фильтры или сбросьте поиск.</p>
+      <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <aside className="lg:col-span-1 space-y-3">
+          <div className="lg:sticky lg:top-20">
+            <div className="p-4 rounded-2xl border bg-white shadow-sm space-y-3">
+              <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск каналов..." className="w-full h-11 rounded-xl border px-4" />
+              <div>
+                <div className="text-sm font-medium mb-2">Категории</div>
+                <div className="flex flex-wrap gap-2">
+                  <button className={classNames("px-3 py-1.5 rounded-full border text-sm", !category ? "bg-indigo-600 text-white border-indigo-600" : "bg-white hover:bg-gray-50")} onClick={()=>setCategory("")}>Все</button>
+                  {(cats.data||[]).map(c => (
+                    <button key={c} className={classNames("px-3 py-1.5 rounded-full border text-sm", category===c?"bg-indigo-600 text-white border-indigo-600":"bg-white hover:bg-gray-50")} onClick={()=>setCategory(c)}>{c}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium mb-2">Подписчики</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input inputMode="numeric" pattern="[0-9]*" value={minSubs} onChange={(e)=>setMinSubs(e.target.value)} placeholder="от" className="h-10 rounded-xl border px-3" />
+                  <input inputMode="numeric" pattern="[0-9]*" value={maxSubs} onChange={(e)=>setMaxSubs(e.target.value)} placeholder="до" className="h-10 rounded-xl border px-3" />
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium mb-2">Цена ₽</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input inputMode="numeric" pattern="[0-9]*" value={minPrice} onChange={(e)=>setMinPrice(e.target.value)} placeholder="от" className="h-10 rounded-xl border px-3" />
+                  <input inputMode="numeric" pattern="[0-9]*" value={maxPrice} onChange={(e)=>setMaxPrice(e.target.value)} placeholder="до" className="h-10 rounded-xl border px-3" />
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium mb-2">ER %</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <input inputMode="decimal" value={minEr} onChange={(e)=>setMinEr(e.target.value)} placeholder="от" className="h-10 rounded-xl border px-3" />
+                  <input inputMode="decimal" value={maxEr} onChange={(e)=>setMaxEr(e.target.value)} placeholder="до" className="h-10 rounded-xl border px-3" />
+                </div>
+              </div>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyFeatured} onChange={(e)=>setOnlyFeatured(e.target.checked)} /> Только избранные</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={onlyAlive} onChange={(e)=>setOnlyAlive(e.target.checked)} /> Только живые ссылки</label>
             </div>
+          </div>
+        </aside>
+        {/* Grid */}
+        <div className="lg:col-span-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {loading ? (
+              Array.from({ length: 9 }).map((_, i) => (<div key={i} className="h-44 rounded-2xl bg-gray-100 animate-pulse border" />))
+            ) : channels && channels.items && channels.items.length > 0 ? (
+              channels.items.map((item) => (<Card key={item.id} item={item} onOpen={onOpenDetail} />))
+            ) : (
+              <div className="col-span-full text-center py-16">
+                <div className="mx-auto h-16 w-16 rounded-2xl bg-gray-100 border flex items-center justify-center">🔎</div>
+                <p className="mt-4 text-gray-700">Ничего не найдено. Измените фильтры или сбросьте поиск.</p>
+              </div>
+            )}
+          </div>
+          {channels && !!channels.total && (
+            <Pagination page={channels.page} total={channels.total} limit={limit} onChange={(p) => setPage(p)} />
           )}
         </div>
-        {channels && !!channels.total && (
-          <Pagination page={channels.page} total={channels.total} limit={limit} onChange={(p) => setPage(p)} />
-        )}
       </div>
     </div>
   );
