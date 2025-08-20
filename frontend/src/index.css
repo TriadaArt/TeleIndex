@@ -11,8 +11,8 @@
   .tg-container { @apply max-w-[1280px] mx-auto px-6; }
   .tg-header { @apply tg-container py-3 flex items-center gap-3 border-b bg-white; }
 
-  /* Hero polygonal abstraction with animated diamonds */
-  .tg-hero { @apply relative overflow-hidden; background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #06b6d4 100%); }
+  /* Hero polygonal abstraction with animated diamonds and textured layer */
+  .tg-hero { @apply relative overflow-hidden; background-image: linear-gradient(135deg, rgba(79,70,229,0.95) 0%, rgba(124,58,237,0.9) 50%, rgba(6,182,212,0.9) 100%), repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, rgba(255,255,255,0.0) 1px, rgba(255,255,255,0.0) 6px), url('https://customer-assets.emergentagent.com/job_tgcatalog/artifacts/6hq0okl0_9099100.jpg'); background-size: cover; background-position: center; background-blend-mode: overlay, overlay, normal; }
   .tg-hero-inner { @apply tg-container py-10 text-white relative z-10; }
   .tg-hero-title { @apply text-2xl md:text-3xl font-semibold; }
   .tg-hero-sub { @apply mt-2 text-white/90 text-sm md:text-base; }
@@ -20,7 +20,7 @@
   .poly-diamond { fill: rgba(255,255,255,.85); transform-origin: center; animation: diamond-move 12s ease-in-out infinite; }
   .poly-diamond.s { opacity:.6; animation-duration: 9s; }
   .poly-diamond.l { opacity:.9; animation-duration: 15s; }
-  @keyframes diamond-move { 0%,100% { transform: translate(0,0) rotate(45deg); } 50% { transform: translate(8px,-10px) rotate(47deg); } }
+  @keyframes diamond-move { 0%,100% { transform: translate(0,0) rotate(45deg); } 50% { transform: translate(6px,-8px) rotate(47deg); } }
 
   .tg-input { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
   .tg-input-lg { @apply h-11 rounded-xl border border-gray-300 px-4 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
@@ -42,10 +42,10 @@
 
   .tg-icon { @apply inline-block align-middle mr-1.5 text-gray-500; }
 
-  /* 2-column grid: left content (with metrics row) | price */
+  /* 2-column grid: left content | price (metrics compact inside left) */
   .tg-card-grid { @apply grid gap-3 items-stretch; grid-template-columns: 1fr; }
-  @screen md { .tg-card-grid { grid-template-columns: 1fr 200px; } }
-  @screen lg { .tg-card-grid { grid-template-columns: 1fr 220px; } }
+  @screen md { .tg-card-grid { grid-template-columns: 1fr 180px; } }
+  @screen lg { .tg-card-grid { grid-template-columns: 1fr 190px; } }
 
   .tg-metrics-row { @apply mt-2 text-[12.5px] text-gray-700 flex flex-wrap items-center gap-y-1; }
   .tg-sep { @apply mx-2 text-gray-300; }

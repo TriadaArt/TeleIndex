@@ -23,7 +23,7 @@ export default function CatalogCard({ item }){
     <div className="tg-card overflow-hidden">
       <div className="tg-card-pad">
         <div className="tg-card-grid">
-          {/* Left content with compact metrics row at bottom */}
+          {/* Left content only (metrics compact row inside) */}
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
@@ -34,7 +34,6 @@ export default function CatalogCard({ item }){
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <h3 className="tg-title truncate" title={item.name}>{item.name}</h3>
-                  {item.is_featured && <span className="tg-badge tg-badge-warn">Избранный</span>}
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-600 flex-wrap">
                   {item.category && <span className="px-2 py-0.5 rounded-full bg-gray-100 border">{item.category}</span>}
@@ -59,7 +58,7 @@ export default function CatalogCard({ item }){
             </div>
           </div>
 
-          {/* Price column */}
+          {/* Right price column only (narrow) */}
           <div>
             <div className="tg-price-panel">
               <div className="tg-price-top">
