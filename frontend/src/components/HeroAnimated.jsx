@@ -33,7 +33,7 @@ export default function HeroAnimated(){
           <polyline points="5,3 11,9" stroke="url(#dg2)" strokeWidth="0.5" opacity="0.5" />
           <polyline points="11,3 5,9" stroke="url(#dg2)" strokeWidth="0.5" opacity="0.5" />
         </g>
-        <g className="tg-diamond-group swim2" transform="translate(44 18)">
+        <g className="tg-diamond-group swim2" transform="translate(44 6)">
           <polygon points="8,0 16,6 8,12 0,6" fill="none" stroke="url(#dg2)" strokeWidth="0.9" />
           <polyline points="8,0 8,12" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.6" />
           <polyline points="0,6 16,6" stroke="url(#dg2)" strokeWidth="0.6" opacity="0.6" />
