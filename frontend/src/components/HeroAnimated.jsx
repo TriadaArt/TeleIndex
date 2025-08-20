@@ -3,7 +3,7 @@ import React from "react";
 export default function HeroAnimated(){
   return (
     <div className="tg-hero">
-      {/* Polygonal background + three animated diamonds + corner sparkles */}
+      {/* Polygonal background + three animated diamonds (no corner sparkles) */}
       <svg className="tg-hero-poly" viewBox="0 0 100 100" preserveAspectRatio="none">
         <defs>
           <linearGradient id="pgrad" x1="0" y1="0" x2="1" y2="1">
@@ -47,20 +47,6 @@ export default function HeroAnimated(){
           <polyline points="5,3 11,9" stroke="url(#dg2)" strokeWidth="0.5" opacity="0.5" />
           <polyline points="11,3 5,9" stroke="url(#dg2)" strokeWidth="0.5" opacity="0.5" />
         </g>
-
-        {/* Corner sparkles on polygon vertices with fading glow */}
-        <circle className="corner-spark l" cx="25" cy="0" r="0.8" />
-        <circle className="corner-spark" cx="55" cy="0" r="0.7" />
-        <circle className="corner-spark s" cx="100" cy="0" r="0.6" />
-        <circle className="corner-spark" cx="78" cy="22" r="0.7" />
-        <circle className="corner-spark s" cx="100" cy="18" r="0.6" />
-        <circle className="corner-spark l" cx="100" cy="40" r="0.8" />
-        <circle className="corner-spark" cx="68" cy="40" r="0.7" />
-        <circle className="corner-spark s" cx="50" cy="16" r="0.6" />
-        <circle className="corner-spark" cx="44" cy="36" r="0.7" />
-        <circle className="corner-spark s" cx="20" cy="20" r="0.6" />
-        <circle className="corner-spark" cx="0" cy="24" r="0.7" />
-        <circle className="corner-spark l" cx="0" cy="44" r="0.9" />
       </svg>
 
       {/* Right sparkles (animated bright points) */}
