@@ -18,22 +18,28 @@
   .tg-hero-sub { @apply mt-2 text-white/90 text-sm md:text-base; }
   .tg-hero-poly { position:absolute; inset:0; opacity:.25; }
 
-  /* Animated diamonds (Telegram-like) */
+  /* Animated diamonds (Telegram-like, 10% smaller) */
   .tg-diamond-group { transform-origin: center; }
   .swim1 { animation: swim1 14s ease-in-out infinite; }
   .swim2 { animation: swim2 16s ease-in-out infinite; }
   .swim3 { animation: swim3 18s ease-in-out infinite; }
-  @keyframes swim1 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.9);} 50%{ transform: translate(10px,-8px) rotate(3deg) scale(0.9);} }
-  @keyframes swim2 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.9);} 50%{ transform: translate(-8px,10px) rotate(-2deg) scale(0.9);} }
-  @keyframes swim3 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.9);} 50%{ transform: translate(6px,6px) rotate(1.5deg) scale(0.9);} }
+  @keyframes swim1 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(10px,-8px) rotate(3deg) scale(0.8);} }
+  @keyframes swim2 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(-8px,10px) rotate(-2deg) scale(0.8);} }
+  @keyframes swim3 { 0%,100%{ transform: translate(0,0) rotate(0deg) scale(0.8);} 50%{ transform: translate(6px,6px) rotate(1.5deg) scale(0.8);} }
 
-  /* Sparkles on the right */
+  /* Right sparkles (animated bright points) */
   .tg-sparkles { position:absolute; right:0; top:0; bottom:0; width:40%; pointer-events:none; }
   .tg-sparkle { position:absolute; width:4px; height:4px; border-radius:9999px; background:rgba(255,255,255,0.95); box-shadow:0 0 10px rgba(255,255,255,0.9), 0 0 18px rgba(255,255,255,0.7), 0 0 24px rgba(6,182,212,0.6); animation: twinkle 2.2s ease-in-out infinite, drift 12s ease-in-out infinite; }
   .tg-sparkle.s { width:3px; height:3px; animation-duration: 1.8s, 10s; opacity:.9; }
   .tg-sparkle.l { width:6px; height:6px; animation-duration: 2.8s, 14s; opacity:1; }
-  @keyframes twinkle { 0%,100%{ opacity:.4; transform: scale(0.9);} 50%{ opacity:1; transform: scale(1.25);} }
+  @keyframes twinkle { 0%,100%{ opacity:.4; transform: scale(0.85);} 50%{ opacity:1; transform: scale(1.2);} }
   @keyframes drift { 0%,100%{ transform: translateX(0) translateY(0);} 50%{ transform: translateX(-12px) translateY(-6px);} }
+
+  /* Corner sparkles at polygon vertices */
+  .corner-spark { fill: rgba(255,255,255,0.95); filter: drop-shadow(0 0 6px rgba(255,255,255,0.9)) drop-shadow(0 0 12px rgba(6,182,212,0.6)); animation: spark-fade 3.6s ease-in-out infinite; }
+  .corner-spark.s { opacity:.75; animation-duration: 2.8s; }
+  .corner-spark.l { opacity:1; animation-duration: 4.2s; }
+  @keyframes spark-fade { 0%,100%{ opacity:.4; transform: scale(0.85);} 50%{ opacity:1; transform: scale(1.25);} }
 
   .tg-input { @apply h-10 rounded-xl border border-gray-300 px-3 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
   .tg-input-lg { @apply h-11 rounded-xl border border-gray-300 px-4 bg-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500; }
@@ -55,7 +61,6 @@
 
   .tg-icon { @apply inline-block align-middle mr-1.5 text-gray-500; }
 
-  /* 2-column grid: left content | price */
   .tg-card-grid { @apply grid gap-3 items-stretch; grid-template-columns: 1fr; }
   @screen md { .tg-card-grid { grid-template-columns: 1fr 180px; } }
   @screen lg { .tg-card-grid { grid-template-columns: 1fr 190px; } }
