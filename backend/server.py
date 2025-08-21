@@ -750,12 +750,26 @@ async def update_channel(channel_id: str, payload: ChannelUpdate):
 @api.get("/admin/users")
 async def admin_list_users(user: Dict[str, Any] = Depends(get_current_admin)):
     cursor = db.users.find({}).sort("created_at", -1)
-    items = await cursor.to_list(length=200)
+    items = await cursor.to_list(length=1000)
     out = []
     for u in items:
         d = parse_from_mongo(u)
         out.append({"id": d.get("id"), "email": d.get("email"), "role": d.get("role"), "created_at": d.get("created_at")})
     return {"items": out}
+
+@api.delete("/admin/users/{user_id}")
+async def admin_delete_user(user_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
+    # admin cannot delete himself
+    if user.get("id") == user_id:
+        raise HTTPException(403, detail="Cannot delete self")
+    # only admins can delete others (already enforced)
+    existing = await db.users.find_one({"id": user_id})
+    if not existing:
+        raise HTTPException(404, detail="User not found")
+    # reassign channels owned by this user to admin
+    await db.channels.update_many({"owner_id": user_id}, {"$set": {"owner_id": user.get("id")}})
+    await db.users.delete_one({"id": user_id})
+    return {"ok": True}
 
 
 @api.get("/admin/summary")
