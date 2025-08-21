@@ -150,8 +150,8 @@ export default function TelegaClone(){
       <HeroAnimated />
 
       <div className="tg-header">
-        <div className="tg-header-inner">
-          <div className="flex items-center gap-3">
+        <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
+          <div className="flex items-center gap-3 col-start-1">
             <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
               <span className="text-white font-bold text-base">T</span>
             </div>
@@ -169,7 +169,7 @@ export default function TelegaClone(){
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 justify-end col-start-2">
             {user ? (
               <>
                 <span className="text-sm text-gray-700 font-semibold">
