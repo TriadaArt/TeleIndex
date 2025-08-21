@@ -270,6 +270,104 @@ class LinkChannelsPayload(BaseModel):
     channel_ids: List[str]
     primary_id: Optional[str] = None
 
+# -------------------- Creator Utilities --------------------
+
+def generate_slug(name: str) -> str:
+    """Generate URL-safe slug from name"""
+    import unicodedata
+    # Remove accents and convert to lowercase
+    slug = unicodedata.normalize('NFKD', name.lower())
+    # Replace spaces and special chars with hyphens
+    slug = re.sub(r'[^\w\s-]', '', slug)
+    slug = re.sub(r'[\s_-]+', '-', slug)
+    # Remove leading/trailing hyphens
+    slug = slug.strip('-')
+    return slug or "creator"
+
+async def ensure_unique_slug(base_slug: str, creator_id: Optional[str] = None) -> str:
+    """Ensure slug is unique by appending number if needed"""
+    slug = base_slug
+    counter = 1
+    while True:
+        query = {"slug": slug}
+        if creator_id:
+            query["id"] = {"$ne": creator_id}
+        existing = await db.creators.find_one(query)
+        if not existing:
+            return slug
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+async def recompute_creator_metrics(creator_id: str) -> CreatorMetrics:
+    """Recompute metrics for a creator based on linked channels"""
+    # Get all channel links for this creator
+    links_cursor = db.creator_channel_links.find({"creator_id": creator_id})
+    links = await links_cursor.to_list(length=None)
+    
+    if not links:
+        return CreatorMetrics()
+    
+    # Get all linked channels that are approved/published
+    channel_ids = [link["channel_id"] for link in links]
+    channels_cursor = db.channels.find({
+        "id": {"$in": channel_ids},
+        "status": {"$in": ["approved"]}
+    })
+    channels = await channels_cursor.to_list(length=None)
+    
+    if not channels:
+        return CreatorMetrics()
+    
+    # Compute metrics
+    metrics = CreatorMetrics()
+    metrics.channels_count = len(channels)
+    
+    # Sum subscribers (only alive channels)
+    alive_channels = [ch for ch in channels if ch.get("link_status") != "dead"]
+    if not alive_channels:
+        alive_channels = channels  # fallback to all if status unknown
+    
+    metrics.subscribers_total = sum(ch.get("subscribers", 0) for ch in alive_channels)
+    
+    # Weighted average ER
+    er_channels = [(ch.get("er", 0), ch.get("subscribers", 0)) 
+                   for ch in channels if ch.get("er") is not None and ch.get("er") > 0]
+    if er_channels:
+        total_weighted_er = sum(er * subs for er, subs in er_channels)
+        total_subs = sum(subs for _, subs in er_channels)
+        if total_subs > 0:
+            metrics.avg_er_percent = round(total_weighted_er / total_subs, 3)
+    
+    # Price metrics
+    prices = [ch.get("price_rub") for ch in channels 
+              if ch.get("price_rub") is not None and ch.get("price_rub") > 0]
+    if prices:
+        metrics.min_price_rub = min(prices)
+        metrics.avg_price_rub = int(sum(prices) / len(prices))
+    
+    # Weighted average CPM
+    cpm_channels = [(ch.get("cpm_rub", 0), ch.get("subscribers", 0)) 
+                    for ch in channels if ch.get("cpm_rub") is not None and ch.get("cpm_rub") > 0]
+    if cpm_channels:
+        total_weighted_cpm = sum(cpm * subs for cpm, subs in cpm_channels)
+        total_subs = sum(subs for _, subs in cpm_channels)
+        if total_subs > 0:
+            metrics.avg_cpm_rub = int(total_weighted_cpm / total_subs)
+    
+    # Most recent post date
+    post_dates = [ch.get("last_post_at") for ch in channels if ch.get("last_post_at")]
+    if post_dates:
+        # Get the most recent (max) post date
+        metrics.last_post_at_min = max(post_dates)
+    
+    # Update creator record with new metrics
+    await db.creators.update_one(
+        {"id": creator_id},
+        {"$set": {"metrics": metrics.dict(), "updated_at": utcnow_iso()}}
+    )
+    
+    return metrics
+
 # -------------------- Indexes --------------------
 
 async def create_indexes():
