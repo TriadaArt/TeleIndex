@@ -561,7 +561,7 @@ async def login(payload: UserLogin):
 
 @api.get("/auth/me", response_model=UserResponse)
 async def me(user: Dict[str, Any] = Depends(get_current_user)):
-    return UserResponse(id=user["id"], email=user["email"], role=user.get("role", "admin"), created_at=user.get("created_at", utcnow_iso()))
+    return UserResponse(id=user["id"], email=user["email"], role=user.get("role", "advertiser"), first_name=user.get("first_name"), last_name=user.get("last_name"), tg_username=user.get("tg_username"), created_at=user.get("created_at", utcnow_iso()))
 
 @api.get("/categories", response_model=List[str])
 async def list_categories():
