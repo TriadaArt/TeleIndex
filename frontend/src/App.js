@@ -857,17 +857,30 @@ const CreatorsCatalog = ({ onGoAdmin }) => {
   // Pagination and sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(24);
-  const [sortBy, setSortBy] = useState("subscribers");
+  const [sortBy, setSortBy] = useState("subscribers");  // Frontend-friendly name
   const [sortOrder, setSortOrder] = useState("desc");
+
+  // Map frontend sort names to backend field names
+  const getSortField = (frontendSort) => {
+    const sortMap = {
+      "subscribers": "subscribers",  // Backend maps this to metrics.subscribers_total
+      "name": "name",
+      "created_at": "created_at",
+      "price": "price",
+      "er": "er"
+    };
+    return sortMap[frontendSort] || "subscribers";
+  };
 
   // Load creators data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('Loading creators data...', `${API}/creators?limit=100&sort=${sortBy}&order=${sortOrder}`);
+        const backendSortField = getSortField(sortBy);
+        console.log('Loading creators data...', `${API}/creators?limit=100&sort=${backendSortField}&order=${sortOrder}`);
         const [creatorsRes, categoriesRes] = await Promise.all([
-          axios.get(`${API}/creators?limit=100&sort=${sortBy}&order=${sortOrder}`),
+          axios.get(`${API}/creators?limit=100&sort=${backendSortField}&order=${sortOrder}`),
           axios.get(`${API}/categories`)
         ]);
         
