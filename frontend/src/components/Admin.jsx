@@ -76,6 +76,94 @@ const Admin = () => {
     await axios.post(`${API}/admin/channels/${cid}/reject`, null, { headers: { Authorization: `Bearer ${token}` } });
     await loadChannels();
   };
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-xl p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div className="inline-flex rounded-full bg-gray-100 p-1">
+              <button className={`tg-pill ${tab==='channels'?'tg-pill-active':''}`} onClick={()=>setTab('channels')}>Каналы</button>
+              <button className={`tg-pill ${tab==='users'?'tg-pill-active':''}`} onClick={()=>setTab('users')}>Пользователи</button>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="tg-telega-reg" onClick={seedAll}>Seed All</button>
+            </div>
+          </div>
+
+          {tab==='channels' && (
+            <div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2 pr-4">Имя</th>
+                      <th className="py-2 pr-4">Владелец</th>
+                      <th className="py-2 pr-4">Статус</th>
+                      <th className="py-2 pr-4">Подписчики</th>
+                      <th className="py-2 pr-4">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {channels.map(ch => (
+                      <tr key={ch.id} className="border-b last:border-b-0">
+                        <td className="py-2 pr-4">{ch.name}</td>
+                        <td className="py-2 pr-4">{ch.owner_id || '-'}</td>
+                        <td className="py-2 pr-4">{ch.status}</td>
+                        <td className="py-2 pr-4">{ch.subscribers ?? '-'}</td>
+                        <td className="py-2 pr-4 flex items-center gap-2">
+                          <button className="tg-login" onClick={()=>openChannel(ch)}>Открыть</button>
+                          <button className="tg-telega-reg" onClick={()=>approveChannel(ch.id)}>Опубликовать</button>
+                          <button className="tg-pill tg-pill-outline" onClick={()=>rejectChannel(ch.id)}>Отклонить</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button className="tg-page-btn" disabled={cPage<=1} onClick={()=>setCPage(cPage-1)}>Назад</button>
+                <div className="tg-page-btn">{cPage}</div>
+                <button className="tg-page-btn" onClick={()=>setCPage(cPage+1)}>Вперёд</button>
+              </div>
+            </div>
+          )}
+
+          {tab==='users' && (
+            <div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left border-b">
+                      <th className="py-2 pr-4">Email</th>
+                      <th className="py-2 pr-4">Роль</th>
+                      <th className="py-2 pr-4">Создан</th>
+                      <th className="py-2 pr-4">Действия</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users
+                      .slice((uPage-1)*PAGE_SIZE, uPage*PAGE_SIZE)
+                      .map(u => (
+                        <tr key={u.id} className="border-b last:border-b-0">
+                          <td className="py-2 pr-4">{u.email}</td>
+                          <td className="py-2 pr-4">{u.role}</td>
+                          <td className="py-2 pr-4">{u.created_at}</td>
+                          <td className="py-2 pr-4 flex items-center gap-2">
+                            <button className="tg-login" onClick={()=>alert(JSON.stringify(u,null,2))}>Просмотр</button>
+                            <button className="tg-pill tg-pill-outline" onClick={()=>deleteUser(u.id)}>Удалить</button>
+                          </td>
+                        </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-2">
+                <button className="tg-page-btn" disabled={uPage<=1} onClick={()=>setUPage(uPage-1)}>Назад</button>
+                <div className="tg-page-btn">{uPage}</div>
+                <button className="tg-page-btn" onClick={()=>setUPage(uPage+1)}>Вперёд</button>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
 
   const openChannel = (ch) => {
     const uname = ch.username || (ch.link||'').replace('https://t.me/','').replace('http://t.me/','').replace('t.me/','').replace('@','').replace(/\/$/, '');
