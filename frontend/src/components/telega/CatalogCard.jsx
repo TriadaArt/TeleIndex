@@ -17,8 +17,16 @@ const Icon = ({ name }) => {
 };
 
 export default function CatalogCard({ item }){
+  const navigate = useNavigate();
   const initials = (item?.name || "?").split(" ").map((s) => s[0]).join("").slice(0, 2).toUpperCase();
   const [imgOk, setImgOk] = React.useState(true);
+
+  const toCard = (e) => {
+    e?.stopPropagation?.();
+    const uname = item.username || (item.link||"").replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").replace("@", "");
+    if (!uname) return;
+    navigate(`/tchannel/${uname}`);
+  };
 
   return (
     <div className="tg-card overflow-hidden">
