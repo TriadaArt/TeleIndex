@@ -688,6 +688,25 @@ async def get_channel(channel_id: str):
         owner = {"id": uu.get("id"), "email": uu.get("email"), "role": uu.get("role"), "name": uu.get("email").split("@")[0]}
     return {"channel": ChannelResponse(**base), "owner": owner}
 
+@api.get("/channels/by-username/{username}")
+async def get_channel_by_username(username: str):
+    # normalize remove leading @ if passed
+    un = username.lstrip("@")
+    doc = await db.channels.find_one({"username": un})
+    if not doc:
+        # try to infer by link
+        doc = await db.channels.find_one({"link": {"$regex": f"/{un}$"}})
+    if not doc:
+        raise HTTPException(404, detail="Channel not found")
+    base = parse_from_mongo(doc)
+    owner = None
+    if base.get("owner_id"):
+        u = await db.users.find_one({"id": base["owner_id"]})
+        if u:
+            uu = parse_from_mongo(u)
+            owner = {"id": uu.get("id"), "email": uu.get("email"), "role": uu.get("role"), "name": uu.get("email").split("@")[0]}
+    return {"channel": ChannelResponse(**base), "owner": owner}
+
 @api.get("/channels/{channel_id}/owners")
 async def get_channel_owners(channel_id: str):
     """Return creators linked to this channel via creator_channel_links.
