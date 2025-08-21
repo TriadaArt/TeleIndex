@@ -182,6 +182,29 @@ class PasteLinksPayload(BaseModel):
 # -------------------- Creator Models --------------------
 
 CreatorRole = Literal["owner", "editor", "member"]
+PriorityLevel = Literal["normal", "featured", "premium"]
+
+class CreatorPricing(BaseModel):
+    min_price: Optional[int] = None
+    max_price: Optional[int] = None
+    currency: str = "RUB"
+
+class CreatorAudienceStats(BaseModel):
+    gender_male_percent: Optional[float] = None
+    gender_female_percent: Optional[float] = None
+    geo_russia_percent: Optional[float] = None
+    geo_ukraine_percent: Optional[float] = None
+    geo_belarus_percent: Optional[float] = None
+    geo_other_percent: Optional[float] = None
+    age_18_24_percent: Optional[float] = None
+    age_25_34_percent: Optional[float] = None
+    age_35_44_percent: Optional[float] = None
+    age_45_plus_percent: Optional[float] = None
+
+class CreatorContacts(BaseModel):
+    email: Optional[str] = None
+    tg_username: Optional[str] = None
+    other_links: List[str] = Field(default_factory=list)
 
 class CreatorExternal(BaseModel):
     website: Optional[str] = None
@@ -214,6 +237,10 @@ class CreatorBase(BaseModel):
     country: Optional[str] = None
     language: Optional[str] = None
     external: CreatorExternal = Field(default_factory=CreatorExternal)
+    pricing: CreatorPricing = Field(default_factory=CreatorPricing)
+    audience_stats: CreatorAudienceStats = Field(default_factory=CreatorAudienceStats)
+    contacts: CreatorContacts = Field(default_factory=CreatorContacts)
+    priority_level: PriorityLevel = "normal"
     flags: CreatorFlags = Field(default_factory=CreatorFlags)
 
 class CreatorCreate(CreatorBase):
@@ -229,6 +256,10 @@ class CreatorUpdate(BaseModel):
     country: Optional[str] = None
     language: Optional[str] = None
     external: Optional[CreatorExternal] = None
+    pricing: Optional[CreatorPricing] = None
+    audience_stats: Optional[CreatorAudienceStats] = None
+    contacts: Optional[CreatorContacts] = None
+    priority_level: Optional[PriorityLevel] = None
     flags: Optional[CreatorFlags] = None
 
 class ChannelMinimal(BaseModel):
@@ -269,6 +300,12 @@ class CreatorChannelLinkResponse(CreatorChannelLinkBase):
 class LinkChannelsPayload(BaseModel):
     channel_ids: List[str]
     primary_id: Optional[str] = None
+
+class VerifyCreatorPayload(BaseModel):
+    verified: bool = True
+
+class FeatureCreatorPayload(BaseModel):
+    priority_level: PriorityLevel
 
 # -------------------- Creator Utilities --------------------
 
