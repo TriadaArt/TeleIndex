@@ -818,6 +818,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
+      <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
       <Route path="/c/:id" element={<RouteDetail />} />
       <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
       <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
