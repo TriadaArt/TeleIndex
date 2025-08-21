@@ -187,10 +187,10 @@ export default function TelegaClone(){
             ) : (
               <>
                 {/* Swapped order per request: Регистрация then Войти */}
-                <button className="tg-pill tg-pill-soft tg-grad-hover-soft" onClick={openRegisterModal}>
+                <button className="tg-telega-reg" onClick={openRegisterModal}>
                   Регистрация
                 </button>
-                <button className="tg-pill tg-pill-outline tg-grad-hover" onClick={openLoginModal}>
+                <button className="tg-login tg-grad-hover" onClick={openLoginModal}>
                   Войти
                 </button>
               </>
