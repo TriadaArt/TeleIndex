@@ -1,5 +1,6 @@
 import React from "react";
 import { ruShort, daysAgo } from "./helpers";
+import { useNavigate } from "react-router-dom";
 
 const Icon = ({ name }) => {
   const cls = "tg-icon";
