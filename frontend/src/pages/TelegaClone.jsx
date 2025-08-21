@@ -178,12 +178,14 @@ export default function TelegaClone(){
               <span className="text-sm text-gray-700 font-medium">
                 Добро пожаловать, {user.email || user.name}!
               </span>
-              <button 
-                className="tg-btn-primary" 
-                onClick={goToAdmin}
-              >
-                Админ
-              </button>
+              {user?.role === 'admin' && (
+                <button 
+                  className="tg-btn-primary" 
+                  onClick={goToAdmin}
+                >
+                  Админ
+                </button>
+              )}
               <button 
                 className="tg-btn-outline" 
                 onClick={handleLogout}
