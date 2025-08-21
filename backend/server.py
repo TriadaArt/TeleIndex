@@ -2073,6 +2073,20 @@ async def seed_creators(
     
     return {"ok": True, "created": created}
 
+@api.post("/admin/seed-all")
+async def seed_all(user: Dict[str, Any] = Depends(get_current_admin)):
+    """Seed both demo channels and creators"""
+    # First seed demo channels
+    demo_result = await seed_demo(user)
+    # Then seed creators
+    creators_result = await seed_creators(10, user)
+    
+    return {
+        "ok": True, 
+        "channels_inserted": demo_result.get("inserted", 0),
+        "creators_created": creators_result.get("created", 0)
+    }
+
 # -------------------- App wiring --------------------
 
 app.include_router(api)
