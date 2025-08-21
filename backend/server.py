@@ -538,7 +538,10 @@ async def register(user: UserCreate):
         "id": str(uuid.uuid4()),
         "email": str(user.email).lower(),
         "password_hash": pwd_ctx.hash(user.password),
-        "role": user.role,
+        "role": user.role or "advertiser",
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "tg_username": user.tg_username,
         "created_at": utcnow_iso(),
         "updated_at": utcnow_iso(),
     }
