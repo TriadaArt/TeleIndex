@@ -15,21 +15,52 @@ axios.interceptors.request.use((config) => { const t = localStorage.getItem("tok
 
 const useFetch = (url, deps = []) => { const [data, setData] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(null); useEffect(() => { let mounted = true; setLoading(true); axios.get(url).then((res) => mounted && setData(res.data)).catch((e) => mounted && setError(e)).finally(() => mounted && setLoading(false)); return () => { mounted = false; }; }, deps); return { data, loading, error }; };
 
-const Header = ({ onGoAdmin, q, setQ, scrollToCats }) => (
-  <header className="w-full sticky top-0 z-10 backdrop-blur bg-white/80 border-b">
-    <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
-      <div className="flex items-center gap-2 mr-auto">
-        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500" />
-        <h1 className="font-semibold text-lg">TeleIndex</h1>
+const Header = ({ onGoAdmin, onOpenLogin, onOpenRegister, q, setQ, scrollToCats }) => {
+  const isLoggedIn = localStorage.getItem('token');
+  
+  return (
+    <header className="w-full sticky top-0 z-10 backdrop-blur bg-white/80 border-b">
+      <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="flex items-center gap-2 mr-auto">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500" />
+          <h1 className="font-semibold text-lg">TeleIndex</h1>
+        </div>
+        <div className="flex-1 hidden md:block">
+          <input 
+            value={q} 
+            onChange={(e)=>setQ(e.target.value)} 
+            placeholder="Поиск каналов..." 
+            className="w-full h-11 rounded-xl border px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+          />
+        </div>
+        <button className="text-sm text-gray-600 hover:text-gray-900" onClick={scrollToCats}>
+          Категории
+        </button>
+        
+        {isLoggedIn ? (
+          <button className="text-sm text-gray-600 hover:text-gray-900" onClick={onGoAdmin}>
+            Админ
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <button 
+              className="text-sm text-gray-600 hover:text-gray-900 transition-colors" 
+              onClick={onOpenLogin}
+            >
+              Войти
+            </button>
+            <button 
+              className="text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors" 
+              onClick={onOpenRegister}
+            >
+              Регистрация
+            </button>
+          </div>
+        )}
       </div>
-      <div className="flex-1 hidden md:block">
-        <input value={q} onChange={(e)=>setQ(e.target.value)} placeholder="Поиск каналов..." className="w-full h-11 rounded-xl border px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-      </div>
-      <button className="text-sm text-gray-600 hover:text-gray-900" onClick={scrollToCats}>Категории</button>
-      <button className="text-sm text-gray-600 hover:text-gray-900" onClick={onGoAdmin}>Админ</button>
-    </div>
-  </header>
-);
+    </header>
+  );
+};
 
 const CategoryBar = React.forwardRef(({ categories, active, setActive }, ref) => (
   <div ref={ref} className="max-w-6xl mx-auto px-4 mt-3 overflow-x-auto">
