@@ -359,7 +359,14 @@ const Admin = ({ onLogout, onOpenDetail }) => {
 
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center gap-2 mb-4 flex-wrap">
-          {[{ k: "summary", label: "Сводка" }, { k: "drafts", label: "Черновики" }, { k: "approved", label: "Опубликованные" }, { k: "add", label: "Добавить" }, { k: "import", label: "Импорт" }].map((t) => (
+          {[
+            { k: "summary", label: "Сводка" }, 
+            { k: "drafts", label: "Черновики" }, 
+            { k: "approved", label: "Опубликованные" }, 
+            { k: "creators", label: "Создатели" },
+            { k: "add", label: "Добавить" }, 
+            { k: "import", label: "Импорт" }
+          ].map((t) => (
             <button key={t.k} onClick={() => setTab(t.k)} className={classNames("chip", tab === t.k && "chip-active")}>{t.label}</button>
           ))}
         </div>
