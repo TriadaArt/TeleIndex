@@ -2094,17 +2094,81 @@ async def seed_creators(
 
 @api.post("/admin/seed-all")
 async def seed_all(user: Dict[str, Any] = Depends(get_current_admin)):
-    """Seed both demo channels and creators"""
-    # First seed demo channels
-    demo_result = await seed_demo(user)
-    # Then seed creators
-    creators_result = await seed_creators(10, user)
-    
-    return {
-        "ok": True, 
-        "channels_inserted": demo_result.get("inserted", 0),
-        "creators_created": creators_result.get("created", 0)
-    }
+    """Seed test users if needed, attach ALL existing channels to admin with username, approve them, and create 3 channels for each test user."""
+    now = utcnow_iso()
+    # Ensure users exist
+    async def ensure_user(email: str, password: str, role: str) -> Dict[str, Any]:
+        u = await db.users.find_one({"email": email})
+        if u:
+            return u
+        uid = str(uuid.uuid4())
+        await db.users.insert_one({
+            "id": uid,
+            "email": email,
+            "password_hash": pwd_ctx.hash(password),
+            "role": role,
+            "created_at": now,
+            "updated_at": now,
+        })
+        return {"id": uid, "email": email, "role": role}
+    admin = await ensure_user("admin@test.com", "Admin123", "admin")
+    u1 = await ensure_user("user1@test.com", "Test1234", "editor")
+    u2 = await ensure_user("user2@test.com", "Test5678", "editor")
+    u3 = await ensure_user("user3@test.com", "Test91011", "editor")
+
+    # Attach all existing channels to admin, approve, and set username from link
+    updated = 0
+    async for ch in db.channels.find({}):
+        link = (ch.get("link") or "").strip()
+        uname = (ch.get("username") or "").strip()
+        if not uname and link:
+            uname = link.replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").replace("@", "").strip("/")
+        await db.channels.update_one({"id": ch["id"]}, {"$set": {"owner_id": admin["id"], "status": "approved", "updated_at": now, "username": uname}})
+        updated += 1
+
+    # Helper to create a channel if not exists by link
+    async def ensure_channel(link: str, name: str, owner_id: str, **extra):
+        existing = await db.channels.find_one({"link": link})
+        if existing:
+            return existing["id"]
+        uname = link.replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").replace("@", "").strip("/")
+        doc = {
+            "id": str(uuid.uuid4()),
+            "name": name,
+            "link": link,
+            "username": uname,
+            "avatar_url": extra.get("avatar_url"),
+            "category": extra.get("category", "Новости"),
+            "language": extra.get("language", "Русский"),
+            "country": extra.get("country", "Россия"),
+            "city": extra.get("city", "Москва"),
+            "subscribers": int(extra.get("subscribers", 50000)),
+            "er": float(extra.get("er", 4.2)),
+            "price_rub": int(extra.get("price_rub", 20000)),
+            "cpm_rub": float(extra.get("cpm_rub", 450)),
+            "growth_30d": float(extra.get("growth_30d", 3.5)),
+            "last_post_at": now,
+            "short_description": extra.get("short_description", "Демо канал пользователя."),
+            "seo_description": None,
+            "status": "approved",
+            "owner_id": owner_id,
+            "created_at": now,
+            "updated_at": now,
+        }
+        await db.channels.insert_one(prepare_for_mongo(doc))
+        return doc["id"]
+
+    created = 0
+    for user_doc, chans in [
+        (u1, [("https://t.me/demo_u1_news", "User1 Новости"), ("https://t.me/demo_u1_tech", "User1 Tech"), ("https://t.me/demo_u1_fun", "User1 Fun")]),
+        (u2, [("https://t.me/demo_u2_biz", "User2 Бизнес"), ("https://t.me/demo_u2_crypto", "User2 Крипто"), ("https://t.me/demo_u2_life", "User2 Lifestyle")]),
+        (u3, [("https://t.me/demo_u3_marketing", "User3 Маркетинг"), ("https://t.me/demo_u3_fin", "User3 Финансы"), ("https://t.me/demo_u3_city", "User3 Афиша")]),
+    ]:
+        for link, name in chans:
+            await ensure_channel(link, name, user_doc["id"], category="Новости")
+            created += 1
+
+    return {"ok": True, "updated_existing": updated, "created_for_users": created}
 
 # -------------------- App wiring --------------------
 
