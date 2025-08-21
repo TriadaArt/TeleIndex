@@ -1034,6 +1034,8 @@ async def check_links(limit: int = 100, replace_dead: bool = False, user: Dict[s
 @api.post("/admin/seed-demo")
 async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
     now = utcnow_iso()
+    # Attach demo data to the requesting admin as owner
+    owner_id = user.get("id") if isinstance(user, dict) else None
     demo = [
         {"name":"Новости 24/7","link":"https://t.me/demo_news247","avatar_url":"https://picsum.photos/id/1011/200/200","category":"Новости","language":"Русский","country":"Россия","city":"Москва","subscribers":412000,"er":5.2,"price_rub":18000,"cpm_rub":450.0,"growth_30d":3.8,"last_post_at":"2025-08-18T10:00:00Z","short_description":"Круглосуточные главные события, коротко и по делу.","is_featured":True},
         {"name":"Tech Insight RU","link":"https://t.me/demo_techinsight","avatar_url":"https://picsum.photos/id/1027/200/200","category":"Технологии","language":"Русский","country":"Россия","city":"Санкт-Петербург","subscribers":156000,"er":4.3,"price_rub":25000,"cpm_rub":520.0,"growth_30d":6.2,"last_post_at":"2025-08-17T12:30:00Z","short_description":"Глубокая аналитика ИТ-рынка, тренды и обзоры продуктов.","is_featured":True},
