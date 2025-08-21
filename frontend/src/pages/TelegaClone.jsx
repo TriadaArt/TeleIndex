@@ -59,22 +59,30 @@ export default function TelegaClone(){
 
   // Load real data from API
   useEffect(() => {
+    console.log('TelegaClone: Component mounted, loading data and checking auth');
     loadRealData();
     checkAuthStatus();
   }, []);
 
   const checkAuthStatus = async () => {
     const token = localStorage.getItem("token");
+    console.log('TelegaClone: Checking auth status, token:', token ? 'exists' : 'none');
+    
     if (token) {
       try {
         const response = await axios.get(`${API}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        console.log('TelegaClone: Auth verified, user:', response.data);
         setUser(response.data);
       } catch (error) {
         console.error('Token verification failed:', error);
         localStorage.removeItem("token");
+        setUser(null);
       }
+    } else {
+      console.log('TelegaClone: No token, user is guest');
+      setUser(null);
     }
   };
 
