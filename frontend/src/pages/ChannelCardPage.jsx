@@ -19,13 +19,16 @@ export default function ChannelCardPage() {
     (async () => {
       try {
         setLoading(true);
-        const [chRes, ownRes] = await Promise.all([
-          axios.get(`${API}/channels/username/${username}`),
-          axios.get(`${API}/channels/${username}/owners`).catch(() => ({ data: { items: [] }})),
-        ]);
+        const chRes = await axios.get(`${API}/channels/username/${username}`);
         if (!mounted) return;
-        setChannel(chRes.data?.channel || chRes.data);
-        setOwners(ownRes.data?.items || []);
+        const ch = chRes.data?.channel || chRes.data;
+        setChannel(ch);
+        let ownersItems = [];
+        try {
+          const ownRes = await axios.get(`${API}/channels/${ch.id}/owners`);
+          ownersItems = ownRes.data?.items || [];
+        } catch (e) { ownersItems = []; }
+        setOwners(ownersItems);
         setUseLive(true);
       } catch (e) {
         setError("Канал не найден");
