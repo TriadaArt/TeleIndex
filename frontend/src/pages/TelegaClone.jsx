@@ -1,9 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import FilterSidebar from "../components/telega/FilterSidebar";
 import CatalogGrid from "../components/telega/CatalogGrid";
 import Pagination from "../components/telega/Pagination";
 import { telegaDemo } from "../data/telegaDemo";
 import HeroAnimated from "../components/HeroAnimated";
+import AuthModal from "../components/AuthModal";
+import axios from 'axios';
+
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
 
 const expandTo48 = (arr) => { const out = []; let i=0; while(out.length<48){ const base=arr[i%arr.length]; out.push({ ...base, id: `${base.id}-${out.length+1}`}); i++; } return out; };
 
@@ -36,13 +41,87 @@ export default function TelegaClone(){
   const [sort, setSort] = useState('popular');
   const [page, setPage] = useState(1);
   const [selects, setSelects] = useState({ social: 'Telegram', category: '', genderBlogger: '', genderAudience: '', country: '', city: '' });
+  
+  // Auth states
+  const [user, setUser] = useState(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
+  
+  // Real data states
+  const [channels, setChannels] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [useRealData, setUseRealData] = useState(false);
+  
   const limit = 24;
 
-  const source = React.useMemo(()=> expandTo48(telegaDemo), []);
+  // Load real data from API
+  useEffect(() => {
+    loadRealData();
+    checkAuthStatus();
+  }, []);
+
+  const checkAuthStatus = () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setUser({ name: "Пользователь" });
+    }
+  };
+
+  const loadRealData = async () => {
+    try {
+      setLoading(true);
+      const [channelsRes, categoriesRes] = await Promise.all([
+        axios.get(`${API}/channels?limit=100`), // Get more channels for better filtering
+        axios.get(`${API}/categories`)
+      ]);
+      
+      if (channelsRes.data && channelsRes.data.items && channelsRes.data.items.length > 0) {
+        setChannels(channelsRes.data.items);
+        setCategories(categoriesRes.data || []);
+        setUseRealData(true);
+        console.log(`Loaded ${channelsRes.data.items.length} real channels from API`);
+      } else {
+        console.log("No real data available, using demo data");
+        setUseRealData(false);
+      }
+    } catch (error) {
+      console.error('Failed to load real data, using demo:', error);
+      setUseRealData(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Choose data source
+  const source = useRealData ? channels : expandTo48(telegaDemo);
+  const sourceCategories = useRealData ? categories : [...new Set(telegaDemo.map(x=>x.category))];
+  
   const filtered = useMemo(()=> applyFilters(source, { q, ranges, flags, sort, selects }), [q, selects, ranges, flags, sort, source]);
   const start = (page-1)*limit;
   const items = filtered.slice(start, start+limit);
   React.useEffect(()=> setPage(1), [q, selects, ranges, flags, sort]);
+
+  // Auth handlers
+  const handleAuthSuccess = (userData) => {
+    setAuthModalOpen(false);
+    setUser(userData || { name: "Пользователь" });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+  };
+
+  const openLoginModal = () => {
+    setAuthModalMode('login');
+    setAuthModalOpen(true);
+  };
+
+  const openRegisterModal = () => {
+    setAuthModalMode('register');
+    setAuthModalOpen(true);
+  };
 
   return (
     <div className="min-h-screen">
@@ -52,33 +131,106 @@ export default function TelegaClone(){
         <div className="flex items-center gap-2 mr-auto">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500" />
           <h1 className="font-semibold text-lg">TeleIndex</h1>
+          {useRealData && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+              Live Data
+            </span>
+          )}
+          {loading && (
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+              Loading...
+            </span>
+          )}
         </div>
-        <div className="text-sm text-gray-600">Каталог</div>
+        
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600">
+                Добро пожаловать, {user.email || user.name}!
+              </span>
+              <button 
+                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors" 
+                onClick={handleLogout}
+              >
+                Выйти
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button 
+                className="text-sm text-gray-600 hover:text-gray-900 transition-colors" 
+                onClick={openLoginModal}
+              >
+                Войти
+              </button>
+              <button 
+                className="text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors" 
+                onClick={openRegisterModal}
+              >
+                Регистрация
+              </button>
+            </div>
+          )}
+          <div className="text-sm text-gray-600">Каталог</div>
+        </div>
       </div>
 
       <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[340px_820px] gap-6">
-        <FilterSidebar q={q} setQ={setQ} categories={[...new Set(source.map(x=>x.category))]} ranges={ranges} setRanges={setRanges} flags={flags} setFlags={setFlags} selects={selects} setSelects={setSelects} />
+        <FilterSidebar 
+          q={q} 
+          setQ={setQ} 
+          categories={sourceCategories} 
+          ranges={ranges} 
+          setRanges={setRanges} 
+          flags={flags} 
+          setFlags={setFlags} 
+          selects={selects} 
+          setSelects={setSelects} 
+        />
         <div>
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            {[{k:'popular',label:'Популярные'},{k:'new',label:'Новые'},{k:'name',label:'По имени'},{k:'price',label:'Цена'},{k:'er',label:'ER'}].map(t=> (
-              <button key={t.k} onClick={()=>setSort(t.k)} className={`tg-chip ${sort===t.k?'tg-chip-active':''}`}>{t.label}</button>
-            ))}
-          </div>
-          <CatalogGrid items={items} />
-          <div className="tg-pager">
-            <button className="tg-page-btn" disabled={page<=1} onClick={()=>setPage(page-1)}>Назад</button>
-            <div className="flex items-center gap-2">
-              {Array.from({length: Math.min(5, Math.max(1, Math.ceil(filtered.length/limit)))}).map((_,i)=>{
-                const pages = Math.ceil(filtered.length/limit) || 1;
-                const start = Math.max(1, Math.min(Math.max(1, page-2), Math.max(1, pages-4)));
-                const p = start + i;
-                return <button key={p} className={`tg-page-btn ${p===page?'tg-page-active':''}`} onClick={()=>setPage(p)}>{p}</button>;
-              })}
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {[{k:'popular',label:'Популярные'},{k:'new',label:'Новые'},{k:'name',label:'По имени'},{k:'price',label:'Цена'},{k:'er',label:'ER'}].map(t=> (
+                <button key={t.k} onClick={()=>setSort(t.k)} className={`tg-chip ${sort===t.k?'tg-chip-active':''}`}>{t.label}</button>
+              ))}
             </div>
-            <button className="tg-page-btn" disabled={page>=Math.ceil(filtered.length/limit)} onClick={()=>setPage(page+1)}>Вперёд</button>
+            <div className="text-sm text-gray-500">
+              Найдено: {filtered.length} {useRealData ? 'каналов' : 'каналов (демо)'}
+            </div>
           </div>
+          
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            </div>
+          ) : (
+            <>
+              <CatalogGrid items={items} />
+              <div className="tg-pager">
+                <button className="tg-page-btn" disabled={page<=1} onClick={()=>setPage(page-1)}>Назад</button>
+                <div className="flex items-center gap-2">
+                  {Array.from({length: Math.min(5, Math.max(1, Math.ceil(filtered.length/limit)))}).map((_,i)=>{
+                    const pages = Math.ceil(filtered.length/limit) || 1;
+                    const start = Math.max(1, Math.min(Math.max(1, page-2), Math.max(1, pages-4)));
+                    const p = start + i;
+                    return <button key={p} className={`tg-page-btn ${p===page?'tg-page-active':''}`} onClick={()=>setPage(p)}>{p}</button>;
+                  })}
+                </div>
+                <button className="tg-page-btn" disabled={page>=Math.ceil(filtered.length/limit)} onClick={()=>setPage(page+1)}>Вперёд</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
   );
 }
