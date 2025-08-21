@@ -36,6 +36,52 @@ const Admin = () => {
       setUser(response.data);
     } catch (error) {
       console.error('Auth check failed:', error);
+
+  const loadUsers = async () => {
+    const token = localStorage.getItem('token');
+    const { data } = await axios.get(`${API}/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
+    setUsers(data.items || []);
+  };
+  const loadChannels = async () => {
+    const token = localStorage.getItem('token');
+    const { data } = await axios.get(`${API}/admin/channels?page=${cPage}&limit=${PAGE_SIZE}`, { headers: { Authorization: `Bearer ${token}` } });
+    setChannels(data.items || []);
+  };
+
+  useEffect(() => { if (user) { loadUsers(); loadChannels(); } }, [user, cPage]);
+
+  const seedAll = async () => {
+    const token = localStorage.getItem('token');
+    await axios.post(`${API}/admin/seed-all`, null, { headers: { Authorization: `Bearer ${token}` } });
+    await loadChannels();
+    await loadUsers();
+  };
+
+  const deleteUser = async (uid) => {
+    if (!window.confirm('Удалить пользователя?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`${API}/admin/users/${uid}`, { headers: { Authorization: `Bearer ${token}` } });
+      await loadUsers();
+    } catch (e) { alert('Удаление запрещено или ошибка'); }
+  };
+
+  const approveChannel = async (cid) => {
+    const token = localStorage.getItem('token');
+    await axios.post(`${API}/admin/channels/${cid}/approve`, null, { headers: { Authorization: `Bearer ${token}` } });
+    await loadChannels();
+  };
+  const rejectChannel = async (cid) => {
+    const token = localStorage.getItem('token');
+    await axios.post(`${API}/admin/channels/${cid}/reject`, null, { headers: { Authorization: `Bearer ${token}` } });
+    await loadChannels();
+  };
+
+  const openChannel = (ch) => {
+    const uname = ch.username || (ch.link||'').replace('https://t.me/','').replace('http://t.me/','').replace('t.me/','').replace('@','').replace(/\/$/, '');
+    if (uname) window.location.href = `/tchannel/${uname}`;
+  };
+
       localStorage.removeItem('token');
       navigate('/');
     } finally {
