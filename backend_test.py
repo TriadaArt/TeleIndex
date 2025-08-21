@@ -2169,6 +2169,605 @@ class BackendTester:
         except Exception as e:
             self.log(f"❌ POST /api/admin/creators/seed - FAILED: {e}")
             return False
+
+    # ==================== EXTENDED CREATORS API TESTS ====================
+    
+    def test_extended_creators_new_data_fields(self):
+        """Test NEW data model fields: pricing, audience_stats, contacts, priority_level"""
+        self.log("Testing EXTENDED creators API - new data model fields...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for extended creators test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First seed creators to ensure we have data with new fields
+            seed_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=10")
+            assert seed_response.status_code == 200, f"Creators seed failed: {seed_response.status_code} - {seed_response.text}"
+            
+            self.log("✅ Seeded creators with extended data fields")
+            
+            # Get creators and verify new fields are present
+            creators_response = self.session.get(f"{BASE_URL}/creators?limit=5")
+            assert creators_response.status_code == 200, "Failed to get creators"
+            
+            creators_data = creators_response.json()
+            assert len(creators_data["items"]) > 0, "No creators found for extended fields testing"
+            
+            # Test each creator has all new fields
+            for creator in creators_data["items"]:
+                # Test pricing field
+                assert "pricing" in creator, f"Creator missing pricing field: {creator['name']}"
+                pricing = creator["pricing"]
+                assert "min_price" in pricing, "Pricing missing min_price"
+                assert "max_price" in pricing, "Pricing missing max_price"
+                assert "currency" in pricing, "Pricing missing currency"
+                assert pricing["currency"] == "RUB", f"Expected RUB currency, got {pricing['currency']}"
+                
+                # Test audience_stats field
+                assert "audience_stats" in creator, f"Creator missing audience_stats field: {creator['name']}"
+                audience = creator["audience_stats"]
+                expected_audience_fields = [
+                    "gender_male_percent", "gender_female_percent",
+                    "geo_russia_percent", "geo_ukraine_percent", "geo_belarus_percent", "geo_other_percent",
+                    "age_18_24_percent", "age_25_34_percent", "age_35_44_percent", "age_45_plus_percent"
+                ]
+                for field in expected_audience_fields:
+                    assert field in audience, f"Audience stats missing {field}"
+                
+                # Test contacts field
+                assert "contacts" in creator, f"Creator missing contacts field: {creator['name']}"
+                contacts = creator["contacts"]
+                assert "email" in contacts, "Contacts missing email"
+                assert "tg_username" in contacts, "Contacts missing tg_username"
+                assert "other_links" in contacts, "Contacts missing other_links"
+                assert isinstance(contacts["other_links"], list), "other_links should be a list"
+                
+                # Test priority_level field
+                assert "priority_level" in creator, f"Creator missing priority_level field: {creator['name']}"
+                priority = creator["priority_level"]
+                assert priority in ["normal", "featured", "premium"], f"Invalid priority_level: {priority}"
+                
+                self.log(f"✅ Creator '{creator['name']}' has all new fields: pricing={pricing['min_price']}-{pricing['max_price']} {pricing['currency']}, priority={priority}")
+            
+            # Test creating creator with new fields
+            extended_creator = {
+                "name": "Extended Fields Test Creator",
+                "bio": "Creator with all new extended fields",
+                "category": "Технологии",
+                "tags": ["тест", "расширенные поля"],
+                "country": "RU",
+                "language": "ru",
+                "pricing": {
+                    "min_price": 25000,
+                    "max_price": 75000,
+                    "currency": "RUB"
+                },
+                "audience_stats": {
+                    "gender_male_percent": 60.0,
+                    "gender_female_percent": 40.0,
+                    "geo_russia_percent": 80.0,
+                    "geo_ukraine_percent": 15.0,
+                    "geo_belarus_percent": 5.0,
+                    "age_25_34_percent": 50.0,
+                    "age_35_44_percent": 30.0,
+                    "age_18_24_percent": 20.0
+                },
+                "contacts": {
+                    "email": "test@extended-creator.com",
+                    "tg_username": "extended_test",
+                    "other_links": ["https://linkedin.com/in/extended-test", "https://github.com/extended-test"]
+                },
+                "priority_level": "premium"
+            }
+            
+            create_response = self.session.post(f"{BASE_URL}/creators", json=extended_creator)
+            assert create_response.status_code == 200, f"Extended creator creation failed: {create_response.status_code} - {create_response.text}"
+            
+            created_creator = create_response.json()
+            
+            # Verify all new fields were saved correctly
+            assert created_creator["pricing"]["min_price"] == 25000, "Min price not saved correctly"
+            assert created_creator["pricing"]["max_price"] == 75000, "Max price not saved correctly"
+            assert created_creator["audience_stats"]["gender_male_percent"] == 60.0, "Gender stats not saved correctly"
+            assert created_creator["contacts"]["email"] == "test@extended-creator.com", "Email not saved correctly"
+            assert len(created_creator["contacts"]["other_links"]) == 2, "Other links not saved correctly"
+            assert created_creator["priority_level"] == "premium", "Priority level not saved correctly"
+            
+            self.log("✅ POST /api/creators - Created creator with all new extended fields")
+            
+            # Test updating creator with new fields
+            creator_id = created_creator["id"]
+            
+            update_data = {
+                "pricing": {
+                    "min_price": 30000,
+                    "max_price": 80000,
+                    "currency": "RUB"
+                },
+                "audience_stats": {
+                    "gender_male_percent": 55.0,
+                    "gender_female_percent": 45.0
+                },
+                "contacts": {
+                    "email": "updated@extended-creator.com",
+                    "tg_username": "updated_test",
+                    "other_links": ["https://updated-link.com"]
+                },
+                "priority_level": "featured"
+            }
+            
+            update_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json=update_data)
+            assert update_response.status_code == 200, f"Extended creator update failed: {update_response.status_code} - {update_response.text}"
+            
+            updated_creator = update_response.json()
+            
+            # Verify updates
+            assert updated_creator["pricing"]["min_price"] == 30000, "Updated min price not saved"
+            assert updated_creator["audience_stats"]["gender_male_percent"] == 55.0, "Updated gender stats not saved"
+            assert updated_creator["contacts"]["email"] == "updated@extended-creator.com", "Updated email not saved"
+            assert updated_creator["priority_level"] == "featured", "Updated priority level not saved"
+            
+            self.log("✅ PUT /api/creators - Updated creator with new extended fields")
+            
+            # Test backward compatibility - old creators should work with defaults
+            basic_creator = {
+                "name": "Basic Creator Test",
+                "bio": "Creator without extended fields",
+                "category": "Бизнес"
+            }
+            
+            basic_response = self.session.post(f"{BASE_URL}/creators", json=basic_creator)
+            assert basic_response.status_code == 200, "Basic creator creation failed"
+            
+            basic_created = basic_response.json()
+            
+            # Should have default values for new fields
+            assert "pricing" in basic_created, "Basic creator missing pricing defaults"
+            assert "audience_stats" in basic_created, "Basic creator missing audience_stats defaults"
+            assert "contacts" in basic_created, "Basic creator missing contacts defaults"
+            assert basic_created["priority_level"] == "normal", "Basic creator should have normal priority by default"
+            
+            self.log("✅ Backward compatibility - basic creator gets default values for new fields")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Extended creators new data fields - FAILED: {e}")
+            return False
+
+    def test_extended_creators_new_filtering_options(self):
+        """Test NEW filtering options: priority_level filter, tags array filter"""
+        self.log("Testing EXTENDED creators API - new filtering options...")
+        
+        try:
+            # Ensure we have seeded data with various priority levels and tags
+            if self.access_token:
+                self.set_auth_header()
+                seed_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=10")
+                if seed_response.status_code == 200:
+                    self.log("✅ Ensured seeded creators for filtering tests")
+                self.clear_auth_header()
+            
+            # Test priority_level filter - normal
+            normal_response = self.session.get(f"{BASE_URL}/creators?priority_level=normal")
+            assert normal_response.status_code == 200, f"Priority level normal filter failed: {normal_response.status_code}"
+            
+            normal_data = normal_response.json()
+            for creator in normal_data["items"]:
+                assert creator["priority_level"] == "normal", f"Priority filter failed: expected normal, got {creator['priority_level']}"
+            
+            self.log(f"✅ GET /api/creators?priority_level=normal - Returned {len(normal_data['items'])} normal creators")
+            
+            # Test priority_level filter - featured
+            featured_response = self.session.get(f"{BASE_URL}/creators?priority_level=featured")
+            assert featured_response.status_code == 200, "Priority level featured filter failed"
+            
+            featured_data = featured_response.json()
+            for creator in featured_data["items"]:
+                assert creator["priority_level"] == "featured", f"Priority filter failed: expected featured, got {creator['priority_level']}"
+            
+            self.log(f"✅ GET /api/creators?priority_level=featured - Returned {len(featured_data['items'])} featured creators")
+            
+            # Test priority_level filter - premium
+            premium_response = self.session.get(f"{BASE_URL}/creators?priority_level=premium")
+            assert premium_response.status_code == 200, "Priority level premium filter failed"
+            
+            premium_data = premium_response.json()
+            for creator in premium_data["items"]:
+                assert creator["priority_level"] == "premium", f"Priority filter failed: expected premium, got {creator['priority_level']}"
+            
+            self.log(f"✅ GET /api/creators?priority_level=premium - Returned {len(premium_data['items'])} premium creators")
+            
+            # Test tags array filter - single tag
+            single_tag_response = self.session.get(f"{BASE_URL}/creators?tags=технологии")
+            assert single_tag_response.status_code == 200, "Single tag filter failed"
+            
+            single_tag_data = single_tag_response.json()
+            for creator in single_tag_data["items"]:
+                tags = creator.get("tags", [])
+                assert "технологии" in tags, f"Tag filter failed: 'технологии' not in {tags}"
+            
+            self.log(f"✅ GET /api/creators?tags=технологии - Returned {len(single_tag_data['items'])} creators with 'технологии' tag")
+            
+            # Test tags array filter - multiple tags (if supported by backend)
+            multi_tag_response = self.session.get(f"{BASE_URL}/creators?tags=технологии&tags=стартапы")
+            assert multi_tag_response.status_code == 200, "Multiple tags filter failed"
+            
+            multi_tag_data = multi_tag_response.json()
+            for creator in multi_tag_data["items"]:
+                tags = creator.get("tags", [])
+                has_tech = "технологии" in tags
+                has_startup = "стартапы" in tags
+                assert has_tech or has_startup, f"Multi-tag filter failed: neither 'технологии' nor 'стартапы' in {tags}"
+            
+            self.log(f"✅ GET /api/creators?tags=технологии&tags=стартапы - Returned {len(multi_tag_data['items'])} creators with matching tags")
+            
+            # Test combined filters with new options
+            combined_response = self.session.get(
+                f"{BASE_URL}/creators?priority_level=featured&tags=маркетинг&country=RU&subscribers_min=50000&sort=subscribers&order=desc&limit=10"
+            )
+            assert combined_response.status_code == 200, "Combined filters with new options failed"
+            
+            combined_data = combined_response.json()
+            for creator in combined_data["items"]:
+                # Verify priority level
+                assert creator["priority_level"] == "featured", f"Combined filter failed: expected featured priority, got {creator['priority_level']}"
+                
+                # Verify country
+                assert creator.get("country") == "RU", f"Combined filter failed: expected RU country, got {creator.get('country')}"
+                
+                # Verify tags (if creator has tags)
+                if creator.get("tags"):
+                    tags = creator["tags"]
+                    assert "маркетинг" in tags, f"Combined filter failed: 'маркетинг' not in {tags}"
+                
+                # Verify subscribers (if metrics exist)
+                if creator.get("metrics", {}).get("subscribers_total"):
+                    subs = creator["metrics"]["subscribers_total"]
+                    assert subs >= 50000, f"Combined filter failed: subscribers {subs} < 50000"
+            
+            self.log(f"✅ Complex combined filter with new options - Returned {len(combined_data['items'])} creators")
+            
+            # Test that existing filters still work with new data
+            existing_filters_response = self.session.get(
+                f"{BASE_URL}/creators?q=tech&category=Технологии&language=ru&featured=true&verified=true&sort=name&order=asc"
+            )
+            assert existing_filters_response.status_code == 200, "Existing filters compatibility failed"
+            
+            existing_data = existing_filters_response.json()
+            self.log(f"✅ Existing filters still work with new data - Returned {len(existing_data['items'])} creators")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Extended creators new filtering options - FAILED: {e}")
+            return False
+
+    def test_extended_creators_new_endpoints(self):
+        """Test NEW endpoints: verify, feature, suggestions"""
+        self.log("Testing EXTENDED creators API - new endpoints...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for new endpoints test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # Ensure we have creators to test with
+            seed_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=10")
+            if seed_response.status_code == 200:
+                self.log("✅ Ensured creators exist for new endpoints testing")
+            
+            # Get a creator to test verify/feature endpoints
+            creators_response = self.session.get(f"{BASE_URL}/creators?limit=1")
+            assert creators_response.status_code == 200, "Failed to get creators for endpoint testing"
+            
+            creators_data = creators_response.json()
+            if not creators_data["items"]:
+                self.log("ℹ️  No creators found for new endpoints testing")
+                return True
+            
+            test_creator = creators_data["items"][0]
+            creator_id = test_creator["id"]
+            
+            # Test 1: POST /api/creators/{id}/verify (admin only)
+            verify_payload = {"verified": True}
+            
+            verify_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/verify", json=verify_payload)
+            assert verify_response.status_code == 200, f"Creator verify failed: {verify_response.status_code} - {verify_response.text}"
+            
+            verify_result = verify_response.json()
+            assert verify_result["ok"] is True, "Verify response missing ok=true"
+            assert verify_result["verified"] is True, "Verify response missing verified=true"
+            
+            self.log(f"✅ POST /api/creators/{creator_id}/verify - Creator marked as verified")
+            
+            # Verify the creator is actually verified
+            verified_creator_response = self.session.get(f"{BASE_URL}/creators/{creator_id}")
+            assert verified_creator_response.status_code == 200, "Failed to get verified creator"
+            
+            verified_creator = verified_creator_response.json()
+            assert verified_creator["flags"]["verified"] is True, "Creator not actually verified"
+            
+            self.log("✅ Creator verification status updated correctly")
+            
+            # Test unverify
+            unverify_payload = {"verified": False}
+            unverify_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/verify", json=unverify_payload)
+            assert unverify_response.status_code == 200, "Creator unverify failed"
+            
+            unverify_result = unverify_response.json()
+            assert unverify_result["verified"] is False, "Unverify response incorrect"
+            
+            self.log("✅ Creator unverification works correctly")
+            
+            # Test 2: POST /api/creators/{id}/feature (admin only)
+            feature_payload = {"priority_level": "premium"}
+            
+            feature_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/feature", json=feature_payload)
+            assert feature_response.status_code == 200, f"Creator feature failed: {feature_response.status_code} - {feature_response.text}"
+            
+            feature_result = feature_response.json()
+            assert feature_result["ok"] is True, "Feature response missing ok=true"
+            assert feature_result["priority_level"] == "premium", "Feature response missing correct priority_level"
+            
+            self.log(f"✅ POST /api/creators/{creator_id}/feature - Creator priority set to premium")
+            
+            # Verify the creator priority was updated
+            featured_creator_response = self.session.get(f"{BASE_URL}/creators/{creator_id}")
+            assert featured_creator_response.status_code == 200, "Failed to get featured creator"
+            
+            featured_creator = featured_creator_response.json()
+            assert featured_creator["priority_level"] == "premium", "Creator priority not actually updated"
+            assert featured_creator["flags"]["featured"] is True, "Featured flag should be set for premium creators"
+            
+            self.log("✅ Creator priority level and featured flag updated correctly")
+            
+            # Test different priority levels
+            for priority in ["normal", "featured", "premium"]:
+                priority_payload = {"priority_level": priority}
+                priority_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/feature", json=priority_payload)
+                assert priority_response.status_code == 200, f"Priority {priority} setting failed"
+                
+                priority_result = priority_response.json()
+                assert priority_result["priority_level"] == priority, f"Priority {priority} not set correctly"
+                
+                self.log(f"✅ Priority level '{priority}' set successfully")
+            
+            # Test 3: GET /api/creators/suggestions (public endpoint)
+            self.clear_auth_header()  # Test as public endpoint
+            
+            suggestions_response = self.session.get(f"{BASE_URL}/creators/suggestions")
+            assert suggestions_response.status_code == 200, f"Creator suggestions failed: {suggestions_response.status_code} - {suggestions_response.text}"
+            
+            suggestions_data = suggestions_response.json()
+            assert "items" in suggestions_data, "Suggestions response missing items"
+            
+            suggestions = suggestions_data["items"]
+            assert len(suggestions) <= 6, f"Default suggestions limit exceeded: got {len(suggestions)}"  # Default limit is 6
+            
+            # Verify suggestion structure
+            for suggestion in suggestions:
+                required_fields = ["id", "name", "slug", "category", "metrics"]
+                for field in required_fields:
+                    assert field in suggestion, f"Suggestion missing required field: {field}"
+                
+                # Verify it's an active creator
+                assert suggestion.get("flags", {}).get("active", True) is True, "Inactive creator in suggestions"
+            
+            self.log(f"✅ GET /api/creators/suggestions - Returned {len(suggestions)} creator suggestions")
+            
+            # Test suggestions with custom limit
+            limit_suggestions_response = self.session.get(f"{BASE_URL}/creators/suggestions?limit=3")
+            assert limit_suggestions_response.status_code == 200, "Suggestions with limit failed"
+            
+            limit_suggestions = limit_suggestions_response.json()["items"]
+            assert len(limit_suggestions) <= 3, f"Custom limit not respected: got {len(limit_suggestions)}"
+            
+            self.log(f"✅ GET /api/creators/suggestions?limit=3 - Custom limit respected")
+            
+            # Test suggestions with featured_only filter
+            featured_suggestions_response = self.session.get(f"{BASE_URL}/creators/suggestions?featured_only=true")
+            assert featured_suggestions_response.status_code == 200, "Featured suggestions failed"
+            
+            featured_suggestions = featured_suggestions_response.json()["items"]
+            for suggestion in featured_suggestions:
+                priority = suggestion.get("priority_level", "normal")
+                assert priority in ["featured", "premium"], f"Non-featured creator in featured suggestions: {priority}"
+            
+            self.log(f"✅ GET /api/creators/suggestions?featured_only=true - Returned {len(featured_suggestions)} featured suggestions")
+            
+            # Test suggestions with category filter
+            category_suggestions_response = self.session.get(f"{BASE_URL}/creators/suggestions?category=Технологии")
+            assert category_suggestions_response.status_code == 200, "Category suggestions failed"
+            
+            category_suggestions = category_suggestions_response.json()["items"]
+            for suggestion in category_suggestions:
+                assert suggestion.get("category") == "Технологии", f"Wrong category in filtered suggestions: {suggestion.get('category')}"
+            
+            self.log(f"✅ GET /api/creators/suggestions?category=Технологии - Returned {len(category_suggestions)} category-filtered suggestions")
+            
+            # Test that suggestions vary on multiple calls (randomization)
+            suggestions_1 = self.session.get(f"{BASE_URL}/creators/suggestions?limit=10").json()["items"]
+            suggestions_2 = self.session.get(f"{BASE_URL}/creators/suggestions?limit=10").json()["items"]
+            
+            if len(suggestions_1) > 1 and len(suggestions_2) > 1:
+                # Check if order is different (randomization working)
+                ids_1 = [s["id"] for s in suggestions_1]
+                ids_2 = [s["id"] for s in suggestions_2]
+                
+                if ids_1 != ids_2:
+                    self.log("✅ Creator suggestions are randomized between calls")
+                else:
+                    self.log("ℹ️  Creator suggestions order same (acceptable with small dataset)")
+            
+            # Test authentication requirements for admin endpoints
+            self.clear_auth_header()
+            
+            # Verify endpoint should require admin auth
+            unauth_verify_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/verify", json={"verified": True})
+            assert unauth_verify_response.status_code == 401, f"Unauthenticated verify should return 401, got {unauth_verify_response.status_code}"
+            
+            # Feature endpoint should require admin auth
+            unauth_feature_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/feature", json={"priority_level": "featured"})
+            assert unauth_feature_response.status_code == 401, f"Unauthenticated feature should return 401, got {unauth_feature_response.status_code}"
+            
+            self.log("✅ Admin-only endpoints properly require authentication")
+            
+            # Test with non-existent creator
+            self.set_auth_header()
+            fake_creator_id = str(uuid.uuid4())
+            
+            fake_verify_response = self.session.post(f"{BASE_URL}/creators/{fake_creator_id}/verify", json={"verified": True})
+            assert fake_verify_response.status_code == 404, f"Expected 404 for non-existent creator verify, got {fake_verify_response.status_code}"
+            
+            fake_feature_response = self.session.post(f"{BASE_URL}/creators/{fake_creator_id}/feature", json={"priority_level": "featured"})
+            assert fake_feature_response.status_code == 404, f"Expected 404 for non-existent creator feature, got {fake_feature_response.status_code}"
+            
+            self.log("✅ New endpoints return 404 for non-existent creators")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Extended creators new endpoints - FAILED: {e}")
+            return False
+
+    def test_extended_creators_seed_with_new_fields(self):
+        """Test extended seed data creates creators with all new fields populated"""
+        self.log("Testing EXTENDED creators seed - rich data with all new fields...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for extended seed test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First ensure we have channels for linking
+            channels_seed_response = self.session.post(f"{BASE_URL}/admin/seed-demo")
+            if channels_seed_response.status_code == 200:
+                self.log("✅ Ensured demo channels exist for extended seed test")
+            
+            # Test extended seed with count=10
+            extended_seed_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=10")
+            assert extended_seed_response.status_code == 200, f"Extended creators seed failed: {extended_seed_response.status_code} - {extended_seed_response.text}"
+            
+            seed_result = extended_seed_response.json()
+            assert seed_result["ok"] is True, "Extended seed response missing ok=true"
+            assert seed_result["created"] > 0, f"Expected > 0 creators created, got {seed_result['created']}"
+            
+            self.log(f"✅ POST /api/admin/creators/seed?count=10 - Created {seed_result['created']} extended creators")
+            
+            # Get the seeded creators and verify they have rich data
+            creators_response = self.session.get(f"{BASE_URL}/creators?limit=10&sort=created_at&order=desc")
+            assert creators_response.status_code == 200, "Failed to get seeded creators"
+            
+            creators_data = creators_response.json()
+            seeded_creators = creators_data["items"]
+            
+            assert len(seeded_creators) >= seed_result["created"], f"Expected at least {seed_result['created']} creators, found {len(seeded_creators)}"
+            
+            # Verify variety in the seeded data
+            priority_levels_found = set()
+            currencies_found = set()
+            countries_found = set()
+            creators_with_pricing = 0
+            creators_with_audience_stats = 0
+            creators_with_contacts = 0
+            creators_with_channels = 0
+            
+            for creator in seeded_creators[:seed_result["created"]]:  # Check only newly created ones
+                # Verify all new fields are present
+                assert "pricing" in creator, f"Seeded creator missing pricing: {creator['name']}"
+                assert "audience_stats" in creator, f"Seeded creator missing audience_stats: {creator['name']}"
+                assert "contacts" in creator, f"Seeded creator missing contacts: {creator['name']}"
+                assert "priority_level" in creator, f"Seeded creator missing priority_level: {creator['name']}"
+                
+                # Collect variety data
+                priority_levels_found.add(creator["priority_level"])
+                currencies_found.add(creator["pricing"]["currency"])
+                if creator.get("country"):
+                    countries_found.add(creator["country"])
+                
+                # Check if fields are populated (not just defaults)
+                pricing = creator["pricing"]
+                if pricing.get("min_price") and pricing.get("max_price"):
+                    creators_with_pricing += 1
+                    assert pricing["min_price"] <= pricing["max_price"], f"Invalid price range: {pricing['min_price']} > {pricing['max_price']}"
+                
+                audience = creator["audience_stats"]
+                if any(audience.get(field) for field in ["gender_male_percent", "gender_female_percent", "geo_russia_percent"]):
+                    creators_with_audience_stats += 1
+                    
+                    # Verify gender percentages add up reasonably (allowing for some variance)
+                    male_pct = audience.get("gender_male_percent", 0) or 0
+                    female_pct = audience.get("gender_female_percent", 0) or 0
+                    if male_pct > 0 and female_pct > 0:
+                        total_gender = male_pct + female_pct
+                        assert 90 <= total_gender <= 110, f"Gender percentages don't add up reasonably: {male_pct} + {female_pct} = {total_gender}"
+                
+                contacts = creator["contacts"]
+                if contacts.get("email") or contacts.get("tg_username") or contacts.get("other_links"):
+                    creators_with_contacts += 1
+                
+                # Check if creator has linked channels
+                metrics = creator.get("metrics", {})
+                if metrics.get("channels_count", 0) > 0:
+                    creators_with_channels += 1
+                    assert metrics.get("subscribers_total", 0) > 0, f"Creator with channels should have subscribers: {creator['name']}"
+                
+                self.log(f"✅ Creator '{creator['name']}': priority={creator['priority_level']}, "
+                        f"pricing={pricing.get('min_price', 0)}-{pricing.get('max_price', 0)} {pricing['currency']}, "
+                        f"channels={metrics.get('channels_count', 0)}, subs={metrics.get('subscribers_total', 0)}")
+            
+            # Verify variety in seeded data
+            assert len(priority_levels_found) >= 2, f"Expected variety in priority levels, found: {priority_levels_found}"
+            assert "RUB" in currencies_found, f"Expected RUB currency in seeded data, found: {currencies_found}"
+            assert creators_with_pricing > 0, f"Expected some creators with pricing data, found {creators_with_pricing}"
+            assert creators_with_audience_stats > 0, f"Expected some creators with audience stats, found {creators_with_audience_stats}"
+            assert creators_with_contacts > 0, f"Expected some creators with contact info, found {creators_with_contacts}"
+            
+            self.log(f"✅ Seeded data variety: {len(priority_levels_found)} priority levels, "
+                    f"{creators_with_pricing} with pricing, {creators_with_audience_stats} with audience stats, "
+                    f"{creators_with_contacts} with contacts, {creators_with_channels} with linked channels")
+            
+            # Test that metrics are computed correctly for creators with channels
+            if creators_with_channels > 0:
+                # Get a creator with channels and verify metrics
+                creator_with_channels = next(c for c in seeded_creators if c.get("metrics", {}).get("channels_count", 0) > 0)
+                creator_id = creator_with_channels["id"]
+                
+                # Get creator with channels included
+                detailed_response = self.session.get(f"{BASE_URL}/creators/{creator_id}?include=channels")
+                assert detailed_response.status_code == 200, "Failed to get creator with channels"
+                
+                detailed_creator = detailed_response.json()
+                assert "channels" in detailed_creator, "Creator with channels missing channels in response"
+                
+                channels = detailed_creator["channels"]
+                metrics = detailed_creator["metrics"]
+                
+                # Verify metrics match linked channels
+                assert len(channels) == metrics["channels_count"], f"Channel count mismatch: {len(channels)} != {metrics['channels_count']}"
+                
+                # Calculate expected total subscribers
+                expected_subs = sum(ch.get("subscribers", 0) for ch in channels if ch.get("link_status") != "dead")
+                if expected_subs == 0:  # Fallback if no link_status
+                    expected_subs = sum(ch.get("subscribers", 0) for ch in channels)
+                
+                assert metrics["subscribers_total"] == expected_subs, f"Subscribers total mismatch: {metrics['subscribers_total']} != {expected_subs}"
+                
+                self.log(f"✅ Creator '{detailed_creator['name']}' metrics correctly computed from {len(channels)} linked channels")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ Extended creators seed with new fields - FAILED: {e}")
+            return False
             
     def run_all_tests(self):
         """Run all backend tests"""
