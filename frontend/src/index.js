@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import TelegaClone from "./pages/TelegaClone";
 import Admin from "./components/Admin";
-import ChannelDetail from "./components/ChannelDetail";
+import ChannelCardPage from "./pages/ChannelCardPage";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
