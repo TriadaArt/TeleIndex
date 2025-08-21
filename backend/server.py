@@ -274,6 +274,7 @@ class LinkChannelsPayload(BaseModel):
 
 async def create_indexes():
     try:
+        # Existing indexes
         await db.users.create_index("email", unique=True)
         await db.channels.create_index("id", unique=True)
         await db.channels.create_index([("status", 1), ("subscribers", -1)])
@@ -287,6 +288,26 @@ async def create_indexes():
             name="channels_text_idx",
         )
         await db.categories.create_index("name", unique=True)
+        
+        # New creator indexes
+        await db.creators.create_index("id", unique=True)
+        await db.creators.create_index("slug", unique=True)
+        await db.creators.create_index(
+            [("name", "text"), ("tags", "text")],
+            default_language="ru",
+            language_override="textLang",
+            name="creators_text_idx",
+        )
+        await db.creators.create_index([("category", 1), ("language", 1)])
+        await db.creators.create_index([("metrics.subscribers_total", -1)])
+        await db.creators.create_index([("metrics.avg_er_percent", -1)])
+        await db.creators.create_index([("metrics.min_price_rub", 1)])
+        await db.creators.create_index([("created_at", -1)])
+        
+        # Creator-channel link indexes
+        await db.creator_channel_links.create_index("id", unique=True)
+        await db.creator_channel_links.create_index([("creator_id", 1), ("channel_id", 1)], unique=True)
+        await db.creator_channel_links.create_index("channel_id")
     except Exception:
         pass
 
