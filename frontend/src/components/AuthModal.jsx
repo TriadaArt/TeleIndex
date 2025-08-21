@@ -250,15 +250,22 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
         <div>
           <input
             type="email"
             name="email"
-            placeholder="Логин"
+            placeholder="Email"
             value={formData.email}
             onChange={handleInputChange}
             className="w-full h-14 px-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
             required
+            disabled={loading}
           />
         </div>
 
@@ -271,11 +278,13 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
             onChange={handleInputChange}
             className="w-full h-14 px-4 pr-12 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
             required
+            disabled={loading}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
             className="absolute inset-y-0 right-0 flex items-center px-4 text-gray-400 hover:text-gray-600"
+            disabled={loading}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {showPassword ? (
@@ -289,24 +298,27 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
 
         <button
           type="submit"
-          className="w-full h-14 bg-green-500 hover:bg-green-600 text-white font-medium rounded-2xl transition-colors duration-200 mt-8"
+          disabled={loading}
+          className="w-full h-14 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium rounded-2xl transition-colors duration-200 mt-8"
         >
-          Войти
+          {loading ? 'Вход...' : 'Войти'}
         </button>
 
         <div className="text-center mt-6 space-y-4">
           <button
             type="button"
-            onClick={() => setMode('register')}
+            onClick={() => { setMode('register'); setError(''); }}
             className="block w-full text-purple-600 hover:text-purple-700 font-medium"
+            disabled={loading}
           >
             Еще нет аккаунта? Зарегистрируйтесь
           </button>
           
           <button
             type="button"
-            onClick={() => setMode('forgot')}
+            onClick={() => { setMode('forgot'); setError(''); }}
             className="block w-full text-purple-600 hover:text-purple-700 font-medium"
+            disabled={loading}
           >
             Забыли пароль?
           </button>
