@@ -124,7 +124,7 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
-ChannelStatus = Literal["draft", "approved", "rejected"]
+ChannelStatus = Literal["draft", "moderation", "approved", "rejected"]
 
 class ChannelBase(BaseModel):
     name: str
