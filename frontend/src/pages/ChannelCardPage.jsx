@@ -34,7 +34,7 @@ export default function ChannelCardPage() {
       }
     })();
     return () => { mounted = false; };
-  }, [id]);
+  }, [username]);
 
   if (loading) {
     return (
