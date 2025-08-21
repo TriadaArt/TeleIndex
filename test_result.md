@@ -239,6 +239,40 @@ test_plan:
   current_focus: []
   stuck_tasks: []
   test_all: false
+
+frontend:
+  - task: "Header full-bleed responsive and auth buttons visible + caching fix"
+    implemented: true
+    working: true
+    file: "/app/frontend/src/pages/TelegaClone.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "user"
+        comment: "Header limited width and Login/Registration buttons missing; bundle.js request failed; caching suspected."
+      - working: true
+        agent: "main"
+        comment: "Implemented aggressive cache-busting in public/index.html (unregister service workers, clear caches). Added full-bleed header with responsive layout already present; ensured buttons render based on auth state and restyled with tg-btn utility classes for Telega-like appearance. Confirmed visibility via screenshot."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 4
+  run_ui: true
+
+test_plan:
+  current_focus:
+    - "Automated frontend validation for header/buttons/modals after caching fix"
+    - "Verify auth login/register with seeded users"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: "Restarted frontend and backend, implemented service-worker/caches purge, restyled header buttons, and seeded test users (admin@test.com/Admin123, user1@test.com/Test1234) at backend startup. Ready to run automated frontend tests and backend auth checks."
   test_priority: "high_first"
 
 
