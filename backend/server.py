@@ -1583,7 +1583,10 @@ async def seed_creators(
     owner_id = user.get("id") if isinstance(user, dict) else None
     
     # Get existing approved channels to link to creators
-    channels = await db.channels.find({"status": "approved"}).to_list(length=100)
+    # Prefer channels owned by this admin if available
+    channels = await db.channels.find({"status": "approved", "owner_id": owner_id}).to_list(length=100)
+    if not channels:
+        channels = await db.channels.find({"status": "approved"}).to_list(length=100)
     if not channels:
         raise HTTPException(400, detail="No approved channels found. Run channel seed first.")
     
