@@ -45,10 +45,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           password: formData.password
         });
         localStorage.setItem("token", data.access_token);
-        onSuccess && onSuccess();
+        onSuccess && onSuccess({ name: formData.email.split('@')[0] || "Пользователь" });
       } else if (mode === 'register') {
-        // For now, redirect to first admin registration if available
-        // In a real app, you'd implement public user registration
+        // Register new user
         const { data } = await axios.post(`${API}/auth/register`, {
           email: formData.email,
           password: formData.password,
@@ -61,7 +60,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           password: formData.password
         });
         localStorage.setItem("token", loginResponse.data.access_token);
-        onSuccess && onSuccess();
+        onSuccess && onSuccess({ 
+          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.email.split('@')[0] || "Пользователь"
+        });
       } else if (mode === 'forgot') {
         // Password reset - placeholder for now
         setError('Функция восстановления пароля пока не реализована');
