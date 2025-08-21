@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import FilterSidebar from "../components/telega/FilterSidebar";
 import CatalogGrid from "../components/telega/CatalogGrid";
 import Pagination from "../components/telega/Pagination";
@@ -35,6 +36,7 @@ function applyFilters(list, { q, ranges, flags, sort, selects }){
 }
 
 export default function TelegaClone(){
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [ranges, setRanges] = useState({});
   const [flags, setFlags] = useState({ featured: false, alive: false });
@@ -61,10 +63,18 @@ export default function TelegaClone(){
     checkAuthStatus();
   }, []);
 
-  const checkAuthStatus = () => {
+  const checkAuthStatus = async () => {
     const token = localStorage.getItem("token");
     if (token) {
-      setUser({ name: "Пользователь" });
+      try {
+        const response = await axios.get(`${API}/auth/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setUser(response.data);
+      } catch (error) {
+        console.error('Token verification failed:', error);
+        localStorage.removeItem("token");
+      }
     }
   };
 
@@ -123,6 +133,10 @@ export default function TelegaClone(){
     setAuthModalOpen(true);
   };
 
+  const goToAdmin = () => {
+    navigate('/admin');
+  };
+
   return (
     <div className="min-h-screen">
       <HeroAnimated />
@@ -149,6 +163,12 @@ export default function TelegaClone(){
               <span className="text-sm text-gray-600">
                 Добро пожаловать, {user.email || user.name}!
               </span>
+              <button 
+                className="text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg transition-colors" 
+                onClick={goToAdmin}
+              >
+                Админ
+              </button>
               <button 
                 className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors" 
                 onClick={handleLogout}
