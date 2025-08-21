@@ -216,8 +216,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Backend filter params: min/max subscribers, price, ER + featured/alive toggles"
-    - "Frontend: migrate to BrowserRouter /c/:id and add sidebar filters"
+    - "NEW Creators API: Full CRUD endpoints /api/creators with complex filtering, metrics aggregation, and admin management"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
