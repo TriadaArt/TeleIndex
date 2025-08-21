@@ -1510,39 +1510,83 @@ async def seed_creators(
     demo_creators = [
         {
             "name": "Кира Петровна",
-            "bio": "Ведущий маркетолог и создатель популярных каналов о бизнесе и технологиях",
+            "bio": "Ведущий маркетолог и создатель популярных каналов о бизнесе и технологиях. Специализируется на growth-стратегиях для стартапов.",
             "category": "Бизнес",
-            "tags": ["маркетинг", "реклама", "бизнес"],
+            "tags": ["маркетинг", "реклама", "бизнес", "стартапы", "growth"],
             "country": "RU",
             "language": "ru",
             "avatar_url": "https://images.unsplash.com/photo-1494790108755-2616b332969c?w=200&h=200&fit=crop&crop=face",
             "external": {
+                "website": "https://kira-marketing.ru",
                 "telegram_username": "kira_blog",
                 "telegram_url": "https://t.me/kira_blog",
-                "website": "https://kira-marketing.ru"
+                "instagram": "https://instagram.com/kira_marketing"
             },
+            "pricing": {
+                "min_price": 15000,
+                "max_price": 45000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 35.0,
+                "gender_female_percent": 65.0,
+                "geo_russia_percent": 75.0,
+                "geo_ukraine_percent": 15.0,
+                "geo_belarus_percent": 10.0,
+                "age_25_34_percent": 45.0,
+                "age_35_44_percent": 35.0,
+                "age_18_24_percent": 20.0
+            },
+            "contacts": {
+                "email": "kira@marketing.ru",
+                "tg_username": "kira_blog",
+                "other_links": ["https://linkedin.com/in/kira-marketing"]
+            },
+            "priority_level": "premium",
             "flags": {"featured": True, "verified": True}
         },
         {
             "name": "Алексей Техносвет",
-            "bio": "IT-эксперт, основатель технологических каналов и стартапер",
+            "bio": "IT-эксперт, основатель технологических каналов и стартапер. Рассказывает про новые технологии, разработку и инвестиции в IT.",
             "category": "Технологии",
-            "tags": ["технологии", "стартапы", "it"],
+            "tags": ["технологии", "стартапы", "it", "разработка", "инвестиции"],
             "country": "RU",
             "language": "ru",
             "avatar_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
             "external": {
                 "telegram_username": "alex_tech",
                 "telegram_url": "https://t.me/alex_tech",
-                "youtube": "https://youtube.com/@alextech"
+                "youtube": "https://youtube.com/@alextech",
+                "website": "https://technosvet.ru"
             },
+            "pricing": {
+                "min_price": 20000,
+                "max_price": 60000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 85.0,
+                "gender_female_percent": 15.0,
+                "geo_russia_percent": 60.0,
+                "geo_ukraine_percent": 25.0,
+                "geo_belarus_percent": 15.0,
+                "age_18_24_percent": 30.0,
+                "age_25_34_percent": 50.0,
+                "age_35_44_percent": 20.0
+            },
+            "contacts": {
+                "email": "alex@technosvet.ru",
+                "tg_username": "alex_tech",
+                "other_links": ["https://github.com/alex-tech", "https://habr.com/ru/users/alex-tech/"]
+            },
+            "priority_level": "featured",
             "flags": {"featured": True, "verified": False}
         },
         {
             "name": "Мария Финанс",
-            "bio": "Финансовый аналитик и автор образовательных материалов по инвестициям",
+            "bio": "Финансовый аналитик и автор образовательных материалов по инвестициям. Помогает разобраться в акциях, облигациях и ETF.",
             "category": "Финансы",
-            "tags": ["финансы", "инвестиции", "аналитика"],
+            "tags": ["финансы", "инвестиции", "аналитика", "акции", "облигации"],
             "country": "RU",
             "language": "ru",
             "avatar_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
@@ -1551,28 +1595,70 @@ async def seed_creators(
                 "telegram_url": "https://t.me/maria_finance",
                 "website": "https://maria-finance.com"
             },
+            "pricing": {
+                "min_price": 12000,
+                "max_price": 35000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 55.0,
+                "gender_female_percent": 45.0,
+                "geo_russia_percent": 80.0,
+                "geo_ukraine_percent": 10.0,
+                "geo_belarus_percent": 10.0,
+                "age_25_34_percent": 40.0,
+                "age_35_44_percent": 35.0,
+                "age_45_plus_percent": 25.0
+            },
+            "contacts": {
+                "email": "maria@finance.com",
+                "tg_username": "maria_finance",
+                "other_links": ["https://smart-lab.ru/maria-finance"]
+            },
+            "priority_level": "normal",
             "flags": {"featured": False, "verified": True}
         },
         {
             "name": "Денис Медиа",
-            "bio": "Медиа-продюсер и создатель развлекательного контента",
+            "bio": "Медиа-продюсер и создатель развлекательного контента. Развивает несколько популярных каналов с миллионной аудиторией.",
             "category": "Развлечения",
-            "tags": ["медиа", "развлечения", "контент"],
+            "tags": ["медиа", "развлечения", "контент", "продакшн", "тв"],
             "country": "RU",
             "language": "ru",
             "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
             "external": {
                 "telegram_username": "denis_media",
                 "telegram_url": "https://t.me/denis_media",
-                "instagram": "https://instagram.com/denis_media"
+                "instagram": "https://instagram.com/denis_media",
+                "youtube": "https://youtube.com/@denismedia"
             },
+            "pricing": {
+                "min_price": 8000,
+                "max_price": 25000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 48.0,
+                "gender_female_percent": 52.0,
+                "geo_russia_percent": 70.0,
+                "geo_ukraine_percent": 20.0,
+                "geo_belarus_percent": 10.0,
+                "age_18_24_percent": 35.0,
+                "age_25_34_percent": 40.0,
+                "age_35_44_percent": 25.0
+            },
+            "contacts": {
+                "email": "denis@media-pro.ru",
+                "tg_username": "denis_media"
+            },
+            "priority_level": "normal",
             "flags": {"featured": False, "verified": False}
         },
         {
             "name": "Анна Новости",
-            "bio": "Журналист и редактор новостных каналов, эксперт по информационной политике",
+            "bio": "Журналист и редактор новостных каналов, эксперт по информационной политике. 15 лет опыта в крупных медиа.",
             "category": "Новости",
-            "tags": ["новости", "журналистика", "политика"],
+            "tags": ["новости", "журналистика", "политика", "медиа", "аналитика"],
             "country": "RU",
             "language": "ru",
             "avatar_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face",
@@ -1581,20 +1667,236 @@ async def seed_creators(
                 "telegram_url": "https://t.me/anna_news",
                 "website": "https://anna-news.ru"
             },
+            "pricing": {
+                "min_price": 25000,
+                "max_price": 70000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 60.0,
+                "gender_female_percent": 40.0,
+                "geo_russia_percent": 85.0,
+                "geo_ukraine_percent": 8.0,
+                "geo_belarus_percent": 7.0,
+                "age_25_34_percent": 35.0,
+                "age_35_44_percent": 40.0,
+                "age_45_plus_percent": 25.0
+            },
+            "contacts": {
+                "email": "anna@news.ru",
+                "tg_username": "anna_news",
+                "other_links": ["https://facebook.com/anna.news"]
+            },
+            "priority_level": "premium",
             "flags": {"featured": True, "verified": True}
+        },
+        {
+            "name": "Игорь Крипто",
+            "bio": "Трейдер и аналитик криптовалютных рынков. Делится торговыми сигналами и разборами проектов DeFi.",
+            "category": "Крипто",
+            "tags": ["криптовалюты", "трейдинг", "defi", "bitcoin", "ethereum"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "igor_crypto",
+                "telegram_url": "https://t.me/igor_crypto",
+                "website": "https://crypto-signals.pro"
+            },
+            "pricing": {
+                "min_price": 10000,
+                "max_price": 40000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 90.0,
+                "gender_female_percent": 10.0,
+                "geo_russia_percent": 50.0,
+                "geo_ukraine_percent": 30.0,
+                "geo_belarus_percent": 20.0,
+                "age_18_24_percent": 40.0,
+                "age_25_34_percent": 45.0,
+                "age_35_44_percent": 15.0
+            },
+            "contacts": {
+                "email": "igor@crypto-signals.pro",
+                "tg_username": "igor_crypto"
+            },
+            "priority_level": "featured",
+            "flags": {"featured": True, "verified": True}
+        },
+        {
+            "name": "Елена Здоровье",
+            "bio": "Врач-диетолог и специалист по здоровому образу жизни. Ведет каналы о правильном питании и фитнесе.",
+            "category": "Здоровье",
+            "tags": ["здоровье", "диетология", "фитнес", "питание", "ЗОЖ"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "elena_health",
+                "telegram_url": "https://t.me/elena_health",
+                "instagram": "https://instagram.com/elena.health"
+            },
+            "pricing": {
+                "min_price": 5000,
+                "max_price": 18000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 25.0,
+                "gender_female_percent": 75.0,
+                "geo_russia_percent": 70.0,
+                "geo_ukraine_percent": 20.0,
+                "geo_belarus_percent": 10.0,
+                "age_25_34_percent": 50.0,
+                "age_35_44_percent": 30.0,
+                "age_18_24_percent": 20.0
+            },
+            "contacts": {
+                "email": "elena@health.ru",
+                "tg_username": "elena_health"
+            },
+            "priority_level": "normal",
+            "flags": {"featured": False, "verified": True}
+        },
+        {
+            "name": "Максим Путешествия",
+            "bio": "Тревел-блогер и фотограф. Путешествует по миру и показывает самые красивые места России и зарубежья.",
+            "category": "Путешествия",
+            "tags": ["путешествия", "фотография", "туризм", "тревел", "блог"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "maxim_travel",
+                "telegram_url": "https://t.me/maxim_travel",
+                "instagram": "https://instagram.com/maxim.travel",
+                "youtube": "https://youtube.com/@maximtravel"
+            },
+            "pricing": {
+                "min_price": 7000,
+                "max_price": 22000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 45.0,
+                "gender_female_percent": 55.0,
+                "geo_russia_percent": 65.0,
+                "geo_ukraine_percent": 25.0,
+                "geo_belarus_percent": 10.0,
+                "age_18_24_percent": 30.0,
+                "age_25_34_percent": 45.0,
+                "age_35_44_percent": 25.0
+            },
+            "contacts": {
+                "email": "maxim@travel-blog.ru",
+                "tg_username": "maxim_travel"
+            },
+            "priority_level": "normal",
+            "flags": {"featured": False, "verified": False}
+        },
+        {
+            "name": "Ольга Мода",
+            "bio": "Стилист и fashion-эксперт. Помогает подобрать стиль, следит за трендами и делится секретами красоты.",
+            "category": "Мода",
+            "tags": ["мода", "стиль", "красота", "тренды", "fashion"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "olga_fashion",
+                "telegram_url": "https://t.me/olga_fashion",
+                "instagram": "https://instagram.com/olga.fashion"
+            },
+            "pricing": {
+                "min_price": 6000,
+                "max_price": 20000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 10.0,
+                "gender_female_percent": 90.0,
+                "geo_russia_percent": 75.0,
+                "geo_ukraine_percent": 15.0,
+                "geo_belarus_percent": 10.0,
+                "age_18_24_percent": 40.0,
+                "age_25_34_percent": 35.0,
+                "age_35_44_percent": 25.0
+            },
+            "contacts": {
+                "email": "olga@fashion.ru",
+                "tg_username": "olga_fashion"
+            },
+            "priority_level": "normal",
+            "flags": {"featured": False, "verified": True}
+        },
+        {
+            "name": "Виктор Спорт",
+            "bio": "Тренер и спортивный комментатор. Рассказывает о футболе, хоккее и других видах спорта. Делает прогнозы на матчи.",
+            "category": "Спорт",
+            "tags": ["спорт", "футбол", "хоккей", "прогнозы", "ставки"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "viktor_sport",
+                "telegram_url": "https://t.me/viktor_sport"
+            },
+            "pricing": {
+                "min_price": 8000,
+                "max_price": 30000,
+                "currency": "RUB"
+            },
+            "audience_stats": {
+                "gender_male_percent": 85.0,
+                "gender_female_percent": 15.0,
+                "geo_russia_percent": 80.0,
+                "geo_ukraine_percent": 15.0,
+                "geo_belarus_percent": 5.0,
+                "age_18_24_percent": 25.0,
+                "age_25_34_percent": 35.0,
+                "age_35_44_percent": 40.0
+            },
+            "contacts": {
+                "email": "viktor@sport.ru",
+                "tg_username": "viktor_sport"
+            },
+            "priority_level": "featured",
+            "flags": {"featured": True, "verified": False}
         }
     ]
     
     # Extend for 100 creators if needed
     if count == 100:
         base_creators = demo_creators.copy()
-        for i in range(5, 100):
+        for i in range(len(demo_creators), 100):
             base_idx = i % len(base_creators)
             base_creator = base_creators[base_idx].copy()
-            base_creator["name"] = f"{base_creator['name']} {i-4}"
-            base_creator["bio"] = f"{base_creator['bio']} (вариант {i-4})"
-            base_creator["flags"]["featured"] = i < 20  # First 20 featured
-            base_creator["flags"]["verified"] = i < 50  # First 50 verified
+            base_creator["name"] = f"{base_creator['name']} {i-len(base_creators)+1}"
+            base_creator["bio"] = f"{base_creator['bio']} (вариант {i-len(base_creators)+1})"
+            
+            # Vary priority levels
+            if i < 20:
+                base_creator["priority_level"] = "premium"
+                base_creator["flags"]["featured"] = True
+                base_creator["flags"]["verified"] = True
+            elif i < 50:
+                base_creator["priority_level"] = "featured"
+                base_creator["flags"]["featured"] = True
+                base_creator["flags"]["verified"] = i < 30
+            else:
+                base_creator["priority_level"] = "normal"
+                base_creator["flags"]["featured"] = False
+                base_creator["flags"]["verified"] = i < 70
+            
+            # Vary pricing
+            import random
+            base_price = base_creator["pricing"]["min_price"]
+            variation = random.randint(-20, 30) / 100.0
+            base_creator["pricing"]["min_price"] = int(base_price * (1 + variation))
+            base_creator["pricing"]["max_price"] = int(base_creator["pricing"]["max_price"] * (1 + variation))
+            
             demo_creators.append(base_creator)
     
     # Create creators and link to channels
