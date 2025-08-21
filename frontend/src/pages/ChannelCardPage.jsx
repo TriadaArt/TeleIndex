@@ -20,8 +20,8 @@ export default function ChannelCardPage() {
       try {
         setLoading(true);
         const [chRes, ownRes] = await Promise.all([
-          axios.get(`${API}/channels/${id}`),
-          axios.get(`${API}/channels/${id}/owners`).catch(() => ({ data: { items: [] }})),
+          axios.get(`${API}/channels/${username}`),
+          axios.get(`${API}/channels/${username}/owners`).catch(() => ({ data: { items: [] }})),
         ]);
         if (!mounted) return;
         setChannel(chRes.data?.channel || chRes.data);
