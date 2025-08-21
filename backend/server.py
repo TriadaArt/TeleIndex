@@ -1291,6 +1291,15 @@ async def update_creator(
     # Ensure metrics exists
     if "metrics" not in creator_data:
         creator_data["metrics"] = CreatorMetrics().dict()
+    # Ensure all new fields have defaults
+    if "pricing" not in creator_data:
+        creator_data["pricing"] = CreatorPricing().dict()
+    if "audience_stats" not in creator_data:
+        creator_data["audience_stats"] = CreatorAudienceStats().dict()
+    if "contacts" not in creator_data:
+        creator_data["contacts"] = CreatorContacts().dict()
+    if "priority_level" not in creator_data:
+        creator_data["priority_level"] = "normal"
     
     return CreatorResponse(**creator_data)
 
