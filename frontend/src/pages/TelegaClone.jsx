@@ -194,13 +194,13 @@ export default function TelegaClone(){
           ) : (
             <div className="flex items-center gap-3">
               <button 
-                className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 text-sm font-medium transition-all duration-200 rounded-lg border border-gray-200" 
+                className="tg-btn-outline" 
                 onClick={openLoginModal}
               >
                 Войти
               </button>
               <button 
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md" 
+                className="tg-btn-green" 
                 onClick={openRegisterModal}
               >
                 Регистрация
