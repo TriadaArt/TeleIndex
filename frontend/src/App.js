@@ -565,7 +565,7 @@ const Admin = ({ onLogout, onOpenDetail }) => {
                   <label className="flex items-center gap-2">Избранный <input type="checkbox" defaultChecked={d.is_featured} onChange={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { is_featured: e.target.checked }); }} /></label>
                   <label>ER %<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.er || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { er: Number(e.target.value || 0) }); }} /></label>
                   <label>Цена ₽<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.price_rub || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { price_rub: Number(e.target.value || 0) }); }} /></label>
-                  <label>CPM ₽<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.cpm_rub || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { cpm_rub: Number(e.target.value || 0) }); }} /></label>
+                  <label>CPM ₽<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.cpm_rub || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { cmp_rub: Number(e.target.value || 0) }); }} /></label>
                   <label>Рост 30д %<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.growth_30d || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { growth_30d: Number(e.target.value || 0) }); }} /></label>
                   <label>Язык<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.language || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { language: e.target.value }); }} /></label>
                   <label>Страна<input className="w-full h-9 rounded-xl border px-2" defaultValue={d.country || ""} onBlur={async (e) => { await axios.patch(`${API}/admin/channels/${d.id}`, { country: e.target.value }); }} /></label>
@@ -578,6 +578,228 @@ const Admin = ({ onLogout, onOpenDetail }) => {
               </div>
             ))}
             {approved.length === 0 && <div className="text-sm text-gray-600">Опубликованных каналов нет</div>}
+          </div>
+        )}
+
+        {tab === "creators" && (
+          <div className="space-y-4">
+            {/* Creators Management Header */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Создатели ({creators.length})</h3>
+              <div className="flex items-center gap-2">
+                <button className="btn" onClick={seedCreators}>Заполнить демо создателей</button>
+                <button className="btn-primary" onClick={() => {
+                  setEditingCreator(null);
+                  setCreatorForm({
+                    name: "", bio: "", category: "", tags: "", country: "RU", 
+                    language: "ru", avatar_url: "", priority_level: "normal",
+                    "pricing.min_price": "", "pricing.max_price": "", "pricing.currency": "RUB",
+                    "contacts.email": "", "contacts.tg_username": "", "contacts.other_links": ""
+                  });
+                }}>Добавить создателя</button>
+              </div>
+            </div>
+
+            {/* Creator Form */}
+            {(editingCreator || creatorForm.name) && (
+              <form onSubmit={saveCreator} className="card card-pad space-y-4">
+                <h4 className="font-semibold">{editingCreator ? 'Редактировать создателя' : 'Новый создатель'}</h4>
+                
+                {/* Basic Info */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Имя *" 
+                    value={creatorForm.name} 
+                    onChange={(e) => setCreatorForm({...creatorForm, name: e.target.value})} 
+                    required 
+                  />
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Категория" 
+                    value={creatorForm.category} 
+                    onChange={(e) => setCreatorForm({...creatorForm, category: e.target.value})} 
+                  />
+                  <select 
+                    className="h-11 rounded-xl border px-4" 
+                    value={creatorForm.priority_level} 
+                    onChange={(e) => setCreatorForm({...creatorForm, priority_level: e.target.value})}
+                  >
+                    <option value="normal">Normal</option>
+                    <option value="featured">Featured</option>
+                    <option value="premium">Premium</option>
+                  </select>
+                </div>
+                
+                <textarea 
+                  className="w-full h-24 rounded-xl border px-4 py-2" 
+                  placeholder="Описание создателя" 
+                  value={creatorForm.bio} 
+                  onChange={(e) => setCreatorForm({...creatorForm, bio: e.target.value})} 
+                />
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Теги (через запятую)" 
+                    value={creatorForm.tags} 
+                    onChange={(e) => setCreatorForm({...creatorForm, tags: e.target.value})} 
+                  />
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Страна (RU, UA, BY)" 
+                    value={creatorForm.country} 
+                    onChange={(e) => setCreatorForm({...creatorForm, country: e.target.value})} 
+                  />
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Язык (ru, en)" 
+                    value={creatorForm.language} 
+                    onChange={(e) => setCreatorForm({...creatorForm, language: e.target.value})} 
+                  />
+                </div>
+                
+                <input 
+                  className="w-full h-11 rounded-xl border px-4" 
+                  placeholder="URL аватара" 
+                  value={creatorForm.avatar_url} 
+                  onChange={(e) => setCreatorForm({...creatorForm, avatar_url: e.target.value})} 
+                />
+                
+                {/* Pricing */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Мин. цена ₽" 
+                    type="number" 
+                    value={creatorForm["pricing.min_price"]} 
+                    onChange={(e) => setCreatorForm({...creatorForm, "pricing.min_price": e.target.value})} 
+                  />
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Макс. цена ₽" 
+                    type="number" 
+                    value={creatorForm["pricing.max_price"]} 
+                    onChange={(e) => setCreatorForm({...creatorForm, "pricing.max_price": e.target.value})} 
+                  />
+                  <select 
+                    className="h-11 rounded-xl border px-4" 
+                    value={creatorForm["pricing.currency"]} 
+                    onChange={(e) => setCreatorForm({...creatorForm, "pricing.currency": e.target.value})}
+                  >
+                    <option value="RUB">RUB</option>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                  </select>
+                </div>
+                
+                {/* Contacts */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Email" 
+                    type="email" 
+                    value={creatorForm["contacts.email"]} 
+                    onChange={(e) => setCreatorForm({...creatorForm, "contacts.email": e.target.value})} 
+                  />
+                  <input 
+                    className="h-11 rounded-xl border px-4" 
+                    placeholder="Telegram username" 
+                    value={creatorForm["contacts.tg_username"]} 
+                    onChange={(e) => setCreatorForm({...creatorForm, "contacts.tg_username": e.target.value})} 
+                  />
+                </div>
+                
+                <textarea 
+                  className="w-full h-20 rounded-xl border px-4 py-2" 
+                  placeholder="Другие ссылки (по одной на строку)" 
+                  value={creatorForm["contacts.other_links"]} 
+                  onChange={(e) => setCreatorForm({...creatorForm, "contacts.other_links": e.target.value})} 
+                />
+                
+                <div className="flex items-center gap-2">
+                  <button type="submit" className="btn-primary">
+                    {editingCreator ? 'Обновить' : 'Создать'}
+                  </button>
+                  {editingCreator && (
+                    <button type="button" className="btn" onClick={() => setEditingCreator(null)}>
+                      Отмена
+                    </button>
+                  )}
+                </div>
+              </form>
+            )}
+
+            {/* Creators List */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {creators.map((creator) => (
+                <div key={creator.id} className="card card-pad">
+                  <div className="flex items-start gap-3">
+                    {creator.avatar_url ? (
+                      <img src={creator.avatar_url} alt={creator.name} className="h-16 w-16 rounded-xl object-cover border" />
+                    ) : (
+                      <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                        {(creator.name || '?').slice(0, 2).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold truncate">{creator.name}</h4>
+                        {creator.flags?.verified && <span className="badge badge-green">✓</span>}
+                        {creator.priority_level === "premium" && <span className="badge badge-yellow">Premium</span>}
+                        {creator.priority_level === "featured" && <span className="badge badge-blue">Featured</span>}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">{creator.category} • {creator.language}</div>
+                      {creator.bio && <p className="text-sm text-gray-600 mt-2 line-clamp-2">{creator.bio}</p>}
+                    </div>
+                  </div>
+                  
+                  {/* Metrics */}
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div>👥 {ruShort(creator.metrics?.subscribers_total || 0)}</div>
+                    <div>📢 {creator.metrics?.channels_count || 0} каналов</div>
+                    {creator.pricing?.min_price && (
+                      <div>💰 {ruShort(creator.pricing.min_price)}-{ruShort(creator.pricing.max_price)} ₽</div>
+                    )}
+                    {creator.metrics?.avg_er_percent && (
+                      <div>📊 ER {creator.metrics.avg_er_percent}%</div>
+                    )}
+                  </div>
+                  
+                  {/* Tags */}
+                  {creator.tags && creator.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {creator.tags.slice(0, 3).map((tag, idx) => (
+                        <span key={idx} className="px-2 py-1 bg-gray-100 text-xs rounded-lg">{tag}</span>
+                      ))}
+                      {creator.tags.length > 3 && <span className="text-xs text-gray-500">+{creator.tags.length - 3}</span>}
+                    </div>
+                  )}
+                  
+                  {/* Actions */}
+                  <div className="mt-3 flex items-center gap-2 text-xs">
+                    <button className="btn" onClick={() => editCreator(creator)}>Изменить</button>
+                    <button 
+                      className={creator.flags?.verified ? "btn" : "btn-primary"} 
+                      onClick={() => verifyCreator(creator.id, !creator.flags?.verified)}
+                    >
+                      {creator.flags?.verified ? 'Убрать галочку' : 'Верифицировать'}
+                    </button>
+                    <select 
+                      className="h-8 rounded border px-2 text-xs" 
+                      value={creator.priority_level} 
+                      onChange={(e) => featureCreator(creator.id, e.target.value)}
+                    >
+                      <option value="normal">Normal</option>
+                      <option value="featured">Featured</option>
+                      <option value="premium">Premium</option>
+                    </select>
+                    <button className="btn text-red-600" onClick={() => deleteCreator(creator.id)}>Удалить</button>
+                  </div>
+                </div>
+              ))}
+              {creators.length === 0 && <div className="text-sm text-gray-600 col-span-full">Создателей нет</div>}
+            </div>
           </div>
         )}
       </div>
