@@ -91,7 +91,6 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
     >
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Регистрация</h2>
-        <p className="text-gray-600 text-lg mb-6">Создайте аккаунт администратора</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -100,6 +99,32 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
             <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
+
+        <div>
+          <input
+            type="text"
+            name="firstName"
+            placeholder="Имя"
+            value={formData.firstName}
+            onChange={handleInputChange}
+            className="w-full h-14 px-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <input
+            type="text"
+            name="lastName"
+            placeholder="Фамилия"
+            value={formData.lastName}
+            onChange={handleInputChange}
+            className="w-full h-14 px-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
+            required
+            disabled={loading}
+          />
+        </div>
 
         <div>
           <input
@@ -142,42 +167,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           </button>
         </div>
 
-        <div className="mt-6 text-left text-sm text-gray-600">
-          <label className="flex items-start gap-3 mb-3">
-            <input
-              type="checkbox"
-              name="agreeToTerms"
-              checked={formData.agreeToTerms}
-              onChange={handleInputChange}
-              className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-              required
-              disabled={loading}
-            />
-            <span>
-              Я согласен с условиями{' '}
-              <a href="#" className="text-purple-600 underline">Пользовательского соглашения</a>
-            </span>
-          </label>
-
-          <label className="flex items-start gap-3">
-            <input
-              type="checkbox"
-              name="agreeToProcessing"
-              checked={formData.agreeToProcessing}
-              onChange={handleInputChange}
-              className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-              required
-              disabled={loading}
-            />
-            <span>
-              Я даю согласие на обработку персональных данных
-            </span>
-          </label>
-        </div>
-
         <button
           type="submit"
-          disabled={loading || !formData.agreeToTerms || !formData.agreeToProcessing}
+          disabled={loading}
           className="w-full h-14 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium rounded-2xl transition-colors duration-200 mt-8"
         >
           {loading ? 'Регистрация...' : 'Зарегистрироваться'}
