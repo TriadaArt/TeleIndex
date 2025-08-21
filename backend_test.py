@@ -2198,6 +2198,15 @@ class BackendTester:
             ("Update Channel", self.test_update_channel),
             ("Top Channels", self.test_top_channels),
             ("CORS & JSON", self.test_cors_and_json_format),
+            # NEW CREATORS API TESTS
+            ("Creators List Endpoint", self.test_creators_list_endpoint),
+            ("Creators Get by ID/Slug", self.test_creators_get_by_id_or_slug),
+            ("Creators Create Endpoint", self.test_creators_create_endpoint),
+            ("Creators Update Endpoint", self.test_creators_update_endpoint),
+            ("Creators Delete Endpoint", self.test_creators_delete_endpoint),
+            ("Creators Link Channels", self.test_creators_link_channels_endpoint),
+            ("Creators Unlink Channel", self.test_creators_unlink_channel_endpoint),
+            ("Creators Seed Endpoint", self.test_creators_seed_endpoint),
         ]
         
         for test_name, test_method in test_methods:
