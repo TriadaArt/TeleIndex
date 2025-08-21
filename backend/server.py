@@ -727,6 +727,17 @@ async def update_channel(channel_id: str, payload: ChannelUpdate):
 
 # -------------------- Admin --------------------
 
+@api.get("/admin/users")
+async def admin_list_users(user: Dict[str, Any] = Depends(get_current_admin)):
+    cursor = db.users.find({}).sort("created_at", -1)
+    items = await cursor.to_list(length=200)
+    out = []
+    for u in items:
+        d = parse_from_mongo(u)
+        out.append({"id": d.get("id"), "email": d.get("email"), "role": d.get("role"), "created_at": d.get("created_at")})
+    return {"items": out}
+
+
 @api.get("/admin/summary")
 async def admin_summary(user: Dict[str, Any] = Depends(get_current_admin)):
     draft = await db.channels.count_documents({"status": "draft"})
