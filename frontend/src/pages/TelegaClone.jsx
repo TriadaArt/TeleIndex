@@ -160,9 +160,14 @@ export default function TelegaClone(){
         </div>
         
         <div className="flex items-center gap-4">
+          {/* Debug info */}
+          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+            User: {user ? 'logged' : 'guest'}
+          </span>
+          
           {user ? (
             <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600 font-medium">
+              <span className="text-sm text-gray-700 font-medium">
                 Добро пожаловать, {user.email || user.name}!
               </span>
               <button 
@@ -181,13 +186,13 @@ export default function TelegaClone(){
           ) : (
             <div className="flex items-center gap-3">
               <button 
-                className="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 rounded-lg" 
+                className="px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-50 text-sm font-medium transition-all duration-200 rounded-lg border border-gray-200" 
                 onClick={openLoginModal}
               >
                 Войти
               </button>
               <button 
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105" 
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md" 
                 onClick={openRegisterModal}
               >
                 Регистрация
