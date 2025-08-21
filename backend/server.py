@@ -1049,7 +1049,9 @@ async def list_creators(
     has_price: Optional[bool] = Query(None, description="Filter creators with price"),
     featured: Optional[bool] = Query(None, description="Filter featured creators"),
     verified: Optional[bool] = Query(None, description="Filter verified creators"),
+    priority_level: Optional[PriorityLevel] = Query(None, description="Filter by priority level"),
     last_post_days_max: Optional[int] = Query(None, description="Maximum days since last post"),
+    tags: Optional[List[str]] = Query(None, description="Filter by tags"),
     sort: str = Query("subscribers", description="Sort field: name|created_at|subscribers|price|er|cpm|last_post"),
     order: str = Query("desc", description="Sort order: asc|desc"),
     page: int = Query(1, ge=1, description="Page number"),
@@ -1098,10 +1100,14 @@ async def list_creators(
         query["flags.featured"] = featured
     if verified is not None:
         query["flags.verified"] = verified
+    if priority_level is not None:
+        query["priority_level"] = priority_level
     if last_post_days_max is not None:
         from datetime import datetime, timezone, timedelta
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=last_post_days_max)
         query["metrics.last_post_at_min"] = {"$gte": cutoff_date.isoformat()}
+    if tags:
+        query["tags"] = {"$in": tags}
     
     # Build sort
     sort_field_map = {
@@ -1131,6 +1137,15 @@ async def list_creators(
         # Ensure metrics exists
         if "metrics" not in creator_data:
             creator_data["metrics"] = CreatorMetrics().dict()
+        # Ensure all new fields have defaults
+        if "pricing" not in creator_data:
+            creator_data["pricing"] = CreatorPricing().dict()
+        if "audience_stats" not in creator_data:
+            creator_data["audience_stats"] = CreatorAudienceStats().dict()
+        if "contacts" not in creator_data:
+            creator_data["contacts"] = CreatorContacts().dict()
+        if "priority_level" not in creator_data:
+            creator_data["priority_level"] = "normal"
         creators.append(CreatorResponse(**creator_data))
     
     return PaginatedCreators(
