@@ -2807,6 +2807,11 @@ class BackendTester:
             ("Creators Link Channels", self.test_creators_link_channels_endpoint),
             ("Creators Unlink Channel", self.test_creators_unlink_channel_endpoint),
             ("Creators Seed Endpoint", self.test_creators_seed_endpoint),
+            # EXTENDED CREATORS API TESTS
+            ("EXTENDED: New Data Fields", self.test_extended_creators_new_data_fields),
+            ("EXTENDED: New Filtering Options", self.test_extended_creators_new_filtering_options),
+            ("EXTENDED: New Endpoints", self.test_extended_creators_new_endpoints),
+            ("EXTENDED: Seed with New Fields", self.test_extended_creators_seed_with_new_fields),
         ]
         
         for test_name, test_method in test_methods:
