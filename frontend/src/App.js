@@ -271,7 +271,7 @@ const Catalog = ({ onGoAdmin, onOpenLogin, onOpenRegister, onOpenDetail }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      <Header onGoAdmin={onGoAdmin} q={q} setQ={setQ} scrollToCats={scrollToCats} />
+      <Header onGoAdmin={onGoAdmin} onOpenLogin={onOpenLogin} onOpenRegister={onOpenRegister} q={q} setQ={setQ} scrollToCats={scrollToCats} />
       <CategoryBar ref={catRef} categories={cats.data} active={category} setActive={setCategory} />
       <SortBar sort={sort} setSort={setSort} />
       <div className="max-w-6xl mx-auto px-4 mt-4 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
