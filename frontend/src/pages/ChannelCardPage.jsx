@@ -6,7 +6,7 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function ChannelCardPage() {
-  const { id } = useParams();
+  const { username } = useParams();
   const navigate = useNavigate();
   const [channel, setChannel] = useState(null);
   const [owners, setOwners] = useState([]);
