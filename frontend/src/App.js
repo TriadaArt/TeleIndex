@@ -315,6 +315,17 @@ const Admin = ({ onLogout, onOpenDetail }) => {
   const [tab, setTab] = useState("summary");
   const [drafts, setDrafts] = useState([]);
   const [approved, setApproved] = useState([]);
+  const [creators, setCreators] = useState([]);
+  const [creatorForm, setCreatorForm] = useState({
+    name: "", bio: "", category: "", tags: "", country: "RU", 
+    language: "ru", avatar_url: "", priority_level: "normal",
+    "pricing.min_price": "", "pricing.max_price": "", "pricing.currency": "RUB",
+    "contacts.email": "", "contacts.tg_username": "", "contacts.other_links": ""
+  });
+  const [editingCreator, setEditingCreator] = useState(null);
+  const [creatorFilters, setCreatorFilters] = useState({
+    q: "", category: "", priority_level: "", verified: ""
+  });
   const [deadInfo, setDeadInfo] = useState({ dead: 0 });
   const [deadList, setDeadList] = useState([]);
   const [manual, setManual] = useState({ name: "", link: "", avatar_url: "", category: "", language: "Русский", country: "", city: "", subscribers: 0, er: "", price_rub: "", cpm_rub: "", growth_30d: "", last_post_at: "", short_description: "" });
