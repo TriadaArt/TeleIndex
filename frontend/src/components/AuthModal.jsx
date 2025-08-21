@@ -74,7 +74,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           });
         } catch (registerError) {
           if (registerError.response?.status === 403) {
-            setError('Регистрация заблокирована. Используйте тестовый аккаунт: admin@teleindex.com / SecureAdmin123!');
+            setError('Регистрация временно заблокирована. Используйте тестовые аккаунты: user1@test.com / Test1234 или admin@test.com / Admin123');
           } else {
             setError('Не удалось создать аккаунт. Попробуйте войти в существующий аккаунт.');
           }
