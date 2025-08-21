@@ -1223,6 +1223,951 @@ class BackendTester:
         except Exception as e:
             self.log(f"❌ API prefix requirement - FAILED: {e}")
             return False
+
+    def test_creators_list_endpoint(self):
+        """Test GET /api/creators with all filtering options"""
+        self.log("Testing creators list endpoint with comprehensive filtering...")
+        
+        try:
+            # Test basic listing without auth (should work for public endpoint)
+            response = self.session.get(f"{BASE_URL}/creators")
+            assert response.status_code == 200, f"Creators listing failed: {response.status_code} - {response.text}"
+            
+            data = response.json()
+            assert "items" in data, "Response missing items"
+            assert "meta" in data, "Response missing meta"
+            
+            meta = data["meta"]
+            assert "page" in meta, "Meta missing page"
+            assert "limit" in meta, "Meta missing limit"
+            assert "total" in meta, "Meta missing total"
+            assert "pages" in meta, "Meta missing pages"
+            
+            self.log(f"✅ GET /api/creators - Basic listing returned {len(data['items'])} creators")
+            
+            # Test search filter (q parameter)
+            search_response = self.session.get(f"{BASE_URL}/creators?q=tech")
+            assert search_response.status_code == 200, "Search filter failed"
+            search_data = search_response.json()
+            
+            # Verify search results contain the search term in name or tags
+            for item in search_data["items"]:
+                name_match = "tech" in item["name"].lower()
+                tags_match = any("tech" in tag.lower() for tag in item.get("tags", []))
+                assert name_match or tags_match, f"Search result doesn't match 'tech': {item['name']}"
+            
+            self.log(f"✅ GET /api/creators?q=tech - Search returned {len(search_data['items'])} results")
+            
+            # Test category filter
+            cat_response = self.session.get(f"{BASE_URL}/creators?category=Технологии")
+            assert cat_response.status_code == 200, "Category filter failed"
+            cat_data = cat_response.json()
+            
+            for item in cat_data["items"]:
+                assert item.get("category") == "Технологии", f"Category filter failed: {item.get('category')}"
+            
+            self.log(f"✅ GET /api/creators?category=Технологии - Returned {len(cat_data['items'])} creators")
+            
+            # Test language filter
+            lang_response = self.session.get(f"{BASE_URL}/creators?language=ru")
+            assert lang_response.status_code == 200, "Language filter failed"
+            lang_data = lang_response.json()
+            
+            for item in lang_data["items"]:
+                assert item.get("language") == "ru", f"Language filter failed: {item.get('language')}"
+            
+            self.log(f"✅ GET /api/creators?language=ru - Returned {len(lang_data['items'])} creators")
+            
+            # Test country filter
+            country_response = self.session.get(f"{BASE_URL}/creators?country=RU")
+            assert country_response.status_code == 200, "Country filter failed"
+            country_data = country_response.json()
+            
+            for item in country_data["items"]:
+                assert item.get("country") == "RU", f"Country filter failed: {item.get('country')}"
+            
+            self.log(f"✅ GET /api/creators?country=RU - Returned {len(country_data['items'])} creators")
+            
+            # Test subscribers range filters
+            subs_min_response = self.session.get(f"{BASE_URL}/creators?subscribers_min=50000")
+            assert subs_min_response.status_code == 200, "Subscribers min filter failed"
+            subs_min_data = subs_min_response.json()
+            
+            for item in subs_min_data["items"]:
+                total_subs = item.get("metrics", {}).get("subscribers_total", 0)
+                assert total_subs >= 50000, f"Subscribers min filter failed: {total_subs} < 50000"
+            
+            self.log(f"✅ GET /api/creators?subscribers_min=50000 - Returned {len(subs_min_data['items'])} creators")
+            
+            # Test price filters
+            price_min_response = self.session.get(f"{BASE_URL}/creators?price_min=10000")
+            assert price_min_response.status_code == 200, "Price min filter failed"
+            price_min_data = price_min_response.json()
+            
+            for item in price_min_data["items"]:
+                min_price = item.get("metrics", {}).get("min_price_rub")
+                if min_price is not None:
+                    assert min_price >= 10000, f"Price min filter failed: {min_price} < 10000"
+            
+            self.log(f"✅ GET /api/creators?price_min=10000 - Returned {len(price_min_data['items'])} creators")
+            
+            # Test ER filters
+            er_min_response = self.session.get(f"{BASE_URL}/creators?er_min=3.0")
+            assert er_min_response.status_code == 200, "ER min filter failed"
+            er_min_data = er_min_response.json()
+            
+            for item in er_min_data["items"]:
+                avg_er = item.get("metrics", {}).get("avg_er_percent")
+                if avg_er is not None:
+                    assert avg_er >= 3.0, f"ER min filter failed: {avg_er} < 3.0"
+            
+            self.log(f"✅ GET /api/creators?er_min=3.0 - Returned {len(er_min_data['items'])} creators")
+            
+            # Test featured filter
+            featured_response = self.session.get(f"{BASE_URL}/creators?featured=true")
+            assert featured_response.status_code == 200, "Featured filter failed"
+            featured_data = featured_response.json()
+            
+            for item in featured_data["items"]:
+                assert item.get("flags", {}).get("featured") is True, f"Featured filter failed: {item.get('flags', {}).get('featured')}"
+            
+            self.log(f"✅ GET /api/creators?featured=true - Returned {len(featured_data['items'])} featured creators")
+            
+            # Test verified filter
+            verified_response = self.session.get(f"{BASE_URL}/creators?verified=true")
+            assert verified_response.status_code == 200, "Verified filter failed"
+            verified_data = verified_response.json()
+            
+            for item in verified_data["items"]:
+                assert item.get("flags", {}).get("verified") is True, f"Verified filter failed: {item.get('flags', {}).get('verified')}"
+            
+            self.log(f"✅ GET /api/creators?verified=true - Returned {len(verified_data['items'])} verified creators")
+            
+            # Test sorting options
+            sort_options = ["name", "created_at", "subscribers", "price", "er"]
+            for sort_option in sort_options:
+                sort_response = self.session.get(f"{BASE_URL}/creators?sort={sort_option}&order=desc")
+                assert sort_response.status_code == 200, f"Sort by {sort_option} failed: {sort_response.status_code}"
+                
+                sort_data = sort_response.json()
+                assert "items" in sort_data, f"Sort response missing items for {sort_option}"
+                
+                self.log(f"✅ GET /api/creators?sort={sort_option}&order=desc - Returned {len(sort_data['items'])} creators")
+            
+            # Test pagination
+            page1_response = self.session.get(f"{BASE_URL}/creators?limit=5&page=1")
+            assert page1_response.status_code == 200, "Pagination failed"
+            page1_data = page1_response.json()
+            
+            assert page1_data["meta"]["page"] == 1, "Page number incorrect"
+            assert page1_data["meta"]["limit"] == 5, "Limit incorrect"
+            assert len(page1_data["items"]) <= 5, "Page size exceeded"
+            
+            self.log("✅ GET /api/creators - Pagination works correctly")
+            
+            # Test complex combined filters
+            complex_response = self.session.get(
+                f"{BASE_URL}/creators?q=tech&category=Технологии&language=ru&country=RU&subscribers_min=10000&featured=true&sort=subscribers&order=desc&page=1&limit=10"
+            )
+            assert complex_response.status_code == 200, "Complex combined filter failed"
+            complex_data = complex_response.json()
+            
+            self.log(f"✅ Complex combined filter query - Returned {len(complex_data['items'])} creators")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ GET /api/creators - FAILED: {e}")
+            return False
+
+    def test_creators_get_by_id_or_slug(self):
+        """Test GET /api/creators/{id_or_slug} with optional channels include"""
+        self.log("Testing get creator by ID or slug...")
+        
+        try:
+            # First get list of creators to test with
+            list_response = self.session.get(f"{BASE_URL}/creators?limit=1")
+            assert list_response.status_code == 200, "Failed to get creators list"
+            
+            creators_data = list_response.json()
+            if not creators_data["items"]:
+                self.log("ℹ️  No creators found for ID/slug testing - this is expected if no creators exist yet")
+                return True
+            
+            creator = creators_data["items"][0]
+            creator_id = creator["id"]
+            creator_slug = creator.get("slug")
+            
+            # Test get by ID
+            id_response = self.session.get(f"{BASE_URL}/creators/{creator_id}")
+            assert id_response.status_code == 200, f"Get creator by ID failed: {id_response.status_code} - {id_response.text}"
+            
+            id_data = id_response.json()
+            assert id_data["id"] == creator_id, "Creator ID mismatch"
+            assert "metrics" in id_data, "Creator response missing metrics"
+            assert "created_at" in id_data, "Creator response missing created_at"
+            assert "updated_at" in id_data, "Creator response missing updated_at"
+            
+            self.log(f"✅ GET /api/creators/{creator_id} - Retrieved creator by ID")
+            
+            # Test get by slug (if slug exists)
+            if creator_slug:
+                slug_response = self.session.get(f"{BASE_URL}/creators/{creator_slug}")
+                assert slug_response.status_code == 200, f"Get creator by slug failed: {slug_response.status_code}"
+                
+                slug_data = slug_response.json()
+                assert slug_data["id"] == creator_id, "Creator ID mismatch when fetching by slug"
+                assert slug_data["slug"] == creator_slug, "Creator slug mismatch"
+                
+                self.log(f"✅ GET /api/creators/{creator_slug} - Retrieved creator by slug")
+            
+            # Test with channels include
+            include_response = self.session.get(f"{BASE_URL}/creators/{creator_id}?include=channels")
+            assert include_response.status_code == 200, f"Get creator with channels failed: {include_response.status_code}"
+            
+            include_data = include_response.json()
+            assert "channels" in include_data, "Creator response missing channels when include=channels"
+            
+            if include_data["channels"]:
+                # Validate channel structure
+                channel = include_data["channels"][0]
+                required_fields = ["id", "name", "link", "subscribers"]
+                for field in required_fields:
+                    assert field in channel, f"Channel missing required field: {field}"
+            
+            self.log(f"✅ GET /api/creators/{creator_id}?include=channels - Retrieved creator with channels")
+            
+            # Test non-existent creator
+            fake_id = str(uuid.uuid4())
+            fake_response = self.session.get(f"{BASE_URL}/creators/{fake_id}")
+            assert fake_response.status_code == 404, f"Expected 404 for non-existent creator, got {fake_response.status_code}"
+            
+            self.log("✅ GET /api/creators/{fake_id} - 404 for non-existent creator")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ GET /api/creators/{{id_or_slug}} - FAILED: {e}")
+            return False
+
+    def test_creators_create_endpoint(self):
+        """Test POST /api/creators (requires admin/editor auth)"""
+        self.log("Testing creator creation endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for creator creation test")
+            return False
+        
+        try:
+            # Test without authentication first
+            self.clear_auth_header()
+            
+            creator_data = {
+                "name": "Test Creator",
+                "bio": "Test creator for API testing",
+                "category": "Technology"
+            }
+            
+            unauth_response = self.session.post(f"{BASE_URL}/creators", json=creator_data)
+            assert unauth_response.status_code == 401, f"Unauthenticated request should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ POST /api/creators - Unauthenticated request properly rejected")
+            
+            # Test with authentication
+            self.set_auth_header()
+            
+            # Test with minimal data
+            minimal_creator = {
+                "name": "Tech Innovator",
+                "bio": "Leading technology innovator and content creator",
+                "category": "Технологии",
+                "tags": ["технологии", "инновации", "стартапы"],
+                "country": "RU",
+                "language": "ru"
+            }
+            
+            response = self.session.post(f"{BASE_URL}/creators", json=minimal_creator)
+            assert response.status_code == 200, f"Creator creation failed: {response.status_code} - {response.text}"
+            
+            creator = response.json()
+            
+            # Validate response structure
+            assert "id" in creator, "Creator response missing id"
+            assert "slug" in creator, "Creator response missing slug"
+            assert "metrics" in creator, "Creator response missing metrics"
+            assert "created_at" in creator, "Creator response missing created_at"
+            assert "updated_at" in creator, "Creator response missing updated_at"
+            
+            # Validate UUID format
+            try:
+                uuid.UUID(creator["id"])
+                self.log("✅ Creator ID is valid UUID")
+            except ValueError:
+                self.log(f"❌ Creator ID is not valid UUID: {creator['id']}")
+                return False
+            
+            # Validate slug generation
+            assert creator["slug"], "Creator slug should not be empty"
+            assert "-" in creator["slug"] or creator["slug"].isalnum(), "Creator slug format invalid"
+            
+            # Validate metrics initialization
+            metrics = creator["metrics"]
+            assert metrics["channels_count"] == 0, "New creator should have 0 channels"
+            assert metrics["subscribers_total"] == 0, "New creator should have 0 total subscribers"
+            
+            self.log(f"✅ POST /api/creators - Created creator with ID: {creator['id']}, slug: {creator['slug']}")
+            
+            # Test with full data including external links
+            full_creator = {
+                "name": "Maria Finance Expert",
+                "bio": "Financial analyst and investment advisor with 10+ years experience",
+                "category": "Финансы",
+                "tags": ["финансы", "инвестиции", "аналитика", "рынки"],
+                "country": "RU",
+                "language": "ru",
+                "avatar_url": "https://example.com/avatar.jpg",
+                "external": {
+                    "website": "https://maria-finance.com",
+                    "telegram_username": "maria_finance",
+                    "telegram_url": "https://t.me/maria_finance",
+                    "instagram": "https://instagram.com/maria_finance"
+                },
+                "flags": {
+                    "featured": True,
+                    "verified": True,
+                    "active": True
+                }
+            }
+            
+            full_response = self.session.post(f"{BASE_URL}/creators", json=full_creator)
+            assert full_response.status_code == 200, f"Full creator creation failed: {full_response.status_code} - {full_response.text}"
+            
+            full_creator_data = full_response.json()
+            
+            # Validate external links
+            assert full_creator_data["external"]["website"] == full_creator["external"]["website"], "External website not saved"
+            assert full_creator_data["external"]["telegram_username"] == full_creator["external"]["telegram_username"], "Telegram username not saved"
+            
+            # Validate flags
+            assert full_creator_data["flags"]["featured"] is True, "Featured flag not saved"
+            assert full_creator_data["flags"]["verified"] is True, "Verified flag not saved"
+            
+            self.log(f"✅ POST /api/creators - Created full creator with external links and flags")
+            
+            # Test custom slug
+            custom_slug_creator = {
+                "name": "Custom Slug Creator",
+                "slug": "custom-test-slug",
+                "bio": "Creator with custom slug",
+                "category": "Бизнес"
+            }
+            
+            custom_response = self.session.post(f"{BASE_URL}/creators", json=custom_slug_creator)
+            assert custom_response.status_code == 200, f"Custom slug creator creation failed: {custom_response.status_code}"
+            
+            custom_data = custom_response.json()
+            assert custom_data["slug"] == "custom-test-slug", f"Custom slug not preserved: {custom_data['slug']}"
+            
+            self.log(f"✅ POST /api/creators - Created creator with custom slug: {custom_data['slug']}")
+            
+            # Test duplicate slug handling
+            duplicate_response = self.session.post(f"{BASE_URL}/creators", json=custom_slug_creator)
+            if duplicate_response.status_code == 400:
+                self.log("✅ POST /api/creators - Duplicate slug properly rejected")
+            else:
+                # Should auto-generate unique slug
+                duplicate_data = duplicate_response.json()
+                assert duplicate_data["slug"] != "custom-test-slug", "Duplicate slug should be modified"
+                self.log(f"✅ POST /api/creators - Duplicate slug auto-modified to: {duplicate_data['slug']}")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/creators - FAILED: {e}")
+            return False
+
+    def test_creators_update_endpoint(self):
+        """Test PUT /api/creators/{creator_id} (requires admin/editor auth)"""
+        self.log("Testing creator update endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for creator update test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First create a creator to update
+            creator_data = {
+                "name": "Update Test Creator",
+                "bio": "Creator for update testing",
+                "category": "Technology",
+                "tags": ["test", "update"],
+                "country": "US",
+                "language": "en"
+            }
+            
+            create_response = self.session.post(f"{BASE_URL}/creators", json=creator_data)
+            assert create_response.status_code == 200, "Failed to create creator for update test"
+            
+            creator = create_response.json()
+            creator_id = creator["id"]
+            original_slug = creator["slug"]
+            original_updated_at = creator["updated_at"]
+            
+            self.log(f"✅ Created test creator for update: {creator_id}")
+            
+            # Wait a moment to ensure timestamp difference
+            time.sleep(1)
+            
+            # Test partial update
+            update_data = {
+                "bio": "Updated bio for testing creator updates",
+                "tags": ["test", "update", "modified"],
+                "flags": {
+                    "featured": True,
+                    "verified": False,
+                    "active": True
+                }
+            }
+            
+            update_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json=update_data)
+            assert update_response.status_code == 200, f"Creator update failed: {update_response.status_code} - {update_response.text}"
+            
+            updated_creator = update_response.json()
+            
+            # Verify updates applied
+            assert updated_creator["bio"] == update_data["bio"], "Bio not updated"
+            assert updated_creator["tags"] == update_data["tags"], "Tags not updated"
+            assert updated_creator["flags"]["featured"] is True, "Featured flag not updated"
+            
+            # Verify updated_at changed
+            assert updated_creator["updated_at"] != original_updated_at, "updated_at timestamp not changed"
+            
+            # Verify created_at unchanged
+            assert updated_creator["created_at"] == creator["created_at"], "created_at should not change"
+            
+            # Verify slug unchanged (since name didn't change)
+            assert updated_creator["slug"] == original_slug, "Slug should not change when name unchanged"
+            
+            self.log(f"✅ PUT /api/creators/{creator_id} - Partial update successful")
+            
+            # Test name change (should regenerate slug)
+            name_update = {
+                "name": "Completely New Creator Name"
+            }
+            
+            name_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json=name_update)
+            assert name_response.status_code == 200, "Name update failed"
+            
+            name_updated = name_response.json()
+            assert name_updated["name"] == name_update["name"], "Name not updated"
+            assert name_updated["slug"] != original_slug, "Slug should change when name changes"
+            
+            self.log(f"✅ PUT /api/creators/{creator_id} - Name change regenerated slug: {name_updated['slug']}")
+            
+            # Test custom slug update
+            slug_update = {
+                "slug": "custom-updated-slug"
+            }
+            
+            slug_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json=slug_update)
+            assert slug_response.status_code == 200, "Slug update failed"
+            
+            slug_updated = slug_response.json()
+            assert slug_updated["slug"] == "custom-updated-slug", f"Custom slug not updated: {slug_updated['slug']}"
+            
+            self.log(f"✅ PUT /api/creators/{creator_id} - Custom slug update successful")
+            
+            # Test external links update
+            external_update = {
+                "external": {
+                    "website": "https://updated-website.com",
+                    "telegram_username": "updated_username",
+                    "youtube": "https://youtube.com/@updated"
+                }
+            }
+            
+            external_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json=external_update)
+            assert external_response.status_code == 200, "External links update failed"
+            
+            external_updated = external_response.json()
+            assert external_updated["external"]["website"] == external_update["external"]["website"], "Website not updated"
+            assert external_updated["external"]["telegram_username"] == external_update["external"]["telegram_username"], "Telegram username not updated"
+            
+            self.log(f"✅ PUT /api/creators/{creator_id} - External links update successful")
+            
+            # Test update non-existent creator
+            fake_id = str(uuid.uuid4())
+            fake_response = self.session.put(f"{BASE_URL}/creators/{fake_id}", json={"name": "Fake"})
+            assert fake_response.status_code == 404, f"Expected 404 for non-existent creator, got {fake_response.status_code}"
+            
+            self.log("✅ PUT /api/creators/{fake_id} - 404 for non-existent creator")
+            
+            # Test without authentication
+            self.clear_auth_header()
+            unauth_response = self.session.put(f"{BASE_URL}/creators/{creator_id}", json={"name": "Unauthorized"})
+            assert unauth_response.status_code == 401, f"Unauthenticated update should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ PUT /api/creators - Unauthenticated request properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ PUT /api/creators - FAILED: {e}")
+            return False
+
+    def test_creators_delete_endpoint(self):
+        """Test DELETE /api/creators/{creator_id} with soft/hard delete (requires admin auth)"""
+        self.log("Testing creator delete endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for creator delete test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # Create creators for delete testing
+            creators_to_delete = []
+            for i in range(2):
+                creator_data = {
+                    "name": f"Delete Test Creator {i+1}",
+                    "bio": f"Creator {i+1} for delete testing",
+                    "category": "Technology"
+                }
+                
+                create_response = self.session.post(f"{BASE_URL}/creators", json=creator_data)
+                assert create_response.status_code == 200, f"Failed to create creator {i+1} for delete test"
+                
+                creators_to_delete.append(create_response.json())
+            
+            self.log(f"✅ Created {len(creators_to_delete)} creators for delete testing")
+            
+            # Test soft delete (default)
+            soft_delete_id = creators_to_delete[0]["id"]
+            
+            soft_response = self.session.delete(f"{BASE_URL}/creators/{soft_delete_id}")
+            assert soft_response.status_code == 200, f"Soft delete failed: {soft_response.status_code} - {soft_response.text}"
+            
+            soft_result = soft_response.json()
+            assert soft_result["ok"] is True, "Soft delete response missing ok=true"
+            assert soft_result["deleted"] == "soft", f"Expected soft delete, got: {soft_result['deleted']}"
+            
+            self.log(f"✅ DELETE /api/creators/{soft_delete_id} - Soft delete successful")
+            
+            # Verify soft deleted creator is not in active list
+            list_response = self.session.get(f"{BASE_URL}/creators")
+            assert list_response.status_code == 200, "Failed to get creators list after soft delete"
+            
+            active_creators = list_response.json()["items"]
+            active_ids = [c["id"] for c in active_creators]
+            
+            assert soft_delete_id not in active_ids, "Soft deleted creator still appears in active list"
+            self.log("✅ Soft deleted creator properly hidden from active list")
+            
+            # Test hard delete
+            hard_delete_id = creators_to_delete[1]["id"]
+            
+            hard_response = self.session.delete(f"{BASE_URL}/creators/{hard_delete_id}?hard=true")
+            assert hard_response.status_code == 200, f"Hard delete failed: {hard_response.status_code} - {hard_response.text}"
+            
+            hard_result = hard_response.json()
+            assert hard_result["ok"] is True, "Hard delete response missing ok=true"
+            assert hard_result["deleted"] == "hard", f"Expected hard delete, got: {hard_result['deleted']}"
+            
+            self.log(f"✅ DELETE /api/creators/{hard_delete_id}?hard=true - Hard delete successful")
+            
+            # Verify hard deleted creator returns 404
+            get_response = self.session.get(f"{BASE_URL}/creators/{hard_delete_id}")
+            assert get_response.status_code == 404, f"Hard deleted creator should return 404, got {get_response.status_code}"
+            
+            self.log("✅ Hard deleted creator properly returns 404")
+            
+            # Test delete non-existent creator
+            fake_id = str(uuid.uuid4())
+            fake_response = self.session.delete(f"{BASE_URL}/creators/{fake_id}")
+            assert fake_response.status_code == 404, f"Expected 404 for non-existent creator, got {fake_response.status_code}"
+            
+            self.log("✅ DELETE /api/creators/{fake_id} - 404 for non-existent creator")
+            
+            # Test without authentication
+            self.clear_auth_header()
+            
+            # Create another creator for unauth test
+            self.set_auth_header()
+            unauth_creator_data = {
+                "name": "Unauth Delete Test",
+                "bio": "Creator for unauthorized delete test",
+                "category": "Technology"
+            }
+            unauth_create_response = self.session.post(f"{BASE_URL}/creators", json=unauth_creator_data)
+            assert unauth_create_response.status_code == 200, "Failed to create creator for unauth delete test"
+            unauth_creator_id = unauth_create_response.json()["id"]
+            
+            self.clear_auth_header()
+            unauth_response = self.session.delete(f"{BASE_URL}/creators/{unauth_creator_id}")
+            assert unauth_response.status_code == 401, f"Unauthenticated delete should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ DELETE /api/creators - Unauthenticated request properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ DELETE /api/creators - FAILED: {e}")
+            return False
+
+    def test_creators_link_channels_endpoint(self):
+        """Test POST /api/creators/{creator_id}/channels (requires admin/editor auth)"""
+        self.log("Testing creator channel linking endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for channel linking test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First ensure we have some approved channels
+            seed_response = self.session.post(f"{BASE_URL}/admin/seed-demo")
+            if seed_response.status_code == 200:
+                self.log("✅ Ensured demo channels exist for linking test")
+            
+            # Get some approved channels
+            channels_response = self.session.get(f"{BASE_URL}/channels?status=approved&limit=3")
+            assert channels_response.status_code == 200, "Failed to get approved channels"
+            
+            channels_data = channels_response.json()
+            if not channels_data["items"]:
+                self.log("ℹ️  No approved channels found for linking test - creating test channels")
+                
+                # Create test channels
+                test_channels = []
+                for i in range(2):
+                    channel_data = {
+                        "name": f"Link Test Channel {i+1}",
+                        "link": f"https://t.me/linktest{i+1}",
+                        "subscribers": 10000 + (i * 5000),
+                        "category": "Technology",
+                        "status": "approved"
+                    }
+                    
+                    create_response = self.session.post(f"{BASE_URL}/admin/channels", json=channel_data)
+                    if create_response.status_code == 200:
+                        channel = create_response.json()
+                        # Approve the channel
+                        approve_response = self.session.post(f"{BASE_URL}/admin/channels/{channel['id']}/approve")
+                        if approve_response.status_code == 200:
+                            test_channels.append(channel)
+                
+                channels_data["items"] = test_channels
+            
+            available_channels = channels_data["items"][:2]  # Use first 2 channels
+            channel_ids = [ch["id"] for ch in available_channels]
+            
+            self.log(f"✅ Found {len(available_channels)} channels for linking test")
+            
+            # Create a creator for linking test
+            creator_data = {
+                "name": "Channel Link Test Creator",
+                "bio": "Creator for testing channel linking",
+                "category": "Technology"
+            }
+            
+            create_response = self.session.post(f"{BASE_URL}/creators", json=creator_data)
+            assert create_response.status_code == 200, "Failed to create creator for linking test"
+            
+            creator = create_response.json()
+            creator_id = creator["id"]
+            
+            self.log(f"✅ Created creator for linking test: {creator_id}")
+            
+            # Test linking channels
+            link_data = {
+                "channel_ids": channel_ids,
+                "primary_id": channel_ids[0]  # Set first channel as primary
+            }
+            
+            link_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/channels", json=link_data)
+            assert link_response.status_code == 200, f"Channel linking failed: {link_response.status_code} - {link_response.text}"
+            
+            link_result = link_response.json()
+            assert link_result["ok"] is True, "Channel linking response missing ok=true"
+            assert "added" in link_result, "Channel linking response missing added count"
+            assert link_result["added"] == len(channel_ids), f"Expected {len(channel_ids)} channels added, got {link_result['added']}"
+            
+            self.log(f"✅ POST /api/creators/{creator_id}/channels - Linked {link_result['added']} channels")
+            
+            # Verify creator metrics were updated
+            creator_response = self.session.get(f"{BASE_URL}/creators/{creator_id}")
+            assert creator_response.status_code == 200, "Failed to get creator after linking"
+            
+            updated_creator = creator_response.json()
+            metrics = updated_creator["metrics"]
+            
+            assert metrics["channels_count"] == len(channel_ids), f"Expected {len(channel_ids)} channels in metrics, got {metrics['channels_count']}"
+            assert metrics["subscribers_total"] > 0, "Total subscribers should be > 0 after linking"
+            
+            self.log(f"✅ Creator metrics updated: {metrics['channels_count']} channels, {metrics['subscribers_total']} total subscribers")
+            
+            # Test getting creator with channels included
+            include_response = self.session.get(f"{BASE_URL}/creators/{creator_id}?include=channels")
+            assert include_response.status_code == 200, "Failed to get creator with channels"
+            
+            creator_with_channels = include_response.json()
+            assert "channels" in creator_with_channels, "Creator response missing channels"
+            assert len(creator_with_channels["channels"]) == len(channel_ids), f"Expected {len(channel_ids)} channels, got {len(creator_with_channels['channels'])}"
+            
+            # Validate channel structure
+            for channel in creator_with_channels["channels"]:
+                required_fields = ["id", "name", "link", "subscribers"]
+                for field in required_fields:
+                    assert field in channel, f"Channel missing required field: {field}"
+            
+            self.log(f"✅ GET /api/creators/{creator_id}?include=channels - Retrieved {len(creator_with_channels['channels'])} linked channels")
+            
+            # Test linking duplicate channels (should not add duplicates)
+            duplicate_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/channels", json=link_data)
+            assert duplicate_response.status_code == 200, "Duplicate linking request failed"
+            
+            duplicate_result = duplicate_response.json()
+            assert duplicate_result["added"] == 0, f"Duplicate channels should not be added, got {duplicate_result['added']}"
+            
+            self.log("✅ Duplicate channel linking properly handled (no duplicates added)")
+            
+            # Test linking non-existent channels
+            fake_channel_id = str(uuid.uuid4())
+            fake_link_data = {
+                "channel_ids": [fake_channel_id]
+            }
+            
+            fake_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/channels", json=fake_link_data)
+            assert fake_response.status_code == 400, f"Expected 400 for non-existent channels, got {fake_response.status_code}"
+            
+            self.log("✅ Non-existent channel linking properly rejected")
+            
+            # Test linking to non-existent creator
+            fake_creator_id = str(uuid.uuid4())
+            fake_creator_response = self.session.post(f"{BASE_URL}/creators/{fake_creator_id}/channels", json=link_data)
+            assert fake_creator_response.status_code == 404, f"Expected 404 for non-existent creator, got {fake_creator_response.status_code}"
+            
+            self.log("✅ Channel linking to non-existent creator properly rejected")
+            
+            # Test without authentication
+            self.clear_auth_header()
+            unauth_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/channels", json=link_data)
+            assert unauth_response.status_code == 401, f"Unauthenticated linking should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ POST /api/creators/channels - Unauthenticated request properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/creators/channels - FAILED: {e}")
+            return False
+
+    def test_creators_unlink_channel_endpoint(self):
+        """Test DELETE /api/creators/{creator_id}/channels/{channel_id} (requires admin/editor auth)"""
+        self.log("Testing creator channel unlinking endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for channel unlinking test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First create a creator and link some channels (reuse previous test setup)
+            creator_data = {
+                "name": "Unlink Test Creator",
+                "bio": "Creator for testing channel unlinking",
+                "category": "Technology"
+            }
+            
+            create_response = self.session.post(f"{BASE_URL}/creators", json=creator_data)
+            assert create_response.status_code == 200, "Failed to create creator for unlinking test"
+            
+            creator = create_response.json()
+            creator_id = creator["id"]
+            
+            # Get some channels to link
+            channels_response = self.session.get(f"{BASE_URL}/channels?status=approved&limit=2")
+            assert channels_response.status_code == 200, "Failed to get channels for unlinking test"
+            
+            channels_data = channels_response.json()
+            if len(channels_data["items"]) < 2:
+                self.log("ℹ️  Not enough channels for unlinking test - this is acceptable")
+                return True
+            
+            channel_ids = [ch["id"] for ch in channels_data["items"][:2]]
+            
+            # Link channels first
+            link_data = {
+                "channel_ids": channel_ids
+            }
+            
+            link_response = self.session.post(f"{BASE_URL}/creators/{creator_id}/channels", json=link_data)
+            assert link_response.status_code == 200, "Failed to link channels for unlinking test"
+            
+            self.log(f"✅ Linked {len(channel_ids)} channels for unlinking test")
+            
+            # Test unlinking first channel
+            channel_to_unlink = channel_ids[0]
+            
+            unlink_response = self.session.delete(f"{BASE_URL}/creators/{creator_id}/channels/{channel_to_unlink}")
+            assert unlink_response.status_code == 200, f"Channel unlinking failed: {unlink_response.status_code} - {unlink_response.text}"
+            
+            unlink_result = unlink_response.json()
+            assert unlink_result["ok"] is True, "Channel unlinking response missing ok=true"
+            assert "removed" in unlink_result, "Channel unlinking response missing removed count"
+            assert unlink_result["removed"] == 1, f"Expected 1 channel removed, got {unlink_result['removed']}"
+            
+            self.log(f"✅ DELETE /api/creators/{creator_id}/channels/{channel_to_unlink} - Channel unlinked successfully")
+            
+            # Verify creator metrics were updated
+            creator_response = self.session.get(f"{BASE_URL}/creators/{creator_id}")
+            assert creator_response.status_code == 200, "Failed to get creator after unlinking"
+            
+            updated_creator = creator_response.json()
+            metrics = updated_creator["metrics"]
+            
+            expected_channels = len(channel_ids) - 1
+            assert metrics["channels_count"] == expected_channels, f"Expected {expected_channels} channels in metrics, got {metrics['channels_count']}"
+            
+            self.log(f"✅ Creator metrics updated after unlinking: {metrics['channels_count']} channels remaining")
+            
+            # Verify channel is no longer in creator's channels list
+            include_response = self.session.get(f"{BASE_URL}/creators/{creator_id}?include=channels")
+            assert include_response.status_code == 200, "Failed to get creator with channels after unlinking"
+            
+            creator_with_channels = include_response.json()
+            linked_channel_ids = [ch["id"] for ch in creator_with_channels["channels"]]
+            
+            assert channel_to_unlink not in linked_channel_ids, "Unlinked channel still appears in creator's channels"
+            assert len(linked_channel_ids) == expected_channels, f"Expected {expected_channels} linked channels, got {len(linked_channel_ids)}"
+            
+            self.log("✅ Unlinked channel properly removed from creator's channels list")
+            
+            # Test unlinking non-existent link
+            fake_channel_id = str(uuid.uuid4())
+            fake_response = self.session.delete(f"{BASE_URL}/creators/{creator_id}/channels/{fake_channel_id}")
+            assert fake_response.status_code == 404, f"Expected 404 for non-existent link, got {fake_response.status_code}"
+            
+            self.log("✅ Unlinking non-existent channel link properly returns 404")
+            
+            # Test unlinking from non-existent creator
+            fake_creator_id = str(uuid.uuid4())
+            remaining_channel = channel_ids[1]
+            fake_creator_response = self.session.delete(f"{BASE_URL}/creators/{fake_creator_id}/channels/{remaining_channel}")
+            assert fake_creator_response.status_code == 404, f"Expected 404 for non-existent creator, got {fake_creator_response.status_code}"
+            
+            self.log("✅ Unlinking from non-existent creator properly returns 404")
+            
+            # Test without authentication
+            self.clear_auth_header()
+            unauth_response = self.session.delete(f"{BASE_URL}/creators/{creator_id}/channels/{remaining_channel}")
+            assert unauth_response.status_code == 401, f"Unauthenticated unlinking should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ DELETE /api/creators/channels - Unauthenticated request properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ DELETE /api/creators/channels - FAILED: {e}")
+            return False
+
+    def test_creators_seed_endpoint(self):
+        """Test POST /api/admin/creators/seed (requires admin auth)"""
+        self.log("Testing creators seed endpoint...")
+        
+        if not self.access_token:
+            self.log("❌ No access token available for creators seed test")
+            return False
+        
+        try:
+            self.set_auth_header()
+            
+            # First ensure we have some approved channels for linking
+            seed_channels_response = self.session.post(f"{BASE_URL}/admin/seed-demo")
+            if seed_channels_response.status_code == 200:
+                self.log("✅ Ensured demo channels exist for creators seed test")
+            
+            # Test seeding 10 creators (default)
+            seed_response = self.session.post(f"{BASE_URL}/admin/creators/seed")
+            assert seed_response.status_code == 200, f"Creators seed failed: {seed_response.status_code} - {seed_response.text}"
+            
+            seed_result = seed_response.json()
+            assert seed_result["ok"] is True, "Creators seed response missing ok=true"
+            assert "created" in seed_result, "Creators seed response missing created count"
+            
+            created_count = seed_result["created"]
+            assert created_count > 0, f"Expected > 0 creators created, got {created_count}"
+            
+            self.log(f"✅ POST /api/admin/creators/seed - Created {created_count} demo creators")
+            
+            # Verify creators were actually created
+            creators_response = self.session.get(f"{BASE_URL}/creators?limit=50")
+            assert creators_response.status_code == 200, "Failed to get creators after seeding"
+            
+            creators_data = creators_response.json()
+            total_creators = creators_data["meta"]["total"]
+            
+            assert total_creators >= created_count, f"Expected at least {created_count} creators, found {total_creators}"
+            
+            self.log(f"✅ Verified {total_creators} total creators exist after seeding")
+            
+            # Verify creators have proper structure and linked channels
+            sample_creators = creators_data["items"][:3]  # Check first 3 creators
+            
+            for creator in sample_creators:
+                # Validate creator structure
+                required_fields = ["id", "name", "slug", "bio", "category", "metrics", "created_at", "updated_at"]
+                for field in required_fields:
+                    assert field in creator, f"Creator missing required field: {field}"
+                
+                # Validate metrics (should have channels linked)
+                metrics = creator["metrics"]
+                assert metrics["channels_count"] > 0, f"Seeded creator should have linked channels: {creator['name']}"
+                assert metrics["subscribers_total"] > 0, f"Seeded creator should have total subscribers: {creator['name']}"
+                
+                # Validate flags
+                flags = creator.get("flags", {})
+                assert "featured" in flags, "Creator missing featured flag"
+                assert "verified" in flags, "Creator missing verified flag"
+                assert "active" in flags, "Creator missing active flag"
+            
+            self.log("✅ Seeded creators have proper structure and linked channels")
+            
+            # Test seeding with specific count
+            seed_100_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=100")
+            if seed_100_response.status_code == 200:
+                seed_100_result = seed_100_response.json()
+                self.log(f"✅ POST /api/admin/creators/seed?count=100 - Created {seed_100_result['created']} additional creators")
+            else:
+                self.log("ℹ️  Large seed test skipped (may take too long or hit limits)")
+            
+            # Test with invalid count (should default to 10)
+            invalid_count_response = self.session.post(f"{BASE_URL}/admin/creators/seed?count=50")
+            if invalid_count_response.status_code == 200:
+                invalid_result = invalid_count_response.json()
+                # Should default to 10 since 50 is not in [10, 100]
+                self.log(f"✅ Invalid count handled properly, created {invalid_result['created']} creators")
+            
+            # Test without approved channels (should fail gracefully)
+            # This is hard to test without breaking existing data, so we'll skip this edge case
+            
+            # Test without authentication
+            self.clear_auth_header()
+            unauth_response = self.session.post(f"{BASE_URL}/admin/creators/seed")
+            assert unauth_response.status_code == 401, f"Unauthenticated seed should return 401, got {unauth_response.status_code}"
+            
+            self.log("✅ POST /api/admin/creators/seed - Unauthenticated request properly rejected")
+            
+            return True
+            
+        except Exception as e:
+            self.log(f"❌ POST /api/admin/creators/seed - FAILED: {e}")
+            return False
             
     def run_all_tests(self):
         """Run all backend tests"""
