@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import Modal from './ui/modal';
 import { motion, AnimatePresence } from 'framer-motion';
+import axios from 'axios';
 
-const AuthModal = ({ isOpen, onClose, initialMode = 'register' }) => {
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
+const API = `${BACKEND_URL}/api`;
+
+const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => {
   const [mode, setMode] = useState(initialMode); // 'register', 'login', 'forgot'
   const [formData, setFormData] = useState({
     name: '',
@@ -16,6 +20,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register' }) => {
     agreeToEmails: false
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -23,12 +29,54 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register' }) => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    setError(''); // Clear error when user types
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Здесь будет логика отправки данных
-    console.log('Form submitted:', formData);
+    setError('');
+    setLoading(true);
+
+    try {
+      if (mode === 'login') {
+        // Login with existing API
+        const { data } = await axios.post(`${API}/auth/login`, {
+          email: formData.email,
+          password: formData.password
+        });
+        localStorage.setItem("token", data.access_token);
+        onSuccess && onSuccess();
+      } else if (mode === 'register') {
+        // For now, redirect to first admin registration if available
+        // In a real app, you'd implement public user registration
+        const { data } = await axios.post(`${API}/auth/register`, {
+          email: formData.email,
+          password: formData.password,
+          role: "admin"
+        });
+        
+        // Auto-login after registration
+        const loginResponse = await axios.post(`${API}/auth/login`, {
+          email: formData.email,
+          password: formData.password
+        });
+        localStorage.setItem("token", loginResponse.data.access_token);
+        onSuccess && onSuccess();
+      } else if (mode === 'forgot') {
+        // Password reset - placeholder for now
+        setError('Функция восстановления пароля пока не реализована');
+      }
+    } catch (err) {
+      if (mode === 'login') {
+        setError('Неверные учетные данные');
+      } else if (mode === 'register') {
+        setError('Не удалось создать аккаунт. Возможно, пользователь уже существует.');
+      } else {
+        setError('Произошла ошибка. Попробуйте еще раз.');
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderRegisterForm = () => (
