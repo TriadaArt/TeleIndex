@@ -13,8 +13,8 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
     lastName: '',
     email: '',
     password: '',
-    phone: '',
-    budget: 'Планируемый бюджет на запуск РК',
+    tg_username: '',
+    role: 'advertiser',
     agreeToTerms: false,
     agreeToProcessing: false,
     agreeToEmails: false
