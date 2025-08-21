@@ -142,57 +142,61 @@ export default function TelegaClone(){
       <HeroAnimated />
 
       <div className="tg-header">
-        <div className="flex items-center gap-2 mr-auto">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500" />
-          <h1 className="font-semibold text-lg">TeleIndex</h1>
-          {useRealData && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
-              Live Data
-            </span>
-          )}
-          {loading && (
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-              Loading...
-            </span>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {user ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
-                Добро пожаловать, {user.email || user.name}!
+        <div className="tg-header-content">
+          <div className="flex items-center gap-2 mr-auto">
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+              <span className="text-white font-bold text-sm">T</span>
+            </div>
+            <h1 className="font-semibold text-lg text-gray-900">TeleIndex</h1>
+            {useRealData && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                Live Data
               </span>
-              <button 
-                className="text-sm bg-indigo-100 hover:bg-indigo-200 text-indigo-700 px-3 py-1.5 rounded-lg transition-colors" 
-                onClick={goToAdmin}
-              >
-                Админ
-              </button>
-              <button 
-                className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors" 
-                onClick={handleLogout}
-              >
-                Выйти
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <button 
-                className="text-sm text-gray-600 hover:text-gray-900 transition-colors" 
-                onClick={openLoginModal}
-              >
-                Войти
-              </button>
-              <button 
-                className="text-sm bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors" 
-                onClick={openRegisterModal}
-              >
-                Регистрация
-              </button>
-            </div>
-          )}
-          <div className="text-sm text-gray-600">Каталог</div>
+            )}
+            {loading && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                Loading...
+              </span>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-3">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 font-medium">
+                  Добро пожаловать, {user.email || user.name}!
+                </span>
+                <button 
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm" 
+                  onClick={goToAdmin}
+                >
+                  Админ
+                </button>
+                <button 
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200" 
+                  onClick={handleLogout}
+                >
+                  Выйти
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3">
+                <button 
+                  className="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200" 
+                  onClick={openLoginModal}
+                >
+                  Войти
+                </button>
+                <button 
+                  className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm" 
+                  onClick={openRegisterModal}
+                >
+                  Регистрация
+                </button>
+              </div>
+            )}
+            <div className="text-sm text-gray-500 font-medium">Каталог</div>
+          </div>
         </div>
       </div>
 
