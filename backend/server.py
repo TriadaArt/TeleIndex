@@ -179,6 +179,97 @@ class PasteLinksPayload(BaseModel):
     links: List[str]
     category: Optional[str] = None
 
+# -------------------- Creator Models --------------------
+
+CreatorRole = Literal["owner", "editor", "member"]
+
+class CreatorExternal(BaseModel):
+    website: Optional[str] = None
+    telegram_username: Optional[str] = None
+    telegram_url: Optional[str] = None
+    instagram: Optional[str] = None
+    youtube: Optional[str] = None
+
+class CreatorMetrics(BaseModel):
+    channels_count: int = 0
+    subscribers_total: int = 0
+    avg_er_percent: Optional[float] = None
+    min_price_rub: Optional[int] = None
+    avg_price_rub: Optional[int] = None
+    avg_cpm_rub: Optional[int] = None
+    last_post_at_min: Optional[str] = None
+
+class CreatorFlags(BaseModel):
+    featured: bool = False
+    verified: bool = False
+    active: bool = True
+
+class CreatorBase(BaseModel):
+    name: str
+    slug: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    category: Optional[str] = None
+    tags: List[str] = Field(default_factory=list, max_items=20)
+    country: Optional[str] = None
+    language: Optional[str] = None
+    external: CreatorExternal = Field(default_factory=CreatorExternal)
+    flags: CreatorFlags = Field(default_factory=CreatorFlags)
+
+class CreatorCreate(CreatorBase):
+    name: str
+
+class CreatorUpdate(BaseModel):
+    name: Optional[str] = None
+    slug: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[List[str]] = Field(None, max_items=20)
+    country: Optional[str] = None
+    language: Optional[str] = None
+    external: Optional[CreatorExternal] = None
+    flags: Optional[CreatorFlags] = None
+
+class ChannelMinimal(BaseModel):
+    id: str
+    name: str
+    link: str
+    subscribers: int
+    price_rub: Optional[int] = None
+    er: Optional[float] = None
+    last_post_at: Optional[str] = None
+    link_status: Optional[str] = None
+    category: Optional[str] = None
+
+class CreatorResponse(CreatorBase):
+    id: str
+    metrics: CreatorMetrics = Field(default_factory=CreatorMetrics)
+    created_at: str
+    updated_at: str
+    channels: Optional[List[ChannelMinimal]] = None
+
+class PaginatedCreators(BaseModel):
+    items: List[CreatorResponse]
+    meta: Dict[str, Any]
+
+class CreatorChannelLinkBase(BaseModel):
+    creator_id: str
+    channel_id: str
+    role: Optional[CreatorRole] = None
+    primary: bool = False
+
+class CreatorChannelLinkCreate(CreatorChannelLinkBase):
+    pass
+
+class CreatorChannelLinkResponse(CreatorChannelLinkBase):
+    id: str
+    created_at: str
+
+class LinkChannelsPayload(BaseModel):
+    channel_ids: List[str]
+    primary_id: Optional[str] = None
+
 # -------------------- Indexes --------------------
 
 async def create_indexes():
