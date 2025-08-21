@@ -36,9 +36,11 @@ export default function CatalogCard({ item }){
           <div className="min-w-0">
             <div className="flex items-center gap-3">
               {item.avatar_url && imgOk ? (
-                <img src={item.avatar_url} alt={item.name} className="h-12 w-12 rounded-full object-cover border border-gray-200" onError={()=>setImgOk(false)} />
+                <button onClick={toCard} className="h-12 w-12 rounded-full overflow-hidden border border-gray-200">
+                  <img src={item.avatar_url} alt={item.name} className="h-full w-full object-cover" onError={()=>setImgOk(false)} />
+                </button>
               ) : (
-                <div className="h-12 w-12 rounded-full items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{initials}</div>
+                <button onClick={toCard} className="h-12 w-12 rounded-full items-center justify-center font-semibold text-white bg-gradient-to-br from-indigo-500 to-purple-500 flex">{initials}</button>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
