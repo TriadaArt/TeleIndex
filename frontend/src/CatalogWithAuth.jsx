@@ -10,93 +10,104 @@ const CatalogWithAuth = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
   const [channels, setChannels] = useState([]);
+  const [creators, setCreators] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
   const [sortBy, setSortBy] = useState('popular');
   const [selectedCategory, setSelectedCategory] = useState('');
-
-  // Mock data для демонстрации
-  const mockChannels = [
-    {
-      id: 1,
-      name: 'Новости 24/7',
-      description: 'Круглосуточные главные события, коротко и по делу.',
-      subscribers: 412000,
-      views: null,
-      er: 5.2,
-      cpm: 450,
-      cpv: null,
-      price: 18000,
-      avatar: 'H2',
-      category: 'Новости',
-      language: 'Русский',
-      location: 'Россия • Москва'
-    },
-    {
-      id: 2,
-      name: 'Технологии Будущего',
-      description: 'Последние новости из мира высоких технологий и инноваций.',
-      subscribers: 285000,
-      views: 145000,
-      er: 4.8,
-      cpm: 380,
-      cpv: 12,
-      price: 15000,
-      avatar: 'TB',
-      category: 'Технологии',
-      language: 'Русский',
-      location: 'Россия • Санкт-Петербург'
-    },
-    {
-      id: 3,
-      name: 'Бизнес Инсайты',
-      description: 'Аналитика рынков, стратегии развития и экспертные мнения.',
-      subscribers: 156000,
-      views: 89000,
-      er: 6.1,
-      cpm: 520,
-      cpv: 18,
-      price: 22000,
-      avatar: 'БИ',
-      category: 'Бизнес',
-      language: 'Русский',
-      location: 'Россия • Москва'
-    },
-    {
-      id: 4,
-      name: 'Здоровый Образ Жизни',
-      description: 'Советы по питанию, тренировкам и поддержанию здоровья.',
-      subscribers: 198000,
-      views: 112000,
-      er: 5.7,
-      cpm: 410,
-      cpv: 15,
-      price: 16500,
-      avatar: 'ЗОЖ',
-      category: 'Здоровье',
-      language: 'Русский',
-      location: 'Россия • Екатеринбург'
-    }
-  ];
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [filters, setFilters] = useState({
+    category: '',
+    minSubs: '',
+    maxSubs: '',
+    minViews: '',
+    maxViews: '',
+    featured: null,
+    verified: null
+  });
 
   useEffect(() => {
     // Check if user is logged in
     const token = localStorage.getItem("token");
     if (token) {
-      setUser({ name: "Пользователь" });
+      // Verify token and get user info
+      verifyToken(token);
     }
 
-    // Set mock data
-    setChannels(mockChannels);
-    setCategories([
-      { id: 1, name: 'Новости' },
-      { id: 2, name: 'Технологии' },
-      { id: 3, name: 'Бизнес' },
-      { id: 4, name: 'Здоровье' },
-      { id: 5, name: 'Образование' },
-      { id: 6, name: 'Развлечения' }
-    ]);
+    // Load data
+    loadInitialData();
   }, []);
+
+  useEffect(() => {
+    loadChannels();
+  }, [q, sortBy, selectedCategory, currentPage, filters]);
+
+  const verifyToken = async (token) => {
+    try {
+      const response = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      localStorage.removeItem("token");
+    }
+  };
+
+  const loadInitialData = async () => {
+    try {
+      const [categoriesRes, creatorsRes] = await Promise.all([
+        axios.get(`${API}/categories`),
+        axios.get(`${API}/creators?limit=10`)
+      ]);
+      
+      setCategories(categoriesRes.data || []);
+      setCreators(creatorsRes.data?.items || []);
+    } catch (error) {
+      console.error('Failed to load initial data:', error);
+    }
+  };
+
+  const loadChannels = async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      
+      if (q) params.set('q', q);
+      if (selectedCategory) params.set('category', selectedCategory);
+      if (filters.minSubs) params.set('min_subscribers', filters.minSubs);
+      if (filters.maxSubs) params.set('max_subscribers', filters.maxSubs);
+      if (filters.featured !== null) params.set('featured', filters.featured);
+      
+      params.set('page', currentPage.toString());
+      params.set('limit', '20');
+      
+      // Convert sortBy to API format
+      const sortMapping = {
+        'popular': '-subscribers',
+        'new': '-created_at',
+        'name': 'name',
+        'price': 'price_rub',
+        'er': '-er'
+      };
+      params.set('sort', sortMapping[sortBy] || '-subscribers');
+
+      const response = await axios.get(`${API}/channels?${params.toString()}`);
+      const data = response.data;
+      
+      setChannels(data.items || []);
+      setTotalItems(data.total || 0);
+      setTotalPages(Math.ceil((data.total || 0) / 20));
+    } catch (error) {
+      console.error('Failed to load channels:', error);
+      setChannels([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuthSuccess = (userData) => {
     setAuthModalOpen(false);
@@ -116,6 +127,22 @@ const CatalogWithAuth = () => {
   const openRegisterModal = () => {
     setAuthModalMode('register');
     setAuthModalOpen(true);
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Reset to first page when filtering
+  };
+
+  const formatSubscribers = (count) => {
+    if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
+    if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
+    return count?.toLocaleString() || '0';
+  };
+
+  const getChannelAvatar = (channel) => {
+    if (channel.avatar_url) return channel.avatar_url;
+    return channel.name?.substring(0, 2).toUpperCase() || 'CH';
   };
 
   const sortOptions = [
@@ -146,7 +173,7 @@ const CatalogWithAuth = () => {
             {user ? (
               <div className="flex items-center gap-3">
                 <span className="text-sm opacity-90">
-                  Добро пожаловать, {user.name}!
+                  Добро пожаловать, {user.email || user.name}!
                 </span>
                 <button 
                   className="text-sm bg-white/20 hover:bg-white/30 backdrop-blur px-3 py-1.5 rounded-lg transition-colors" 
@@ -205,7 +232,7 @@ const CatalogWithAuth = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar Filters */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 sticky top-6">
               <h3 className="font-semibold text-gray-900 mb-4">Фильтр</h3>
               
               <div className="space-y-6">
@@ -230,54 +257,11 @@ const CatalogWithAuth = () => {
                     onChange={(e) => setSelectedCategory(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    <option value="">Выбрать категории</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    <option value="">Все категории</option>
+                    {categories.map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
                     ))}
                   </select>
-                </div>
-
-                {/* Social Network */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Социальная сеть
-                  </label>
-                  <select className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                    <option>Telegram</option>
-                    <option>Instagram</option>
-                    <option>YouTube</option>
-                    <option>VK</option>
-                  </select>
-                </div>
-
-                {/* Gender Blogger */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Пол блогера
-                  </label>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-                      Мужской
-                    </button>
-                    <button className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-                      Женский
-                    </button>
-                  </div>
-                </div>
-
-                {/* Gender Audience */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Пол аудитории
-                  </label>
-                  <div className="flex gap-2">
-                    <button className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-                      Мужской
-                    </button>
-                    <button className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50">
-                      Женский
-                    </button>
-                  </div>
                 </div>
 
                 {/* Subscribers Count */}
@@ -289,33 +273,31 @@ const CatalogWithAuth = () => {
                     <input 
                       type="text" 
                       placeholder="от"
+                      value={filters.minSubs}
+                      onChange={(e) => handleFilterChange('minSubs', e.target.value)}
                       className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                     <input 
                       type="text" 
                       placeholder="до"
+                      value={filters.maxSubs}
+                      onChange={(e) => handleFilterChange('maxSubs', e.target.value)}
                       className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
 
-                {/* Views */}
+                {/* Featured Channels */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
-                    Охваты
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={filters.featured === true}
+                      onChange={(e) => handleFilterChange('featured', e.target.checked ? true : null)}
+                      className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-700">Только рекомендуемые</span>
                   </label>
-                  <div className="flex gap-2">
-                    <input 
-                      type="text" 
-                      placeholder="от"
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <input 
-                      type="text" 
-                      placeholder="до"
-                      className="flex-1 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                  </div>
                 </div>
               </div>
             </div>
@@ -340,86 +322,154 @@ const CatalogWithAuth = () => {
               ))}
             </div>
 
+            {/* Results Info */}
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-sm text-gray-600">
+                Найдено {totalItems} каналов
+              </p>
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage <= 1}
+                    className="px-3 py-1 text-sm border border-gray-200 rounded disabled:opacity-50"
+                  >
+                    ←
+                  </button>
+                  <span className="text-sm text-gray-600">
+                    {currentPage} из {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage >= totalPages}
+                    className="px-3 py-1 text-sm border border-gray-200 rounded disabled:opacity-50"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Channel Cards */}
-            <div className="space-y-4">
-              {channels.map((channel) => (
-                <div key={channel.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                  <div className="flex items-start gap-4">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold flex-shrink-0">
-                      {channel.avatar}
-                    </div>
-
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <h3 className="font-semibold text-gray-900 text-lg">{channel.name}</h3>
-                          <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
-                            <span>{channel.category}</span>
-                            <span>•</span>
-                            <span>{channel.language}</span>
-                            <span>•</span>
-                            <span>{channel.location}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Format and Post Count */}
-                        <div className="text-right flex-shrink-0">
-                          <select className="text-sm border border-gray-200 rounded px-2 py-1">
-                            <option>1/24</option>
-                          </select>
-                          <select className="text-sm border border-gray-200 rounded px-2 py-1 ml-2">
-                            <option>1</option>
-                          </select>
-                        </div>
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {channels.map((channel) => (
+                  <div key={channel.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                    <div className="flex items-start gap-4">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-semibold flex-shrink-0">
+                        {channel.avatar_url ? (
+                          <img src={channel.avatar_url} alt={channel.name} className="w-full h-full rounded-xl object-cover" />
+                        ) : (
+                          getChannelAvatar(channel)
+                        )}
                       </div>
 
-                      <p className="text-gray-600 mb-3">{channel.description}</p>
-
-                      {/* Metrics */}
-                      <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
-                        <div className="flex items-center gap-1">
-                          <span>👥</span>
-                          <span>{channel.subscribers.toLocaleString()}</span>
-                        </div>
-                        {channel.views && (
-                          <div className="flex items-center gap-1">
-                            <span>👁</span>
-                            <span>Просм.</span>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 text-lg">{channel.name}</h3>
+                            <div className="flex items-center gap-2 mt-1 text-sm text-gray-500">
+                              {channel.category && <span>{channel.category}</span>}
+                              {channel.language && (
+                                <>
+                                  <span>•</span>
+                                  <span>{channel.language}</span>
+                                </>
+                              )}
+                              {(channel.country || channel.city) && (
+                                <>
+                                  <span>•</span>
+                                  <span>{[channel.country, channel.city].filter(Boolean).join(' • ')}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <span>📊</span>
-                          <span>ER {channel.er}%</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span>💰</span>
-                          <span>CPM ₽ {channel.cpm}</span>
-                        </div>
-                        {channel.cpv && (
-                          <div className="flex items-center gap-1">
-                            <span>📺</span>
-                            <span>CPV</span>
+                          
+                          {/* Status badges */}
+                          <div className="flex gap-2 flex-shrink-0">
+                            {channel.is_featured && (
+                              <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                Рекомендуем
+                              </span>
+                            )}
+                            {channel.link_status === 'alive' && (
+                              <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                Активен
+                              </span>
+                            )}
                           </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <span>⏰</span>
-                          <span>3 дн.</span>
                         </div>
-                      </div>
 
-                      {/* Price */}
-                      <div className="flex items-center justify-end">
-                        <div className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold">
-                          {channel.price.toLocaleString()} ₽
+                        {channel.short_description && (
+                          <p className="text-gray-600 mb-3">{channel.short_description}</p>
+                        )}
+
+                        {/* Metrics */}
+                        <div className="flex items-center gap-6 text-sm text-gray-500 mb-4">
+                          <div className="flex items-center gap-1">
+                            <span>👥</span>
+                            <span>{formatSubscribers(channel.subscribers)}</span>
+                          </div>
+                          {channel.er && (
+                            <div className="flex items-center gap-1">
+                              <span>📊</span>
+                              <span>ER {channel.er}%</span>
+                            </div>
+                          )}
+                          {channel.cpm_rub && (
+                            <div className="flex items-center gap-1">
+                              <span>💰</span>
+                              <span>CPM ₽{channel.cpm_rub}</span>
+                            </div>
+                          )}
+                          {channel.growth_30d && (
+                            <div className="flex items-center gap-1">
+                              <span>📈</span>
+                              <span>{channel.growth_30d > 0 ? '+' : ''}{channel.growth_30d}%</span>
+                            </div>
+                          )}
+                          {channel.last_post_at && (
+                            <div className="flex items-center gap-1">
+                              <span>⏰</span>
+                              <span>{new Date(channel.last_post_at).toLocaleDateString()}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Price */}
+                        <div className="flex items-center justify-between">
+                          <a 
+                            href={channel.link} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
+                          >
+                            Перейти к каналу →
+                          </a>
+                          {channel.price_rub && (
+                            <div className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold">
+                              {channel.price_rub.toLocaleString()} ₽
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+                
+                {channels.length === 0 && !loading && (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500">Каналы не найдены</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
