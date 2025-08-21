@@ -1158,6 +1158,53 @@ async def list_creators(
         }
     )
 
+@api.get("/creators/suggestions")
+async def get_creator_suggestions(
+    limit: int = Query(6, ge=1, le=20, description="Number of suggestions"),
+    featured_only: bool = Query(False, description="Only return featured/premium creators"),
+    category: Optional[str] = Query(None, description="Filter by category")
+):
+    """Get random/top creators for homepage widgets"""
+    # Build query
+    query = {"flags.active": True}
+    
+    if featured_only:
+        query["priority_level"] = {"$in": ["featured", "premium"]}
+    
+    if category:
+        query["category"] = category
+    
+    # Get top creators by subscribers, then randomize selection
+    cursor = db.creators.find(query).sort("metrics.subscribers_total", -1).limit(limit * 3)
+    candidates = await cursor.to_list(length=limit * 3)
+    
+    if not candidates:
+        return {"items": []}
+    
+    # Randomize selection from top candidates
+    import random
+    random.shuffle(candidates)
+    selected = candidates[:limit]
+    
+    # Convert to response format
+    creators = []
+    for item in selected:
+        creator_data = parse_from_mongo(item)
+        # Ensure all fields have defaults
+        if "metrics" not in creator_data:
+            creator_data["metrics"] = CreatorMetrics().dict()
+        if "pricing" not in creator_data:
+            creator_data["pricing"] = CreatorPricing().dict()
+        if "audience_stats" not in creator_data:
+            creator_data["audience_stats"] = CreatorAudienceStats().dict()
+        if "contacts" not in creator_data:
+            creator_data["contacts"] = CreatorContacts().dict()
+        if "priority_level" not in creator_data:
+            creator_data["priority_level"] = "normal"
+        creators.append(CreatorResponse(**creator_data))
+    
+    return {"items": creators}
+
 @api.get("/creators/{id_or_slug}", response_model=CreatorResponse)
 async def get_creator(
     id_or_slug: str,
