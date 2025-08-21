@@ -105,7 +105,7 @@ const Admin = () => {
                     {channels.map(ch => (
                       <tr key={ch.id} className="border-b last:border-b-0">
                         <td className="py-2 pr-4">{ch.name}</td>
-                        <td className="py-2 pr-4">{ch.owner_id || '-'}</td>
+                        <td className="py-2 pr-4">{/* map to email later */}{ch.owner_email || ch.owner_id || '-'}</td>
                         <td className="py-2 pr-4">{ch.status}</td>
                         <td className="py-2 pr-4">{ch.subscribers ?? '-'}</td>
                         <td className="py-2 pr-4 flex items-center gap-2">
