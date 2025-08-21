@@ -149,6 +149,7 @@ class ChannelBase(BaseModel):
     seo_description: Optional[str] = None
     status: ChannelStatus = "approved"
     is_featured: bool = False
+    owner_id: Optional[str] = None
     growth_score: Optional[float] = None
     link_status: Optional[Literal["alive", "dead"]] = None
     link_last_checked: Optional[str] = None
