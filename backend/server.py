@@ -1470,6 +1470,7 @@ async def delete_creator(
     
     return {"ok": True, "deleted": "hard" if hard else "soft"}
 
+# Enforce single owner: when linking owner via this endpoint, ensure only one owner exists per channel.
 @api.post("/creators/{creator_id}/channels")
 async def link_channels_to_creator(
     creator_id: str,
