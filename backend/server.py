@@ -190,7 +190,10 @@ class PaginatedChannels(BaseModel):
 
 class UserBase(BaseModel):
     email: EmailStr
-    role: Literal["admin", "editor"] = "admin"
+    role: Literal["admin", "owner", "advertiser", "editor"] = "advertiser"
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    tg_username: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str
