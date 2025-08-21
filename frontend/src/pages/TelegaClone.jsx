@@ -90,7 +90,7 @@ export default function TelegaClone(){
     try {
       setLoading(true);
       const [channelsRes, categoriesRes] = await Promise.all([
-        axios.get(`${API}/channels?limit=100`), // Get more channels for better filtering
+        axios.get(`${API}/channels?limit=48`), // Get more channels for better filtering
         axios.get(`${API}/categories`)
       ]);
       
