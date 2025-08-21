@@ -150,66 +150,52 @@ export default function TelegaClone(){
       <HeroAnimated />
 
       <div className="tg-header">
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">T</span>
-          </div>
-          <h1 className="font-semibold text-lg text-gray-900">TeleIndex</h1>
-          {useRealData && (
-            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium ml-2">
-              Live Data
-            </span>
-          )}
-          {loading && (
-            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium ml-2">
-              Loading...
-            </span>
-          )}
-        </div>
-        
-        <div className="flex items-center gap-4">
-          {/* Debug info */}
-          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-            User: {user ? 'logged' : 'guest'}
-          </span>
-          
-          {user ? (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-700 font-medium">
-                Добро пожаловать, {user.email || user.name}!
+        <div className="tg-header-inner">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+              <span className="text-white font-bold text-base">T</span>
+            </div>
+            <h1 className="font-semibold text-xl text-gray-900 tracking-tight">TeleIndex</h1>
+            <div className="text-sm text-gray-500 font-medium border-l border-gray-200 pl-4">Каталог</div>
+            {useRealData && (
+              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium ml-2">
+                Live Data
               </span>
-              {user?.role === 'admin' && (
-                <button 
-                  className="tg-btn-primary" 
-                  onClick={goToAdmin}
-                >
-                  Админ
+            )}
+            {loading && (
+              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium ml-2">
+                Loading...
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {user ? (
+              <>
+                <span className="text-sm text-gray-700 font-semibold">
+                  {user.email || user.name}
+                </span>
+                {user?.role === 'admin' && (
+                  <button className="tg-pill tg-pill-soft tg-grad-hover" onClick={goToAdmin}>
+                    Админ
+                  </button>
+                )}
+                <button className="tg-pill tg-pill-outline" onClick={handleLogout}>
+                  Выйти
                 </button>
-              )}
-              <button 
-                className="tg-btn-outline" 
-                onClick={handleLogout}
-              >
-                Выйти
-              </button>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <button 
-                className="tg-btn-outline" 
-                onClick={openLoginModal}
-              >
-                Войти
-              </button>
-              <button 
-                className="tg-btn-green" 
-                onClick={openRegisterModal}
-              >
-                Регистрация
-              </button>
-            </div>
-          )}
-          <div className="text-sm text-gray-500 font-medium border-l border-gray-200 pl-4">Каталог</div>
+              </>
+            ) : (
+              <>
+                {/* Swapped order per request: Регистрация then Войти */}
+                <button className="tg-pill tg-pill-soft tg-grad-hover-soft" onClick={openRegisterModal}>
+                  Регистрация
+                </button>
+                <button className="tg-pill tg-pill-outline tg-grad-hover" onClick={openLoginModal}>
+                  Войти
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
 
