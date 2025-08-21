@@ -17,7 +17,7 @@ export default function CatalogCard({ item }) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <div className="tg-title truncate">{item.name}</div>
+                <button className="tg-title truncate text-left hover:underline" onClick={(e)=>{e.stopPropagation(); navigate(`/tchannel/${item.username || (item.link||'').replace('https://t.me/','')}`)}}>{item.name}</button>
                 {item.is_featured && <span className="tg-badge">Featured</span>}
                 {item.category && <span className="tg-badge">{item.category}</span>}
               </div>
