@@ -578,11 +578,22 @@ async def list_categories():
     return [c.get("name") for c in cats]
 
 @api.post("/channels", response_model=ChannelResponse)
-async def create_channel(payload: ChannelCreate):
-    if not payload.link.startswith("http") and not payload.link.startswith("t.me"):
+async def create_channel(payload: ChannelCreate, user: Dict[str, Any] = Depends(get_current_user)):
+    if not (payload.link.startswith("http") or payload.link.startswith("t.me")):
         raise HTTPException(400, detail="Invalid link. Provide t.me or https URL")
     now = utcnow_iso()
-    item = {"id": str(uuid.uuid4()), **payload.model_dump(), "created_at": now, "updated_at": now}
+    # ensure username
+    uname = (payload.username or "").strip()
+    if not uname:
+        uname = payload.link.replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").replace("@", "").strip("/")
+    status = payload.status or "draft"
+    owner_id = payload.owner_id
+    if user.get("role") != "admin":
+        owner_id = user["id"]
+        # only allow draft or moderation for non-admins
+        if status not in ["draft", "moderation"]:
+            status = "moderation"
+    item = {"id": str(uuid.uuid4()), **payload.model_dump(), "username": uname, "status": status, "owner_id": owner_id, "created_at": now, "updated_at": now}
     await db.channels.insert_one(prepare_for_mongo(item))
     return ChannelResponse(**item)
 
