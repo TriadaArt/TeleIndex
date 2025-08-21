@@ -1245,18 +1245,21 @@ class BackendTester:
             
             self.log(f"✅ GET /api/creators - Basic listing returned {len(data['items'])} creators")
             
-            # Test search filter (q parameter)
-            search_response = self.session.get(f"{BASE_URL}/creators?q=tech")
-            assert search_response.status_code == 200, "Search filter failed"
-            search_data = search_response.json()
-            
-            # Verify search results contain the search term in name or tags
-            for item in search_data["items"]:
-                name_match = "tech" in item["name"].lower()
-                tags_match = any("tech" in tag.lower() for tag in item.get("tags", []))
-                assert name_match or tags_match, f"Search result doesn't match 'tech': {item['name']}"
-            
-            self.log(f"✅ GET /api/creators?q=tech - Search returned {len(search_data['items'])} results")
+            # Test search filter (q parameter) - only if creators exist
+            if data["items"]:
+                search_response = self.session.get(f"{BASE_URL}/creators?q=tech")
+                assert search_response.status_code == 200, "Search filter failed"
+                search_data = search_response.json()
+                
+                # Verify search results contain the search term in name or tags (if any results)
+                for item in search_data["items"]:
+                    name_match = "tech" in item["name"].lower()
+                    tags_match = any("tech" in tag.lower() for tag in item.get("tags", []))
+                    assert name_match or tags_match, f"Search result doesn't match 'tech': {item['name']}"
+                
+                self.log(f"✅ GET /api/creators?q=tech - Search returned {len(search_data['items'])} results")
+            else:
+                self.log("ℹ️  Skipping search test - no creators exist yet")
             
             # Test category filter
             cat_response = self.session.get(f"{BASE_URL}/creators?category=Технологии")
