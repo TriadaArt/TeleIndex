@@ -9,8 +9,8 @@ const API = `${BACKEND_URL}/api`;
 const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => {
   const [mode, setMode] = useState(initialMode); // 'register', 'login', 'forgot'
   const [formData, setFormData] = useState({
-    name: '',
-    surname: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     phone: '',
