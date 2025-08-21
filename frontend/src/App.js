@@ -339,6 +339,9 @@ const Admin = ({ onLogout, onOpenDetail }) => {
     const a = await axios.get(`${API}/admin/channels?status=approved`); setApproved(a.data.items || []);
     const s = await axios.get(`${API}/admin/summary`); setDeadInfo(s.data);
     const dl = await axios.get(`${API}/admin/dead`); setDeadList(dl.data || []);
+    
+    // Load creators
+    const c = await axios.get(`${API}/creators?limit=50`); setCreators(c.data.items || []);
   };
   useEffect(() => { reload(); }, []);
 
