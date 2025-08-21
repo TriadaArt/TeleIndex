@@ -9,8 +9,7 @@
 
 @layer components {
   .tg-container { @apply max-w-[1280px] mx-auto px-6; }
-  .tg-header { @apply w-full py-4 flex items-center gap-3 border-b bg-white shadow-sm; }
-  .tg-header-content { @apply tg-container flex items-center gap-3; }
+  .tg-header { @apply w-full py-4 flex items-center justify-between border-b bg-white shadow-sm px-6; }
 
   /* Hero polygonal abstraction with animated diamonds and textured layer */
   .tg-hero { @apply relative overflow-hidden; background-image: linear-gradient(135deg, rgba(79,70,229,0.95) 0%, rgba(124,58,237,0.9) 50%, rgba(6,182,212,0.9) 100%), repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0, rgba(255,255,255,0.06) 1px, rgba(255,255,255,0.0) 1px, rgba(255,255,255,0.0) 6px), url('https://customer-assets.emergentagent.com/job_tgcatalog/artifacts/6hq0okl0_9099100.jpg'); background-size: cover; background-position: center; background-blend-mode: overlay, overlay, normal; }
