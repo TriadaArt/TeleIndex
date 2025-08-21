@@ -219,9 +219,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Войти</h2>
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-          <p className="text-sm text-blue-800 font-medium mb-1">Для тестирования используйте:</p>
-          <p className="text-xs text-blue-600">Email: admin@teleindex.com</p>
-          <p className="text-xs text-blue-600">Пароль: SecureAdmin123!</p>
+          <p className="text-sm text-blue-800 font-medium mb-1">Тестовые аккаунты:</p>
+          <p className="text-xs text-blue-600">Пользователь: user1@test.com / Test1234</p>
+          <p className="text-xs text-blue-600">Админ: admin@test.com / Admin123</p>
         </div>
       </div>
 
