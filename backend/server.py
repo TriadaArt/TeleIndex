@@ -677,12 +677,20 @@ async def list_channels(
     items = [ChannelResponse(**parse_from_mongo(i)) for i in items_raw]
     return PaginatedChannels(items=items, total=total, page=page, limit=limit, has_more=(skip + len(items)) < total)
 
-@api.get("/channels/{channel_id}", response_model=ChannelResponse)
+@api.get("/channels/{channel_id}")
 async def get_channel(channel_id: str):
     doc = await db.channels.find_one({"id": channel_id})
     if not doc:
         raise HTTPException(404, detail="Channel not found")
-    return ChannelResponse(**parse_from_mongo(doc))
+    base = parse_from_mongo(doc)
+    # attach owner
+    owner = None
+    if base.get("owner_id"):
+      u = await db.users.find_one({"id": base["owner_id"]})
+      if u:
+        uu = parse_from_mongo(u)
+        owner = {"id": uu.get("id"), "email": uu.get("email"), "role": uu.get("role"), "name": uu.get("email").split("@")[0]}
+    return {"channel": ChannelResponse(**base), "owner": owner}
 
 @api.get("/channels/{channel_id}/owners")
 async def get_channel_owners(channel_id: str):
