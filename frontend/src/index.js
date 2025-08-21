@@ -13,7 +13,7 @@ root.render(
       <Routes>
         <Route path="/" element={<TelegaClone />} />
         <Route path="/admin" element={<Admin />} />
-        <Route path="/channel/:id" element={<ChannelDetail />} />
+        <Route path="/channel/:id" element={<ChannelCardPage />} />
         <Route path="*" element={<TelegaClone />} />
       </Routes>
     </BrowserRouter>
