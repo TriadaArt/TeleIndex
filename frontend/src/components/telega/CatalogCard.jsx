@@ -53,7 +53,7 @@ export default function CatalogCard({ item }){
                 </div>
               </div>
             </div>
-            <p className="tg-desc line-clamp-2">{item.short_description}</p>
+            <button className="tg-desc line-clamp-2 text-left hover:underline" onClick={toCard}>{item.short_description}</button>
             <div className="tg-metrics-row">
               <span><Icon name="users" />{item.subscribers != null ? Intl.NumberFormat('ru-RU').format(item.subscribers) : '-'}</span>
               <span className="tg-sep">•</span>
