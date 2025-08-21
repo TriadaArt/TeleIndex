@@ -9,6 +9,12 @@ const Admin = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [tab, setTab] = useState('channels');
+  const [users, setUsers] = useState([]);
+  const [channels, setChannels] = useState([]);
+  const [uPage, setUPage] = useState(1);
+  const [cPage, setCPage] = useState(1);
+  const PAGE_SIZE = 20;
 
   useEffect(() => {
     checkAuth();
