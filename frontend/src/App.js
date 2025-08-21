@@ -839,17 +839,18 @@ function App() {
     navigate('/admin');
   };
 
+  // Test component to ensure changes are working
   return (
-    <>
-      <Routes>
-        <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
-        <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
-        <Route path="/c/:id" element={<RouteDetail />} />
-        <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
-        <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
-        {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
-        <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
-      </Routes>
+    <div className="min-h-screen bg-blue-500 flex items-center justify-center">
+      <div className="text-white text-center">
+        <h1 className="text-4xl font-bold mb-4">TeleIndex App Test</h1>
+        <button 
+          onClick={() => setAuthModalOpen(true)}
+          className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg"
+        >
+          Открыть модальное окно
+        </button>
+      </div>
       
       <AuthModal 
         isOpen={authModalOpen} 
@@ -857,7 +858,7 @@ function App() {
         initialMode={authModalMode}
         onSuccess={handleAuthSuccess}
       />
-    </>
+    </div>
   );
 }
 
