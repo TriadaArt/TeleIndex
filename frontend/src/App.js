@@ -834,4 +834,458 @@ const RouteDetail = () => {
   return <Detail id={id} onBack={() => navigate('/')} />;
 };
 
+// Creators Catalog Component (Public)
+const CreatorsCatalog = ({ onGoAdmin }) => {
+  const [creators, setCreators] = useState([]);
+  const [filteredCreators, setFilteredCreators] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // Filters state
+  const [filters, setFilters] = useState({
+    q: "",
+    category: "",
+    priority_level: "",
+    verified: "",
+    country: "",
+    subscribers_min: "",
+    subscribers_max: "",
+    price_min: "",
+    price_max: ""
+  });
+  
+  // Pagination and sorting
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(24);
+  const [sortBy, setSortBy] = useState("subscribers");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  // Load creators data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [creatorsRes, categoriesRes] = await Promise.all([
+          axios.get(`${API}/creators?limit=100&sort=${sortBy}&order=${sortOrder}`),
+          axios.get(`${API}/categories`)
+        ]);
+        
+        setCreators(creatorsRes.data.items || []);
+        setCategories(categoriesRes.data || []);
+      } catch (error) {
+        console.error('Failed to load creators:', error);
+        setCreators([]);
+        setCategories([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [sortBy, sortOrder]);
+
+  // Apply filters
+  useEffect(() => {
+    let filtered = [...creators];
+
+    // Text search
+    if (filters.q) {
+      const query = filters.q.toLowerCase();
+      filtered = filtered.filter(creator => 
+        creator.name?.toLowerCase().includes(query) ||
+        creator.bio?.toLowerCase().includes(query) ||
+        creator.tags?.some(tag => tag.toLowerCase().includes(query))
+      );
+    }
+
+    // Category filter
+    if (filters.category) {
+      filtered = filtered.filter(creator => creator.category === filters.category);
+    }
+
+    // Priority level filter
+    if (filters.priority_level) {
+      filtered = filtered.filter(creator => creator.priority_level === filters.priority_level);
+    }
+
+    // Verified filter
+    if (filters.verified !== "") {
+      const isVerified = filters.verified === "true";
+      filtered = filtered.filter(creator => creator.flags?.verified === isVerified);
+    }
+
+    // Country filter
+    if (filters.country) {
+      filtered = filtered.filter(creator => creator.country === filters.country);
+    }
+
+    // Subscriber range filter
+    if (filters.subscribers_min) {
+      filtered = filtered.filter(creator => (creator.metrics?.subscribers_total || 0) >= Number(filters.subscribers_min));
+    }
+    if (filters.subscribers_max) {
+      filtered = filtered.filter(creator => (creator.metrics?.subscribers_total || 0) <= Number(filters.subscribers_max));
+    }
+
+    // Price range filter
+    if (filters.price_min) {
+      filtered = filtered.filter(creator => (creator.pricing?.min_price || 0) >= Number(filters.price_min));
+    }
+    if (filters.price_max) {
+      filtered = filtered.filter(creator => (creator.pricing?.max_price || 0) <= Number(filters.price_max));
+    }
+
+    setFilteredCreators(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
+  }, [creators, filters]);
+
+  // Pagination
+  const totalPages = Math.ceil(filteredCreators.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedCreators = filteredCreators.slice(startIndex, startIndex + itemsPerPage);
+
+  const handleFilterChange = (key, value) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      q: "", category: "", priority_level: "", verified: "", country: "",
+      subscribers_min: "", subscribers_max: "", price_min: "", price_max: ""
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">Загрузка создателей...</div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      {/* Header */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Каталог Создателей</h1>
+          <div className="flex items-center gap-4">
+            <a href="/" className="btn">← Каналы</a>
+            <button onClick={onGoAdmin} className="btn">Админ</button>
+          </div>
+        </div>
+
+        <div className="flex gap-6">
+          {/* Filters Sidebar */}
+          <div className="w-80 sidebar sticky top-6 h-fit">
+            <h3 className="font-semibold mb-4">Фильтры</h3>
+            
+            {/* Search */}
+            <input
+              className="w-full h-11 rounded-xl border px-4 mb-4"
+              placeholder="Поиск по имени, описанию, тегам"
+              value={filters.q}
+              onChange={(e) => handleFilterChange('q', e.target.value)}
+            />
+
+            {/* Category */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Категория</label>
+              <select
+                className="w-full h-11 rounded-xl border px-4"
+                value={filters.category}
+                onChange={(e) => handleFilterChange('category', e.target.value)}
+              >
+                <option value="">Все категории</option>
+                {categories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Priority Level */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Уровень</label>
+              <select
+                className="w-full h-11 rounded-xl border px-4"
+                value={filters.priority_level}
+                onChange={(e) => handleFilterChange('priority_level', e.target.value)}
+              >
+                <option value="">Все уровни</option>
+                <option value="premium">Premium</option>
+                <option value="featured">Featured</option>
+                <option value="normal">Normal</option>
+              </select>
+            </div>
+
+            {/* Verified */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Верификация</label>
+              <select
+                className="w-full h-11 rounded-xl border px-4"
+                value={filters.verified}
+                onChange={(e) => handleFilterChange('verified', e.target.value)}
+              >
+                <option value="">Все</option>
+                <option value="true">Верифицированные</option>
+                <option value="false">Не верифицированные</option>
+              </select>
+            </div>
+
+            {/* Country */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Страна</label>
+              <select
+                className="w-full h-11 rounded-xl border px-4"
+                value={filters.country}
+                onChange={(e) => handleFilterChange('country', e.target.value)}
+              >
+                <option value="">Все страны</option>
+                <option value="RU">Россия</option>
+                <option value="UA">Украина</option>
+                <option value="BY">Беларусь</option>
+                <option value="KZ">Казахстан</option>
+              </select>
+            </div>
+
+            {/* Subscriber Range */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Подписчики</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  className="h-10 rounded-lg border px-3 text-sm"
+                  placeholder="От"
+                  value={filters.subscribers_min}
+                  onChange={(e) => handleFilterChange('subscribers_min', e.target.value)}
+                />
+                <input
+                  type="number"
+                  className="h-10 rounded-lg border px-3 text-sm"
+                  placeholder="До"
+                  value={filters.subscribers_max}
+                  onChange={(e) => handleFilterChange('subscribers_max', e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Price Range */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">Цена (₽)</label>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  className="h-10 rounded-lg border px-3 text-sm"
+                  placeholder="От"
+                  value={filters.price_min}
+                  onChange={(e) => handleFilterChange('price_min', e.target.value)}
+                />
+                <input
+                  type="number"
+                  className="h-10 rounded-lg border px-3 text-sm"
+                  placeholder="До"
+                  value={filters.price_max}
+                  onChange={(e) => handleFilterChange('price_max', e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button onClick={clearFilters} className="w-full btn">
+              Сбросить фильтры
+            </button>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Sort Controls */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="text-sm text-gray-600">
+                Найдено: {filteredCreators.length} создателей
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Сортировать:</span>
+                <select
+                  className="h-10 rounded-lg border px-3 text-sm"
+                  value={`${sortBy}-${sortOrder}`}
+                  onChange={(e) => {
+                    const [newSort, newOrder] = e.target.value.split('-');
+                    setSortBy(newSort);
+                    setSortOrder(newOrder);
+                  }}
+                >
+                  <option value="subscribers-desc">По подписчикам ↓</option>
+                  <option value="subscribers-asc">По подписчикам ↑</option>
+                  <option value="name-asc">По имени ↑</option>
+                  <option value="name-desc">По имени ↓</option>
+                  <option value="created_at-desc">Новые ↓</option>
+                  <option value="created_at-asc">Старые ↑</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Creators Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+              {paginatedCreators.map((creator) => (
+                <CreatorCard key={creator.id} creator={creator} />
+              ))}
+            </div>
+
+            {/* No Results */}
+            {filteredCreators.length === 0 && (
+              <div className="text-center py-12">
+                <div className="text-gray-500 mb-4">Создатели не найдены</div>
+                <button onClick={clearFilters} className="btn-primary">
+                  Сбросить фильтры
+                </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2">
+                <button
+                  className="btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  ← Пред
+                </button>
+                
+                {[...Array(Math.min(totalPages, 7))].map((_, i) => {
+                  let pageNum;
+                  if (totalPages <= 7) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 4) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 3) {
+                    pageNum = totalPages - 6 + i;
+                  } else {
+                    pageNum = currentPage - 3 + i;
+                  }
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`pagination ${currentPage === pageNum ? 'active' : ''}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                
+                <button
+                  className="btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  След →
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Creator Card Component
+const CreatorCard = ({ creator }) => {
+  return (
+    <div className="card card-pad hover:shadow-lg transition-shadow">
+      <div className="flex items-start gap-4 mb-4">
+        {creator.avatar_url ? (
+          <img src={creator.avatar_url} alt={creator.name} className="h-16 w-16 rounded-xl object-cover border" />
+        ) : (
+          <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+            {(creator.name || '?').slice(0, 2).toUpperCase()}
+          </div>
+        )}
+        
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1">
+            <h3 className="font-semibold text-lg truncate">{creator.name}</h3>
+            {creator.flags?.verified && <span className="badge badge-green">✓</span>}
+          </div>
+          
+          <div className="flex items-center gap-2 mb-2">
+            {creator.priority_level === "premium" && <span className="badge badge-yellow">Premium</span>}
+            {creator.priority_level === "featured" && <span className="badge badge-blue">Featured</span>}
+            <span className="text-sm text-gray-500">{creator.category} • {creator.language}</span>
+          </div>
+          
+          {creator.bio && (
+            <p className="text-sm text-gray-600 line-clamp-2 mb-3">{creator.bio}</p>
+          )}
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500">👥</span>
+          <span>{ruShort(creator.metrics?.subscribers_total || 0)}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-gray-500">📢</span>
+          <span>{creator.metrics?.channels_count || 0} каналов</span>
+        </div>
+        
+        {creator.pricing?.min_price && (
+          <>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">💰</span>
+              <span>{ruShort(creator.pricing.min_price)} ₽</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-gray-500">📊</span>
+              <span>{creator.metrics?.avg_er_percent ? `${creator.metrics.avg_er_percent}%` : '—'}</span>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Tags */}
+      {creator.tags && creator.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 mb-4">
+          {creator.tags.slice(0, 3).map((tag, idx) => (
+            <span key={idx} className="px-2 py-1 bg-gray-100 text-xs rounded-lg">
+              {tag}
+            </span>
+          ))}
+          {creator.tags.length > 3 && (
+            <span className="text-xs text-gray-500">+{creator.tags.length - 3}</span>
+          )}
+        </div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex items-center gap-2">
+        <button className="flex-1 btn-primary">Подробнее</button>
+        {creator.contacts?.tg_username && (
+          <a
+            href={`https://t.me/${creator.contacts.tg_username}`}
+            target="_blank"
+            rel="noreferrer"
+            className="btn"
+          >
+            Telegram
+          </a>
+        )}
+        {creator.contacts?.email && (
+          <a
+            href={`mailto:${creator.contacts.email}`}
+            className="btn"
+          >
+            Email
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
+
 export default App;
