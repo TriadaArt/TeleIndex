@@ -1400,6 +1400,96 @@ async def unlink_channel_from_creator(
     
     return {"ok": True, "removed": 1}
 
+@api.post("/creators/{creator_id}/verify")
+async def verify_creator(
+    creator_id: str,
+    payload: VerifyCreatorPayload,
+    user: Dict[str, Any] = Depends(get_current_admin)
+):
+    """Mark creator as verified (admin only)"""
+    creator = await db.creators.find_one({"id": creator_id})
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    await db.creators.update_one(
+        {"id": creator_id},
+        {"$set": {"flags.verified": payload.verified, "updated_at": utcnow_iso()}}
+    )
+    
+    return {"ok": True, "verified": payload.verified}
+
+@api.post("/creators/{creator_id}/feature")
+async def feature_creator(
+    creator_id: str,
+    payload: FeatureCreatorPayload,
+    user: Dict[str, Any] = Depends(get_current_admin)
+):
+    """Set creator priority level (admin only)"""
+    creator = await db.creators.find_one({"id": creator_id})
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    # Update priority level and also set featured flag for backward compatibility
+    update_data = {
+        "priority_level": payload.priority_level,
+        "flags.featured": payload.priority_level in ["featured", "premium"],
+        "updated_at": utcnow_iso()
+    }
+    
+    await db.creators.update_one(
+        {"id": creator_id},
+        {"$set": update_data}
+    )
+    
+    return {"ok": True, "priority_level": payload.priority_level}
+
+@api.get("/creators/suggestions")
+async def get_creator_suggestions(
+    limit: int = Query(6, ge=1, le=20, description="Number of suggestions"),
+    featured_only: bool = Query(False, description="Only return featured/premium creators"),
+    category: Optional[str] = Query(None, description="Filter by category")
+):
+    """Get random/top creators for homepage widgets"""
+    # Build query
+    query = {"flags.active": True}
+    
+    if featured_only:
+        query["priority_level"] = {"$in": ["featured", "premium"]}
+    
+    if category:
+        query["category"] = category
+    
+    # Get top creators by subscribers, then randomize selection
+    cursor = db.creators.find(query).sort("metrics.subscribers_total", -1).limit(limit * 3)
+    candidates = await cursor.to_list(length=limit * 3)
+    
+    if not candidates:
+        return {"items": []}
+    
+    # Randomize selection from top candidates
+    import random
+    random.shuffle(candidates)
+    selected = candidates[:limit]
+    
+    # Convert to response format
+    creators = []
+    for item in selected:
+        creator_data = parse_from_mongo(item)
+        # Ensure all fields have defaults
+        if "metrics" not in creator_data:
+            creator_data["metrics"] = CreatorMetrics().dict()
+        if "pricing" not in creator_data:
+            creator_data["pricing"] = CreatorPricing().dict()
+        if "audience_stats" not in creator_data:
+            creator_data["audience_stats"] = CreatorAudienceStats().dict()
+        if "contacts" not in creator_data:
+            creator_data["contacts"] = CreatorContacts().dict()
+        if "priority_level" not in creator_data:
+            creator_data["priority_level"] = "normal"
+        creators.append(CreatorResponse(**creator_data))
+    
+    return {"items": creators}
+
 @api.post("/admin/creators/seed")
 async def seed_creators(
     count: int = Query(10, description="Number of creators to create (10 or 100)"),
