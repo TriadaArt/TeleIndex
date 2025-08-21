@@ -293,7 +293,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -20 }}
-      transition={{ duration: 0.3 }}
+      transition={ { duration: 0.3 }}
       className="p-8"
     >
       <div className="text-center mb-8">
@@ -304,6 +304,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-2xl">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
         <div>
           <input
             type="email"
@@ -313,21 +319,24 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
             onChange={handleInputChange}
             className="w-full h-14 px-4 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-base"
             required
+            disabled={loading}
           />
         </div>
 
         <button
           type="submit"
-          className="w-full h-14 bg-green-500 hover:bg-green-600 text-white font-medium rounded-2xl transition-colors duration-200 mt-8"
+          disabled={loading}
+          className="w-full h-14 bg-green-500 hover:bg-green-600 disabled:bg-gray-300 text-white font-medium rounded-2xl transition-colors duration-200 mt-8"
         >
-          Восстановить пароль
+          {loading ? 'Отправка...' : 'Восстановить пароль'}
         </button>
 
         <div className="text-center mt-6">
           <button
             type="button"
-            onClick={() => setMode('login')}
+            onClick={() => { setMode('login'); setError(''); }}
             className="text-purple-600 hover:text-purple-700 font-medium"
+            disabled={loading}
           >
             Назад
           </button>
