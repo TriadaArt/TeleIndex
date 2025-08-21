@@ -824,6 +824,17 @@ async def admin_update_channel(channel_id: str, payload: ChannelUpdate, user: Di
     doc = await db.channels.find_one({"id": channel_id})
     return ChannelResponse(**parse_from_mongo(doc))
 
+@api.patch("/admin/channels/{channel_id}/owner")
+async def admin_change_owner(channel_id: str, new_owner_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
+    existing = await db.channels.find_one({"id": channel_id})
+    if not existing:
+        raise HTTPException(404, detail="Channel not found")
+    u = await db.users.find_one({"id": new_owner_id})
+    if not u:
+        raise HTTPException(404, detail="User not found")
+    await db.channels.update_one({"id": channel_id}, {"$set": {"owner_id": new_owner_id, "updated_at": utcnow_iso()}})
+    return {"ok": True}
+
 @api.post("/admin/channels/{channel_id}/approve", response_model=ChannelResponse)
 async def admin_approve_channel(channel_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
     existing = await db.channels.find_one({"id": channel_id})
