@@ -55,9 +55,12 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
         // Try to register new user
         try {
           const { data } = await axios.post(`${API}/auth/register`, {
+            first_name: formData.firstName,
+            last_name: formData.lastName,
             email: formData.email,
             password: formData.password,
-            role: "admin"
+            tg_username: formData.tg_username,
+            role: formData.role
           });
           
           // Auto-login after registration
