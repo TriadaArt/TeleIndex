@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 export default function CatalogCard({ item }) {
   const navigate = useNavigate();
   return (
-    <div className="tg-card" onClick={() => navigate(`/channel/${item.id}`)}>
+    <div className="tg-card cursor-pointer" onClick={() => navigate(`/channel/${item.id}`)} role="button" tabIndex={0} onKeyDown={(e)=>{if(e.key==='Enter'){navigate(`/channel/${item.id}`)}}}>
       <div className="tg-card-pad tg-card-grid">
         <div>
           <div className="flex items-start gap-3">
