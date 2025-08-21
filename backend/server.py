@@ -684,6 +684,33 @@ async def get_channel(channel_id: str):
         raise HTTPException(404, detail="Channel not found")
     return ChannelResponse(**parse_from_mongo(doc))
 
+@api.get("/channels/{channel_id}/owners")
+async def get_channel_owners(channel_id: str):
+    """Return creators linked to this channel via creator_channel_links.
+    Minimal fields only: id, name, contacts (email, tg_username)
+    """
+    # Find links
+    links_cursor = db.creator_channel_links.find({"channel_id": channel_id})
+    links = await links_cursor.to_list(length=None)
+    if not links:
+        return {"items": []}
+    creator_ids = [l.get("creator_id") for l in links if l.get("creator_id")]
+    if not creator_ids:
+        return {"items": []}
+    creators_cursor = db.creators.find({"id": {"$in": creator_ids}})
+    creators = await creators_cursor.to_list(length=None)
+    out = []
+    for c in creators:
+        data = parse_from_mongo(c)
+        out.append({
+            "id": data.get("id"),
+            "name": data.get("name"),
+            "contacts": (data.get("contacts") or {}),
+            "external": (data.get("external") or {}),
+            "priority_level": data.get("priority_level", "normal"),
+        })
+    return {"items": out}
+
 @api.patch("/channels/{channel_id}", response_model=ChannelResponse)
 async def update_channel(channel_id: str, payload: ChannelUpdate):
     existing = await db.channels.find_one({"id": channel_id})
