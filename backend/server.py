@@ -628,6 +628,8 @@ async def list_channels(
         query["status"] = status
     if category:
         query["category"] = category
+    if owner_id:
+        query["owner_id"] = owner_id
     if only_featured:
         query["is_featured"] = True
     if only_alive:
