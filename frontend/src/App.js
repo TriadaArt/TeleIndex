@@ -358,6 +358,94 @@ const Admin = ({ onLogout, onOpenDetail }) => {
   const runPasteImport = async () => { const links = pasteLinks.split(/\n|,|;|\s+/).map(s => s.trim()).filter(Boolean); if (links.length === 0) return; await axios.post(`${API}/parser/links`, { links }); setPasteLinks(""); reload(); };
   const runLinkCheck = async () => { await axios.post(`${API}/admin/links/check`, null, { params: { limit: 50, replace_dead: false } }); reload(); };
   const seedDemo = async () => { await axios.post(`${API}/admin/seed-demo`); reload(); };
+  
+  // Creator management functions
+  const seedCreators = async () => { await axios.post(`${API}/admin/creators/seed?count=10`); reload(); };
+  
+  const saveCreator = async (e) => {
+    e.preventDefault();
+    const formData = { ...creatorForm };
+    
+    // Parse nested fields
+    const creator = {
+      name: formData.name,
+      bio: formData.bio,
+      category: formData.category,
+      tags: formData.tags ? formData.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+      country: formData.country,
+      language: formData.language,
+      avatar_url: formData.avatar_url,
+      priority_level: formData.priority_level,
+      pricing: {
+        min_price: formData["pricing.min_price"] ? Number(formData["pricing.min_price"]) : null,
+        max_price: formData["pricing.max_price"] ? Number(formData["pricing.max_price"]) : null,
+        currency: formData["pricing.currency"] || "RUB"
+      },
+      contacts: {
+        email: formData["contacts.email"] || null,
+        tg_username: formData["contacts.tg_username"] || null,
+        other_links: formData["contacts.other_links"] ? formData["contacts.other_links"].split('\n').map(l => l.trim()).filter(Boolean) : []
+      }
+    };
+    
+    try {
+      if (editingCreator) {
+        await axios.put(`${API}/creators/${editingCreator.id}`, creator);
+        setEditingCreator(null);
+      } else {
+        await axios.post(`${API}/creators`, creator);
+      }
+      
+      // Reset form
+      setCreatorForm({
+        name: "", bio: "", category: "", tags: "", country: "RU", 
+        language: "ru", avatar_url: "", priority_level: "normal",
+        "pricing.min_price": "", "pricing.max_price": "", "pricing.currency": "RUB",
+        "contacts.email": "", "contacts.tg_username": "", "contacts.other_links": ""
+      });
+      
+      reload();
+    } catch (error) {
+      console.error('Failed to save creator:', error);
+    }
+  };
+  
+  const editCreator = (creator) => {
+    setEditingCreator(creator);
+    setCreatorForm({
+      name: creator.name || "",
+      bio: creator.bio || "",
+      category: creator.category || "",
+      tags: (creator.tags || []).join(', '),
+      country: creator.country || "RU",
+      language: creator.language || "ru",
+      avatar_url: creator.avatar_url || "",
+      priority_level: creator.priority_level || "normal",
+      "pricing.min_price": creator.pricing?.min_price || "",
+      "pricing.max_price": creator.pricing?.max_price || "",
+      "pricing.currency": creator.pricing?.currency || "RUB",
+      "contacts.email": creator.contacts?.email || "",
+      "contacts.tg_username": creator.contacts?.tg_username || "",
+      "contacts.other_links": (creator.contacts?.other_links || []).join('\n')
+    });
+  };
+  
+  const deleteCreator = async (id) => {
+    if (window.confirm('Удалить создателя?')) {
+      await axios.delete(`${API}/creators/${id}`);
+      reload();
+    }
+  };
+  
+  const verifyCreator = async (id, verified) => {
+    await axios.post(`${API}/creators/${id}/verify`, { verified });
+    reload();
+  };
+  
+  const featureCreator = async (id, priority_level) => {
+    await axios.post(`${API}/creators/${id}/feature`, { priority_level });
+    reload();
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
