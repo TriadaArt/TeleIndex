@@ -688,7 +688,7 @@ async def get_channel(channel_id: str):
         owner = {"id": uu.get("id"), "email": uu.get("email"), "role": uu.get("role"), "name": uu.get("email").split("@")[0]}
     return {"channel": ChannelResponse(**base), "owner": owner}
 
-@api.get("/channels/by-username/{username}")
+@api.get("/channels/username/{username}")
 async def get_channel_by_username(username: str):
     # normalize remove leading @ if passed
     un = username.lstrip("@")
