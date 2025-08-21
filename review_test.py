@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 
 # Use the external URL from frontend/.env for testing
-BASE_URL = "https://channelio.preview.emergentagent.com/api"
+BASE_URL = "https://tele-directory.preview.emergentagent.com/api"
 
 class ReviewTester:
     def __init__(self):
