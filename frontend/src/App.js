@@ -15,9 +15,7 @@ axios.interceptors.request.use((config) => { const t = localStorage.getItem("tok
 
 const useFetch = (url, deps = []) => { const [data, setData] = useState(null); const [loading, setLoading] = useState(true); const [error, setError] = useState(null); useEffect(() => { let mounted = true; setLoading(true); axios.get(url).then((res) => mounted && setData(res.data)).catch((e) => mounted && setError(e)).finally(() => mounted && setLoading(false)); return () => { mounted = false; }; }, deps); return { data, loading, error }; };
 
-const Header = ({ onGoAdmin, onOpenLogin, onOpenRegister, q, setQ, scrollToCats }) => {
-  const isLoggedIn = localStorage.getItem('token');
-  
+const Header = ({ user, onGoAdmin, onOpenLogin, onOpenRegister, onLogout, q, setQ, scrollToCats }) => {
   return (
     <header className="w-full sticky top-0 z-10 backdrop-blur bg-white/80 border-b">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -33,14 +31,28 @@ const Header = ({ onGoAdmin, onOpenLogin, onOpenRegister, q, setQ, scrollToCats 
             className="w-full h-11 rounded-xl border px-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" 
           />
         </div>
-        <button className="text-sm text-gray-600 hover:text-gray-900" onClick={scrollToCats}>
+        <button className="text-sm text-gray-600 hover:text-gray-900 transition-colors" onClick={scrollToCats}>
           Категории
         </button>
         
-        {isLoggedIn ? (
-          <button className="text-sm text-gray-600 hover:text-gray-900" onClick={onGoAdmin}>
-            Админ
-          </button>
+        {user ? (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-gray-700">
+              {user.name}
+            </span>
+            <button 
+              className="text-sm text-gray-600 hover:text-gray-900 transition-colors" 
+              onClick={onGoAdmin}
+            >
+              Админ
+            </button>
+            <button 
+              className="text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-1.5 rounded-lg transition-colors" 
+              onClick={onLogout}
+            >
+              Выйти
+            </button>
+          </div>
         ) : (
           <div className="flex items-center gap-3">
             <button 
