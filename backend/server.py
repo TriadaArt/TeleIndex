@@ -755,11 +755,18 @@ async def get_channel_owners(channel_id: str):
     return {"items": out}
 
 @api.patch("/channels/{channel_id}", response_model=ChannelResponse)
-async def update_channel(channel_id: str, payload: ChannelUpdate):
+async def update_channel(channel_id: str, payload: ChannelUpdate, user: Dict[str, Any] = Depends(get_current_user)):
     existing = await db.channels.find_one({"id": channel_id})
     if not existing:
         raise HTTPException(404, detail="Channel not found")
+    # permission: only admin or owner
+    if user.get("role") != "admin" and existing.get("owner_id") != user.get("id"):
+        raise HTTPException(403, detail="Not allowed")
     updates = {k: v for k, v in payload.model_dump(exclude_unset=True).items() if v is not None}
+    # non-admin cannot set status other than draft/moderation
+    if user.get("role") != "admin" and "status" in updates:
+        if updates["status"] not in ["draft", "moderation"]:
+            updates["status"] = "moderation"
     updates["updated_at"] = utcnow_iso()
     await db.channels.update_one({"id": channel_id}, {"$set": prepare_for_mongo(updates)})
     doc = await db.channels.find_one({"id": channel_id})
