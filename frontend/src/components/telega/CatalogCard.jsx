@@ -44,7 +44,7 @@ export default function CatalogCard({ item }){
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <button className="tg-title truncate text-left hover:underline" title={item.name} onClick={toCard}>{item.name}</button>
+                  <button className="tg-title truncate text-left" title={item.name} onClick={toCard}>{item.name}</button>
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-gray-600 flex-wrap">
                   {item.category && <span className="px-2 py-0.5 rounded-full bg-gray-100 border">{item.category}</span>}
