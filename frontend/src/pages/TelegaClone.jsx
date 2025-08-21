@@ -179,13 +179,13 @@ export default function TelegaClone(){
                 Добро пожаловать, {user.email || user.name}!
               </span>
               <button 
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md" 
+                className="tg-btn-primary" 
                 onClick={goToAdmin}
               >
                 Админ
               </button>
               <button 
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200" 
+                className="tg-btn-outline" 
                 onClick={handleLogout}
               >
                 Выйти
