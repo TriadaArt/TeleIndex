@@ -31,6 +31,37 @@ db = client[os.environ['DB_NAME']]
 app = FastAPI()
 api = APIRouter(prefix="/api")
 
+# Seed test users on startup for QA
+@app.on_event("startup")
+async def seed_test_users():
+    try:
+        # Ensure admin@test.com
+        admin = await db.users.find_one({"email": "admin@test.com"})
+        if not admin:
+            now = utcnow_iso()
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": "admin@test.com",
+                "password_hash": pwd_ctx.hash("Admin123"),
+                "role": "admin",
+                "created_at": now,
+                "updated_at": now,
+            })
+        # Ensure user1@test.com
+        user = await db.users.find_one({"email": "user1@test.com"})
+        if not user:
+            now = utcnow_iso()
+            await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": "user1@test.com",
+                "password_hash": pwd_ctx.hash("Test1234"),
+                "role": "editor",
+                "created_at": now,
+                "updated_at": now,
+            })
+    except Exception as e:
+        logging.getLogger(__name__).warning(f"Seed test users skipped: {e}")
+
 pwd_ctx = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 JWT_SECRET = os.environ.get("JWT_SECRET", "dev_secret_change_me")
 JWT_ALG = "HS256"
