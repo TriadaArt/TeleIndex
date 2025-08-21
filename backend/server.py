@@ -129,6 +129,7 @@ ChannelStatus = Literal["draft", "approved", "rejected"]
 class ChannelBase(BaseModel):
     name: str
     link: str
+    username: Optional[str] = None  # telegram username without @
     avatar_url: Optional[str] = None
     category: Optional[str] = None
     language: Optional[str] = None
