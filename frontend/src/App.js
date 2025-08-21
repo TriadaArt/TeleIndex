@@ -811,21 +811,53 @@ const Admin = ({ onLogout, onOpenDetail }) => {
 function App() {
   const navigate = useNavigate();
   const [canFirst, setCanFirst] = useState(false);
-  useEffect(() => { if (!localStorage.getItem("token")) axios.get(`${API}/auth/can-register`).then((res) => { if (res.data && res.data.allowed) setCanFirst(true); }); }, []);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState('login');
+  
+  useEffect(() => { 
+    if (!localStorage.getItem("token")) {
+      axios.get(`${API}/auth/can-register`).then((res) => { 
+        if (res.data && res.data.allowed) setCanFirst(true); 
+      }); 
+    }
+  }, []);
 
-  const goAdmin = () => { navigate(localStorage.getItem('token') ? '/admin' : (canFirst ? '/first' : '/login')); };
+  const goAdmin = () => { 
+    if (localStorage.getItem('token')) {
+      navigate('/admin');
+    } else {
+      // Open auth modal instead of redirecting
+      setAuthModalMode(canFirst ? 'register' : 'login');
+      setAuthModalOpen(true);
+    }
+  };
+  
   const openDetail = (ch) => { navigate(`/c/${ch.id}`); };
 
+  const handleAuthSuccess = () => {
+    setAuthModalOpen(false);
+    navigate('/admin');
+  };
+
   return (
-    <Routes>
-      <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
-      <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
-      <Route path="/c/:id" element={<RouteDetail />} />
-      <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
-      <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
-      {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
-      <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
+        <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
+        <Route path="/c/:id" element={<RouteDetail />} />
+        <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
+        <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
+        {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
+        <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenDetail={openDetail} />} />
+      </Routes>
+      
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+        onSuccess={handleAuthSuccess}
+      />
+    </>
   );
 }
 
