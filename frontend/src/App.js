@@ -839,18 +839,28 @@ function App() {
     navigate('/admin');
   };
 
-  // Test component to ensure changes are working
+  // Functions to open specific modal modes
+  const openLoginModal = () => {
+    setAuthModalMode('login');
+    setAuthModalOpen(true);
+  };
+
+  const openRegisterModal = () => {
+    setAuthModalMode('register');
+    setAuthModalOpen(true);
+  };
+
   return (
-    <div className="min-h-screen bg-blue-500 flex items-center justify-center">
-      <div className="text-white text-center">
-        <h1 className="text-4xl font-bold mb-4">TeleIndex App Test</h1>
-        <button 
-          onClick={() => setAuthModalOpen(true)}
-          className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg"
-        >
-          Открыть модальное окно
-        </button>
-      </div>
+    <>
+      <Routes>
+        <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onOpenDetail={openDetail} />} />
+        <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
+        <Route path="/c/:id" element={<RouteDetail />} />
+        <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
+        <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
+        {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
+        <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onOpenDetail={openDetail} />} />
+      </Routes>
       
       <AuthModal 
         isOpen={authModalOpen} 
@@ -858,7 +868,7 @@ function App() {
         initialMode={authModalMode}
         onSuccess={handleAuthSuccess}
       />
-    </div>
+    </>
   );
 }
 
