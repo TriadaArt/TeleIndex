@@ -256,7 +256,7 @@ const Detail = ({ id, onBack }) => {
   );
 };
 
-const Catalog = ({ onGoAdmin, onOpenLogin, onOpenRegister, onOpenDetail }) => {
+const Catalog = ({ user, onGoAdmin, onOpenLogin, onOpenRegister, onLogout, onOpenDetail }) => {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
   const [sort, setSort] = useState("popular");
