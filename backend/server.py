@@ -1577,9 +1577,10 @@ async def seed_creators(
     count: int = Query(10, description="Number of creators to create (10 or 100)"),
     user: Dict[str, Any] = Depends(get_current_admin)
 ):
-    """Seed demo creators with links to existing channels"""
+    """Seed demo creators with links to existing channels for this admin"""
     if count not in [10, 100]:
         count = 10
+    owner_id = user.get("id") if isinstance(user, dict) else None
     
     # Get existing approved channels to link to creators
     channels = await db.channels.find({"status": "approved"}).to_list(length=100)
