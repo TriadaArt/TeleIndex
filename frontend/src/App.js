@@ -844,9 +844,18 @@ function App() {
   const [canFirst, setCanFirst] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [user, setUser] = useState(null);
   
   useEffect(() => { 
-    if (!localStorage.getItem("token")) {
+    // Check if user is logged in
+    const token = localStorage.getItem("token");
+    if (token) {
+      // In real app, you'd validate the token and get user info
+      setUser({ name: "Пользователь" });
+    }
+    
+    // Check if first admin registration is available
+    if (!token) {
       axios.get(`${API}/auth/can-register`).then((res) => { 
         if (res.data && res.data.allowed) setCanFirst(true); 
       }); 
@@ -865,9 +874,17 @@ function App() {
   
   const openDetail = (ch) => { navigate(`/c/${ch.id}`); };
 
-  const handleAuthSuccess = () => {
+  const handleAuthSuccess = (userData) => {
     setAuthModalOpen(false);
-    navigate('/admin');
+    setUser(userData || { name: "Пользователь" });
+    // Optionally navigate to admin if that was the intention
+    // navigate('/admin');
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    navigate('/');
   };
 
   // Functions to open specific modal modes
@@ -884,13 +901,13 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Catalog onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onOpenDetail={openDetail} />} />
+        <Route path="/" element={<Catalog user={user} onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onLogout={handleLogout} onOpenDetail={openDetail} />} />
         <Route path="/creators" element={<CreatorsCatalog onGoAdmin={goAdmin} />} />
         <Route path="/c/:id" element={<RouteDetail />} />
-        <Route path="/admin" element={<Admin onLogout={() => { localStorage.removeItem("token"); navigate('/'); }} onOpenDetail={openDetail} />} />
+        <Route path="/admin" element={<Admin onLogout={handleLogout} onOpenDetail={openDetail} />} />
         <Route path="/login" element={<Login onLoggedIn={() => navigate('/admin')} onBack={() => navigate('/')} />} />
         {canFirst && <Route path="/first" element={<FirstAdmin onDone={() => navigate('/admin')} onBackToCatalog={() => navigate('/')} />} />}
-        <Route path="*" element={<Catalog onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onOpenDetail={openDetail} />} />
+        <Route path="*" element={<Catalog user={user} onGoAdmin={goAdmin} onOpenLogin={openLoginModal} onOpenRegister={openRegisterModal} onLogout={handleLogout} onOpenDetail={openDetail} />} />
       </Routes>
       
       <AuthModal 
