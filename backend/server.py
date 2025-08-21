@@ -1054,6 +1054,7 @@ async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
             "id": str(uuid.uuid4()),
             **s,
             "status": "approved",
+            "owner_id": owner_id,
             "created_at": now,
             "updated_at": now,
         }
