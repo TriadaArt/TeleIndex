@@ -609,6 +609,7 @@ async def top_channels(limit: int = Query(10, ge=1, le=50)):
 async def list_channels(
     q: Optional[str] = None,
     category: Optional[str] = None,
+    owner_id: Optional[str] = None,
     status: Optional[ChannelStatus] = "approved",
     sort: Literal["popular", "new", "name", "price", "er"] = "popular",
     page: int = Query(1, ge=1),
