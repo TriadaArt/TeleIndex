@@ -45,33 +45,51 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           password: formData.password
         });
         localStorage.setItem("token", data.access_token);
-        onSuccess && onSuccess({ name: formData.email.split('@')[0] || "Пользователь" });
-      } else if (mode === 'register') {
-        // Register new user
-        const { data } = await axios.post(`${API}/auth/register`, {
-          email: formData.email,
-          password: formData.password,
-          role: "admin"
-        });
-        
-        // Auto-login after registration
-        const loginResponse = await axios.post(`${API}/auth/login`, {
-          email: formData.email,
-          password: formData.password
-        });
-        localStorage.setItem("token", loginResponse.data.access_token);
         onSuccess && onSuccess({ 
-          name: `${formData.firstName} ${formData.lastName}`.trim() || formData.email.split('@')[0] || "Пользователь"
+          email: data.user.email,
+          name: formData.email.split('@')[0] || "Пользователь",
+          role: data.user.role,
+          id: data.user.id
         });
+      } else if (mode === 'register') {
+        // Try to register new user
+        try {
+          const { data } = await axios.post(`${API}/auth/register`, {
+            email: formData.email,
+            password: formData.password,
+            role: "admin"
+          });
+          
+          // Auto-login after registration
+          const loginResponse = await axios.post(`${API}/auth/login`, {
+            email: formData.email,
+            password: formData.password
+          });
+          localStorage.setItem("token", loginResponse.data.access_token);
+          onSuccess && onSuccess({ 
+            email: loginResponse.data.user.email,
+            name: `${formData.firstName} ${formData.lastName}`.trim() || formData.email.split('@')[0] || "Пользователь",
+            role: loginResponse.data.user.role,
+            id: loginResponse.data.user.id
+          });
+        } catch (registerError) {
+          if (registerError.response?.status === 403) {
+            setError('Регистрация заблокирована. Используйте тестовый аккаунт: admin@teleindex.com / SecureAdmin123!');
+          } else {
+            setError('Не удалось создать аккаунт. Попробуйте войти в существующий аккаунт.');
+          }
+        }
       } else if (mode === 'forgot') {
         // Password reset - placeholder for now
         setError('Функция восстановления пароля пока не реализована');
       }
     } catch (err) {
       if (mode === 'login') {
-        setError('Неверные учетные данные');
-      } else if (mode === 'register') {
-        setError('Не удалось создать аккаунт. Возможно, пользователь уже существует.');
+        if (err.response?.status === 401) {
+          setError('Неверные учетные данные. Попробуйте: admin@teleindex.com / SecureAdmin123!');
+        } else {
+          setError('Ошибка входа. Проверьте данные и попробуйте снова.');
+        }
       } else {
         setError('Произошла ошибка. Попробуйте еще раз.');
       }
