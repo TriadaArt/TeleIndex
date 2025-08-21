@@ -109,6 +109,10 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
     >
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">Регистрация</h2>
+        <div className="mt-2 inline-flex gap-6 border-b border-transparent">
+          <button type="button" className="relative pb-1 text-indigo-700 font-semibold after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-1 after:rounded-full after:bg-gradient-to-r after:from-purple-500 after:to-indigo-500">Рекламодатель</button>
+          <button type="button" className="relative pb-1 text-indigo-700 font-semibold after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-0.5 after:h-1 after:rounded-full after:bg-gradient-to-r after:from-purple-500 after:to-indigo-500">Владелец</button>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
