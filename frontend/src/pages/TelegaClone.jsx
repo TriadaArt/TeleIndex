@@ -142,61 +142,59 @@ export default function TelegaClone(){
       <HeroAnimated />
 
       <div className="tg-header">
-        <div className="tg-header-content">
-          <div className="flex items-center gap-2 mr-auto">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">T</span>
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+            <span className="text-white font-bold text-sm">T</span>
+          </div>
+          <h1 className="font-semibold text-lg text-gray-900">TeleIndex</h1>
+          {useRealData && (
+            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium ml-2">
+              Live Data
+            </span>
+          )}
+          {loading && (
+            <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium ml-2">
+              Loading...
+            </span>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-4">
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-gray-600 font-medium">
+                Добро пожаловать, {user.email || user.name}!
+              </span>
+              <button 
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md" 
+                onClick={goToAdmin}
+              >
+                Админ
+              </button>
+              <button 
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all duration-200" 
+                onClick={handleLogout}
+              >
+                Выйти
+              </button>
             </div>
-            <h1 className="font-semibold text-lg text-gray-900">TeleIndex</h1>
-            {useRealData && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
-                Live Data
-              </span>
-            )}
-            {loading && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                Loading...
-              </span>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-3">
-            {user ? (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600 font-medium">
-                  Добро пожаловать, {user.email || user.name}!
-                </span>
-                <button 
-                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm" 
-                  onClick={goToAdmin}
-                >
-                  Админ
-                </button>
-                <button 
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors duration-200" 
-                  onClick={handleLogout}
-                >
-                  Выйти
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-                <button 
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200" 
-                  onClick={openLoginModal}
-                >
-                  Войти
-                </button>
-                <button 
-                  className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 shadow-sm" 
-                  onClick={openRegisterModal}
-                >
-                  Регистрация
-                </button>
-              </div>
-            )}
-            <div className="text-sm text-gray-500 font-medium">Каталог</div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <button 
+                className="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200 hover:bg-gray-50 rounded-lg" 
+                onClick={openLoginModal}
+              >
+                Войти
+              </button>
+              <button 
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105" 
+                onClick={openRegisterModal}
+              >
+                Регистрация
+              </button>
+            </div>
+          )}
+          <div className="text-sm text-gray-500 font-medium border-l border-gray-200 pl-4">Каталог</div>
         </div>
       </div>
 
