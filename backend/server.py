@@ -994,6 +994,495 @@ async def seed_demo(user: Dict[str, Any] = Depends(get_current_admin)):
             continue
     return {"ok": True, "inserted": inserted}
 
+# -------------------- Creators Endpoints --------------------
+
+@api.get("/creators", response_model=PaginatedCreators)
+async def list_creators(
+    q: Optional[str] = Query(None, description="Search in name and tags"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    language: Optional[str] = Query(None, description="Filter by language"),
+    country: Optional[str] = Query(None, description="Filter by country"),
+    subscribers_min: Optional[int] = Query(None, description="Minimum total subscribers"),
+    subscribers_max: Optional[int] = Query(None, description="Maximum total subscribers"),
+    price_min: Optional[int] = Query(None, description="Minimum price"),
+    price_max: Optional[int] = Query(None, description="Maximum price"),
+    er_min: Optional[float] = Query(None, description="Minimum ER percentage"),
+    er_max: Optional[float] = Query(None, description="Maximum ER percentage"),
+    cpm_max: Optional[int] = Query(None, description="Maximum CPM"),
+    has_price: Optional[bool] = Query(None, description="Filter creators with price"),
+    featured: Optional[bool] = Query(None, description="Filter featured creators"),
+    verified: Optional[bool] = Query(None, description="Filter verified creators"),
+    last_post_days_max: Optional[int] = Query(None, description="Maximum days since last post"),
+    sort: str = Query("subscribers", description="Sort field: name|created_at|subscribers|price|er|cpm|last_post"),
+    order: str = Query("desc", description="Sort order: asc|desc"),
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(24, ge=1, le=50, description="Items per page")
+):
+    """List creators with filtering, sorting and pagination"""
+    # Build query
+    query = {"flags.active": True}
+    
+    if q:
+        query["$text"] = {"$search": q}
+    if category:
+        query["category"] = category
+    if language:
+        query["language"] = language
+    if country:
+        query["country"] = country
+    if subscribers_min is not None:
+        query["metrics.subscribers_total"] = {"$gte": subscribers_min}
+    if subscribers_max is not None:
+        if "metrics.subscribers_total" not in query:
+            query["metrics.subscribers_total"] = {}
+        query["metrics.subscribers_total"]["$lte"] = subscribers_max
+    if price_min is not None:
+        query["metrics.min_price_rub"] = {"$gte": price_min}
+    if price_max is not None:
+        query["metrics.avg_price_rub"] = {"$lte": price_max}
+    if er_min is not None:
+        query["metrics.avg_er_percent"] = {"$gte": er_min}
+    if er_max is not None:
+        if "metrics.avg_er_percent" not in query:
+            query["metrics.avg_er_percent"] = {}
+        query["metrics.avg_er_percent"]["$lte"] = er_max
+    if cpm_max is not None:
+        query["metrics.avg_cpm_rub"] = {"$lte": cpm_max}
+    if has_price is not None:
+        if has_price:
+            query["metrics.min_price_rub"] = {"$exists": True, "$ne": None, "$gt": 0}
+        else:
+            query["$or"] = [
+                {"metrics.min_price_rub": {"$exists": False}},
+                {"metrics.min_price_rub": None},
+                {"metrics.min_price_rub": 0}
+            ]
+    if featured is not None:
+        query["flags.featured"] = featured
+    if verified is not None:
+        query["flags.verified"] = verified
+    if last_post_days_max is not None:
+        from datetime import datetime, timezone, timedelta
+        cutoff_date = datetime.now(timezone.utc) - timedelta(days=last_post_days_max)
+        query["metrics.last_post_at_min"] = {"$gte": cutoff_date.isoformat()}
+    
+    # Build sort
+    sort_field_map = {
+        "name": "name",
+        "created_at": "created_at",
+        "subscribers": "metrics.subscribers_total",
+        "price": "metrics.avg_price_rub",
+        "er": "metrics.avg_er_percent",
+        "cpm": "metrics.avg_cpm_rub",
+        "last_post": "metrics.last_post_at_min"
+    }
+    
+    sort_field = sort_field_map.get(sort, "metrics.subscribers_total")
+    sort_order = -1 if order == "desc" else 1
+    
+    # Execute queries
+    total = await db.creators.count_documents(query)
+    skip = (page - 1) * limit
+    
+    cursor = db.creators.find(query).sort(sort_field, sort_order).skip(skip).limit(limit)
+    items = await cursor.to_list(length=limit)
+    
+    # Convert to response format
+    creators = []
+    for item in items:
+        creator_data = parse_from_mongo(item)
+        # Ensure metrics exists
+        if "metrics" not in creator_data:
+            creator_data["metrics"] = CreatorMetrics().dict()
+        creators.append(CreatorResponse(**creator_data))
+    
+    return PaginatedCreators(
+        items=creators,
+        meta={
+            "page": page,
+            "limit": limit,
+            "total": total,
+            "pages": (total + limit - 1) // limit
+        }
+    )
+
+@api.get("/creators/{id_or_slug}", response_model=CreatorResponse)
+async def get_creator(
+    id_or_slug: str,
+    include: Optional[str] = Query(None, description="Include channels: 'channels'")
+):
+    """Get creator by ID or slug"""
+    # Try to find by ID first, then by slug
+    creator = await db.creators.find_one({"id": id_or_slug})
+    if not creator:
+        creator = await db.creators.find_one({"slug": id_or_slug})
+    
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    creator_data = parse_from_mongo(creator)
+    
+    # Ensure metrics exists
+    if "metrics" not in creator_data:
+        creator_data["metrics"] = CreatorMetrics().dict()
+    
+    # Include channels if requested
+    if include == "channels":
+        # Get linked channels
+        links_cursor = db.creator_channel_links.find({"creator_id": creator_data["id"]})
+        links = await links_cursor.to_list(length=None)
+        
+        if links:
+            channel_ids = [link["channel_id"] for link in links]
+            channels_cursor = db.channels.find({"id": {"$in": channel_ids}})
+            channels = await channels_cursor.to_list(length=None)
+            
+            # Convert to minimal format
+            creator_data["channels"] = [
+                ChannelMinimal(
+                    id=ch["id"],
+                    name=ch["name"],
+                    link=ch["link"],
+                    subscribers=ch.get("subscribers", 0),
+                    price_rub=ch.get("price_rub"),
+                    er=ch.get("er"),
+                    last_post_at=ch.get("last_post_at"),
+                    link_status=ch.get("link_status"),
+                    category=ch.get("category")
+                ) for ch in channels
+            ]
+    
+    return CreatorResponse(**creator_data)
+
+@api.post("/creators", response_model=CreatorResponse)
+async def create_creator(
+    payload: CreatorCreate,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Create new creator (admin/editor only)"""
+    if user.get("role") not in ["admin", "editor"]:
+        raise HTTPException(403, detail="Admin or editor role required")
+    
+    now = utcnow_iso()
+    
+    # Generate slug if not provided
+    slug = payload.slug or generate_slug(payload.name)
+    slug = await ensure_unique_slug(slug)
+    
+    creator_data = {
+        "id": str(uuid.uuid4()),
+        **payload.dict(exclude={"slug"}),
+        "slug": slug,
+        "metrics": CreatorMetrics().dict(),
+        "created_at": now,
+        "updated_at": now,
+    }
+    
+    try:
+        await db.creators.insert_one(prepare_for_mongo(creator_data))
+    except Exception as e:
+        if "slug" in str(e):
+            raise HTTPException(400, detail="Slug already exists")
+        raise HTTPException(400, detail="Creator creation failed")
+    
+    return CreatorResponse(**creator_data)
+
+@api.put("/creators/{creator_id}", response_model=CreatorResponse)
+async def update_creator(
+    creator_id: str,
+    payload: CreatorUpdate,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Update creator (admin/editor only)"""
+    if user.get("role") not in ["admin", "editor"]:
+        raise HTTPException(403, detail="Admin or editor role required")
+    
+    creator = await db.creators.find_one({"id": creator_id})
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    # Prepare update data
+    update_data = {k: v for k, v in payload.dict(exclude_unset=True).items() if v is not None}
+    
+    # Handle slug regeneration if name changed
+    if "name" in update_data and "slug" not in update_data:
+        new_slug = generate_slug(update_data["name"])
+        update_data["slug"] = await ensure_unique_slug(new_slug, creator_id)
+    elif "slug" in update_data:
+        update_data["slug"] = await ensure_unique_slug(update_data["slug"], creator_id)
+    
+    update_data["updated_at"] = utcnow_iso()
+    
+    try:
+        await db.creators.update_one(
+            {"id": creator_id},
+            {"$set": prepare_for_mongo(update_data)}
+        )
+    except Exception as e:
+        if "slug" in str(e):
+            raise HTTPException(400, detail="Slug already exists")
+        raise HTTPException(400, detail="Creator update failed")
+    
+    # Return updated creator
+    updated_creator = await db.creators.find_one({"id": creator_id})
+    creator_data = parse_from_mongo(updated_creator)
+    
+    # Ensure metrics exists
+    if "metrics" not in creator_data:
+        creator_data["metrics"] = CreatorMetrics().dict()
+    
+    return CreatorResponse(**creator_data)
+
+@api.delete("/creators/{creator_id}")
+async def delete_creator(
+    creator_id: str,
+    hard: bool = Query(False, description="Permanently delete"),
+    user: Dict[str, Any] = Depends(get_current_admin)
+):
+    """Delete creator (admin only, soft delete by default)"""
+    creator = await db.creators.find_one({"id": creator_id})
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    if hard:
+        # Hard delete: remove creator and all links
+        await db.creators.delete_one({"id": creator_id})
+        await db.creator_channel_links.delete_many({"creator_id": creator_id})
+    else:
+        # Soft delete: set active=false
+        await db.creators.update_one(
+            {"id": creator_id},
+            {"$set": {"flags.active": False, "updated_at": utcnow_iso()}}
+        )
+    
+    return {"ok": True, "deleted": "hard" if hard else "soft"}
+
+@api.post("/creators/{creator_id}/channels")
+async def link_channels_to_creator(
+    creator_id: str,
+    payload: LinkChannelsPayload,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Link channels to creator (admin/editor only)"""
+    if user.get("role") not in ["admin", "editor"]:
+        raise HTTPException(403, detail="Admin or editor role required")
+    
+    creator = await db.creators.find_one({"id": creator_id})
+    if not creator:
+        raise HTTPException(404, detail="Creator not found")
+    
+    # Verify channels exist
+    channels = await db.channels.find({"id": {"$in": payload.channel_ids}}).to_list(length=None)
+    if len(channels) != len(payload.channel_ids):
+        raise HTTPException(400, detail="Some channels not found")
+    
+    now = utcnow_iso()
+    added = 0
+    
+    for channel_id in payload.channel_ids:
+        # Check if link already exists
+        existing = await db.creator_channel_links.find_one({
+            "creator_id": creator_id,
+            "channel_id": channel_id
+        })
+        
+        if not existing:
+            link_data = {
+                "id": str(uuid.uuid4()),
+                "creator_id": creator_id,
+                "channel_id": channel_id,
+                "role": "owner",  # Default role
+                "primary": channel_id == payload.primary_id,
+                "created_at": now
+            }
+            
+            try:
+                await db.creator_channel_links.insert_one(prepare_for_mongo(link_data))
+                added += 1
+            except Exception:
+                continue
+    
+    # Recompute metrics
+    await recompute_creator_metrics(creator_id)
+    
+    return {"ok": True, "added": added}
+
+@api.delete("/creators/{creator_id}/channels/{channel_id}")
+async def unlink_channel_from_creator(
+    creator_id: str,
+    channel_id: str,
+    user: Dict[str, Any] = Depends(get_current_user)
+):
+    """Unlink channel from creator (admin/editor only)"""
+    if user.get("role") not in ["admin", "editor"]:
+        raise HTTPException(403, detail="Admin or editor role required")
+    
+    result = await db.creator_channel_links.delete_one({
+        "creator_id": creator_id,
+        "channel_id": channel_id
+    })
+    
+    if result.deleted_count == 0:
+        raise HTTPException(404, detail="Link not found")
+    
+    # Recompute metrics
+    await recompute_creator_metrics(creator_id)
+    
+    return {"ok": True, "removed": 1}
+
+@api.post("/admin/creators/seed")
+async def seed_creators(
+    count: int = Query(10, description="Number of creators to create (10 or 100)"),
+    user: Dict[str, Any] = Depends(get_current_admin)
+):
+    """Seed demo creators with links to existing channels"""
+    if count not in [10, 100]:
+        count = 10
+    
+    # Get existing approved channels to link to creators
+    channels = await db.channels.find({"status": "approved"}).to_list(length=100)
+    if not channels:
+        raise HTTPException(400, detail="No approved channels found. Run channel seed first.")
+    
+    now = utcnow_iso()
+    created = 0
+    
+    demo_creators = [
+        {
+            "name": "Кира Петровна",
+            "bio": "Ведущий маркетолог и создатель популярных каналов о бизнесе и технологиях",
+            "category": "Бизнес",
+            "tags": ["маркетинг", "реклама", "бизнес"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1494790108755-2616b332969c?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "kira_blog",
+                "telegram_url": "https://t.me/kira_blog",
+                "website": "https://kira-marketing.ru"
+            },
+            "flags": {"featured": True, "verified": True}
+        },
+        {
+            "name": "Алексей Техносвет",
+            "bio": "IT-эксперт, основатель технологических каналов и стартапер",
+            "category": "Технологии",
+            "tags": ["технологии", "стартапы", "it"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "alex_tech",
+                "telegram_url": "https://t.me/alex_tech",
+                "youtube": "https://youtube.com/@alextech"
+            },
+            "flags": {"featured": True, "verified": False}
+        },
+        {
+            "name": "Мария Финанс",
+            "bio": "Финансовый аналитик и автор образовательных материалов по инвестициям",
+            "category": "Финансы",
+            "tags": ["финансы", "инвестиции", "аналитика"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "maria_finance",
+                "telegram_url": "https://t.me/maria_finance",
+                "website": "https://maria-finance.com"
+            },
+            "flags": {"featured": False, "verified": True}
+        },
+        {
+            "name": "Денис Медиа",
+            "bio": "Медиа-продюсер и создатель развлекательного контента",
+            "category": "Развлечения",
+            "tags": ["медиа", "развлечения", "контент"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "denis_media",
+                "telegram_url": "https://t.me/denis_media",
+                "instagram": "https://instagram.com/denis_media"
+            },
+            "flags": {"featured": False, "verified": False}
+        },
+        {
+            "name": "Анна Новости",
+            "bio": "Журналист и редактор новостных каналов, эксперт по информационной политике",
+            "category": "Новости",
+            "tags": ["новости", "журналистика", "политика"],
+            "country": "RU",
+            "language": "ru",
+            "avatar_url": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face",
+            "external": {
+                "telegram_username": "anna_news",
+                "telegram_url": "https://t.me/anna_news",
+                "website": "https://anna-news.ru"
+            },
+            "flags": {"featured": True, "verified": True}
+        }
+    ]
+    
+    # Extend for 100 creators if needed
+    if count == 100:
+        base_creators = demo_creators.copy()
+        for i in range(5, 100):
+            base_idx = i % len(base_creators)
+            base_creator = base_creators[base_idx].copy()
+            base_creator["name"] = f"{base_creator['name']} {i-4}"
+            base_creator["bio"] = f"{base_creator['bio']} (вариант {i-4})"
+            base_creator["flags"]["featured"] = i < 20  # First 20 featured
+            base_creator["flags"]["verified"] = i < 50  # First 50 verified
+            demo_creators.append(base_creator)
+    
+    # Create creators and link to channels
+    for i, creator_template in enumerate(demo_creators[:count]):
+        slug = await ensure_unique_slug(generate_slug(creator_template["name"]))
+        
+        creator_data = {
+            "id": str(uuid.uuid4()),
+            "slug": slug,
+            "metrics": CreatorMetrics().dict(),
+            "created_at": now,
+            "updated_at": now,
+            **creator_template
+        }
+        
+        try:
+            await db.creators.insert_one(prepare_for_mongo(creator_data))
+            
+            # Link 1-3 random channels to this creator
+            import random
+            num_channels = random.randint(1, min(3, len(channels)))
+            linked_channels = random.sample(channels, num_channels)
+            
+            for j, channel in enumerate(linked_channels):
+                link_data = {
+                    "id": str(uuid.uuid4()),
+                    "creator_id": creator_data["id"],
+                    "channel_id": channel["id"],
+                    "role": "owner",
+                    "primary": j == 0,  # First channel is primary
+                    "created_at": now
+                }
+                
+                try:
+                    await db.creator_channel_links.insert_one(prepare_for_mongo(link_data))
+                except Exception:
+                    continue
+            
+            # Recompute metrics for this creator
+            await recompute_creator_metrics(creator_data["id"])
+            created += 1
+            
+        except Exception as e:
+            print(f"Error creating creator {creator_template['name']}: {e}")
+            continue
+    
+    return {"ok": True, "created": created}
+
 # -------------------- App wiring --------------------
 
 app.include_router(api)
