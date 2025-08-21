@@ -890,6 +890,7 @@ const CreatorsCatalog = ({ onGoAdmin }) => {
 
   // Apply filters
   useEffect(() => {
+    console.log('Applying filters to creators:', creators.length, 'creators');
     let filtered = [...creators];
 
     // Text search
@@ -939,6 +940,7 @@ const CreatorsCatalog = ({ onGoAdmin }) => {
       filtered = filtered.filter(creator => (creator.pricing?.max_price || 0) <= Number(filters.price_max));
     }
 
+    console.log('Filtered creators:', filtered.length, 'out of', creators.length);
     setFilteredCreators(filtered);
     setCurrentPage(1); // Reset to first page when filters change
   }, [creators, filters]);
