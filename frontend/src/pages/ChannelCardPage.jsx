@@ -24,7 +24,7 @@ export default function ChannelCardPage() {
           axios.get(`${API}/channels/${id}/owners`).catch(() => ({ data: { items: [] }})),
         ]);
         if (!mounted) return;
-        setChannel(chRes.data);
+        setChannel(chRes.data?.channel || chRes.data);
         setOwners(ownRes.data?.items || []);
         setUseLive(true);
       } catch (e) {
