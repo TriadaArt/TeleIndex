@@ -22,7 +22,9 @@ export default function CatalogCard({ item }) {
                 {item.category && <span className="tg-badge">{item.category}</span>}
               </div>
               {item.short_description && (
-                <div className="tg-desc line-clamp-2">{item.short_description}</div>
+                <button className="tg-desc line-clamp-2 text-left hover:underline" onClick={(e)=>{e.stopPropagation(); navigate(`/tchannel/${item.username || (item.link||'').replace('https://t.me/','')}`)}}>
+                  {item.short_description}
+                </button>
               )}
               <div className="tg-metrics-row">
                 <span>👥 {item.subscribers?.toLocaleString?.() || item.subscribers}</span>
