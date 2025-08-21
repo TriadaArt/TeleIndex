@@ -865,10 +865,14 @@ const CreatorsCatalog = ({ onGoAdmin }) => {
     const loadData = async () => {
       try {
         setLoading(true);
+        console.log('Loading creators data...', `${API}/creators?limit=100&sort=${sortBy}&order=${sortOrder}`);
         const [creatorsRes, categoriesRes] = await Promise.all([
           axios.get(`${API}/creators?limit=100&sort=${sortBy}&order=${sortOrder}`),
           axios.get(`${API}/categories`)
         ]);
+        
+        console.log('Creators response:', creatorsRes.data);
+        console.log('Categories response:', categoriesRes.data);
         
         setCreators(creatorsRes.data.items || []);
         setCategories(categoriesRes.data || []);
