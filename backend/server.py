@@ -35,30 +35,25 @@ api = APIRouter(prefix="/api")
 @app.on_event("startup")
 async def seed_test_users():
     try:
-        # Ensure admin@test.com
-        admin = await db.users.find_one({"email": "admin@test.com"})
-        if not admin:
-            now = utcnow_iso()
+        now = utcnow_iso()
+        async def ensure_user(email: str, password: str, role: str) -> str:
+            u = await db.users.find_one({"email": email})
+            if u:
+                return u.get("id")
+            uid = str(uuid.uuid4())
             await db.users.insert_one({
-                "id": str(uuid.uuid4()),
-                "email": "admin@test.com",
-                "password_hash": pwd_ctx.hash("Admin123"),
-                "role": "admin",
+                "id": uid,
+                "email": email,
+                "password_hash": pwd_ctx.hash(password),
+                "role": role,
                 "created_at": now,
                 "updated_at": now,
             })
-        # Ensure user1@test.com
-        user = await db.users.find_one({"email": "user1@test.com"})
-        if not user:
-            now = utcnow_iso()
-            await db.users.insert_one({
-                "id": str(uuid.uuid4()),
-                "email": "user1@test.com",
-                "password_hash": pwd_ctx.hash("Test1234"),
-                "role": "editor",
-                "created_at": now,
-                "updated_at": now,
-            })
+            return uid
+        admin_id = await ensure_user("admin@test.com", "Admin123", "admin")
+        _u1 = await ensure_user("user1@test.com", "Test1234", "editor")
+        _u2 = await ensure_user("user2@test.com", "Test5678", "editor")
+        _u3 = await ensure_user("user3@test.com", "Test91011", "editor")
     except Exception as e:
         logging.getLogger(__name__).warning(f"Seed test users skipped: {e}")
 
