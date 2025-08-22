@@ -18,6 +18,15 @@ export default function MeLayout(){
     (async ()=>{
       try {
         const { data } = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        // count channels for owners
+        if (data?.role === 'owner'){
+          try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API}/channels?owner_id=${data.id}&page=1&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
+            setOwnCount(res.data?.total || 0);
+          } catch {}
+        }
+
         if (data?.role === 'admin') { navigate('/admin/dashboard'); return; }
         setUser(data);
         setOk(true);
