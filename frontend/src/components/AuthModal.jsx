@@ -19,6 +19,11 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
     agreeToProcessing: false,
     agreeToEmails: false
   });
+
+  useEffect(() => {
+    setMode(initialMode || 'register');
+  }, [initialMode]);
+
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
