@@ -16,7 +16,12 @@ root.render(
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<TelegaClone />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="users" element={<Users />} />
+          <Route path="channels" element={<Channels />} />
+        </Route>
         <Route path="/tchannel/:username" element={<ChannelCardPage />} />
         <Route path="*" element={<TelegaClone />} />
       </Routes>
