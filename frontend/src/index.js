@@ -25,8 +25,8 @@ root.render(
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="users" element={<Users />} />
-          <Route path="owners" element={<(await import('./admin/pages/Owners')).default />} />
-          <Route path="advertisers" element={<(await import('./admin/pages/Advertisers')).default />} />
+          <Route path="owners" element={<Owners />} />
+          <Route path="advertisers" element={<Advertisers />} />
           <Route path="channels" element={<Channels />} />
           <Route path="moderation" element={<(await import('./admin/pages/Moderation')).default />} />
           <Route path="config" element={<(await import('./admin/pages/Config')).default />} />
