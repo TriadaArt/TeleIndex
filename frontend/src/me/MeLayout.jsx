@@ -81,5 +81,6 @@ export default function MeLayout(){
         <Outlet context={{ user }} />
       </main>
     </div>
+    </div>
   );
 }
