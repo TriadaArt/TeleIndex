@@ -28,9 +28,9 @@ root.render(
           <Route path="owners" element={<Owners />} />
           <Route path="advertisers" element={<Advertisers />} />
           <Route path="channels" element={<Channels />} />
-          <Route path="moderation" element={<(await import('./admin/pages/Moderation')).default />} />
-          <Route path="config" element={<(await import('./admin/pages/Config')).default />} />
-          <Route path="tools" element={<(await import('./admin/pages/Tools')).default />} />
+          <Route path="moderation" element={<Moderation />} />
+          <Route path="config" element={<Config />} />
+          <Route path="tools" element={<Tools />} />
         </Route>
         <Route path="/tchannel/:username" element={<ChannelCardPage />} />
         <Route path="*" element={<TelegaClone />} />
