@@ -14,6 +14,11 @@ import Moderation from "./admin/pages/Moderation";
 import Config from "./admin/pages/Config";
 import Tools from "./admin/pages/Tools";
 import ChannelCardPage from "./pages/ChannelCardPage";
+import MeLayout from "./me/MeLayout";
+import MeDashboard from "./me/pages/Dashboard";
+import MyChannels from "./me/pages/MyChannels";
+import ChannelForm from "./me/pages/ChannelForm";
+import Favorites from "./me/pages/Favorites";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
