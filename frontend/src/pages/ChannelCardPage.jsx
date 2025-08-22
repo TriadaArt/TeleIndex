@@ -13,6 +13,7 @@ export default function ChannelCardPage() {
   const [loading, setLoading] = useState(true);
   const [useLive, setUseLive] = useState(false);
   const [error, setError] = useState("");
+  const [fav, setFav] = useState(false);
 
   useEffect(() => {
     let mounted = true;
