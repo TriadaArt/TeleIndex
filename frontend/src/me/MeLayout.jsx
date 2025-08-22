@@ -39,9 +39,30 @@ export default function MeLayout(){
   if (!ok) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b">
-        <div className="tg-container py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar */}
+      <aside className={`w-64 bg-white border-r p-4 hidden md:block`}>
+        <div className="flex items-center gap-2 mb-4">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center">ME</div>
+          <div className="font-semibold">Личный кабинет</div>
+        </div>
+        <nav className="space-y-1 text-sm">
+          <NavLink to="/me/dashboard" className={({isActive})=>`block px-3 py-2 rounded-lg ${isActive? 'bg-indigo-50 text-indigo-700':'hover:bg-gray-50'}`}>Дашборд</NavLink>
+          {user?.role === 'owner' && (
+            <>
+              <NavLink to="/me/channels" className={({isActive})=>`block px-3 py-2 rounded-lg ${isActive? 'bg-indigo-50 text-indigo-700':'hover:bg-gray-50'}`}>Мои каналы <span className="text-xs text-gray-500">({ownCount})</span></NavLink>
+              <NavLink to="/me/channels/new" className={({isActive})=>`block px-3 py-2 rounded-lg ${isActive? 'bg-indigo-50 text-indigo-700':'hover:bg-gray-50'}`}>Создать канал</NavLink>
+            </>
+          )}
+          {user?.role === 'advertiser' && (
+            <NavLink to="/me/favorites" className={({isActive})=>`block px-3 py-2 rounded-lg ${isActive? 'bg-indigo-50 text-indigo-700':'hover:bg-gray-50'}`}>Избранное</NavLink>
+          )}
+        </nav>
+      </aside>
+
+      <div className="flex-1 min-w-0">
+        <header className="bg-white border-b">
+          <div className="tg-container py-3 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center">ME</div>
             <nav className="flex items-center gap-3 text-sm">
