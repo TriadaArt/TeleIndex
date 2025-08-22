@@ -10,6 +10,7 @@ export default function AdminSidebar() {
     { to: "/admin/channels", label: "Каналы", icon: "📚" },
     { to: "/admin/moderation", label: "Модерация", icon: "🛡️" },
     { to: "/admin/config", label: "Настройки", icon: "⚙️" },
+    { to: "/admin/tools", label: "Инструменты", icon: "🧰" },
   ];
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white border-r shadow-sm p-3">
