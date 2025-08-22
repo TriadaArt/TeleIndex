@@ -3,7 +3,11 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import TelegaClone from "./pages/TelegaClone";
-import Admin from "./components/Admin";
+import AdminLogin from "./admin/AdminLogin";
+import AdminLayout from "./admin/AdminLayout";
+import Dashboard from "./admin/pages/Dashboard";
+import Users from "./admin/pages/Users";
+import Channels from "./admin/pages/Channels";
 import ChannelCardPage from "./pages/ChannelCardPage";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
