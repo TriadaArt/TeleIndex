@@ -38,6 +38,13 @@ root.render(
           <Route path="tools" element={<Tools />} />
         </Route>
         <Route path="/tchannel/:username" element={<ChannelCardPage />} />
+        <Route path="/me" element={<MeLayout />}>
+          <Route path="dashboard" element={<MeDashboard />} />
+          <Route path="channels" element={<MyChannels />} />
+          <Route path="channels/new" element={<ChannelForm />} />
+          <Route path="channels/:id/edit" element={<ChannelForm />} />
+          <Route path="favorites" element={<Favorites />} />
+        </Route>
         <Route path="*" element={<TelegaClone />} />
       </Routes>
     </BrowserRouter>
