@@ -8,6 +8,8 @@ const API = `${BACKEND_URL}/api`;
 export default function MeLayout(){
   const [ok, setOk] = useState(false);
   const [user, setUser] = useState(null);
+  const [ownCount, setOwnCount] = useState(0);
+  const [open, setOpen] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
