@@ -116,6 +116,24 @@ export default function ChannelCardPage() {
                 {channel.country && tag(channel.country)}
                 {channel.city && tag(channel.city)}
               </div>
+              <div className="mt-3 flex items-center gap-3">
+                {channel.link && (
+                  <a href={channel.link} target="_blank" rel="noopener noreferrer" className="tg-telega-reg">Перейти в Telegram</a>
+                )}
+                <button className={`tg-login`} onClick={()=>{
+                  const favs = JSON.parse(localStorage.getItem('favorites')||'[]');
+                  const uname = username;
+                  if (favs.includes(uname)){
+                    const next = favs.filter(x=>x!==uname);
+                    localStorage.setItem('favorites', JSON.stringify(next));
+                    setFav(false);
+                  } else {
+                    favs.push(uname);
+                    localStorage.setItem('favorites', JSON.stringify(favs));
+                    setFav(true);
+                  }
+                }}>{fav? '♥ В избранном':'♡ В избранное'}</button>
+              </div>
               {channel.short_description && (
                 <p className="mt-2 text-gray-700 text-sm md:text-base">{channel.short_description}</p>
               )}
