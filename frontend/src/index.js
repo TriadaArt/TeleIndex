@@ -7,7 +7,12 @@ import AdminLogin from "./admin/AdminLogin";
 import AdminLayout from "./admin/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import Users from "./admin/pages/Users";
+import Owners from "./admin/pages/Owners";
+import Advertisers from "./admin/pages/Advertisers";
 import Channels from "./admin/pages/Channels";
+import Moderation from "./admin/pages/Moderation";
+import Config from "./admin/pages/Config";
+import Tools from "./admin/pages/Tools";
 import ChannelCardPage from "./pages/ChannelCardPage";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
