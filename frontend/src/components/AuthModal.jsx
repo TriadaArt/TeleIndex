@@ -45,6 +45,17 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           password: formData.password
         });
         localStorage.setItem("token", data.access_token);
+        // Redirect based on role after login
+        try {
+          const me = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data.access_token}` } });
+          if (me.data?.role === 'admin') {
+            window.location.href = '/admin/dashboard';
+          } else {
+            window.location.href = '/me/dashboard';
+          }
+        } catch {
+          window.location.href = '/me/dashboard';
+        }
         onSuccess && onSuccess({ 
           email: data.user.email,
           name: formData.email.split('@')[0] || "Пользователь",
