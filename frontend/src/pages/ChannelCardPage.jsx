@@ -38,6 +38,13 @@ export default function ChannelCardPage() {
       }
     })();
     return () => { mounted = false; };
+  useEffect(()=>{
+    // init favorites
+    const favs = JSON.parse(localStorage.getItem('favorites')||'[]');
+    const uname = username;
+    setFav(favs.includes(uname));
+  }, [username]);
+
   }, [username]);
 
   if (loading) {
