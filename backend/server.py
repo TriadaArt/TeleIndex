@@ -775,14 +775,27 @@ async def update_channel(channel_id: str, payload: ChannelUpdate, user: Dict[str
 # -------------------- Admin --------------------
 
 @api.get("/admin/users")
-async def admin_list_users(user: Dict[str, Any] = Depends(get_current_admin)):
-    cursor = db.users.find({}).sort("created_at", -1)
-    items = await cursor.to_list(length=1000)
+async def admin_list_users(
+    role: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    user: Dict[str, Any] = Depends(get_current_admin)
+):
+    query: Dict[str, Any] = {}
+    if role:
+        query["role"] = role
+    if q:
+        query["email"] = {"$regex": q, "$options": "i"}
+    total = await db.users.count_documents(query)
+    skip = (page - 1) * limit
+    cursor = db.users.find(query).sort("created_at", -1).skip(skip).limit(limit)
+    items = await cursor.to_list(length=limit)
     out = []
     for u in items:
         d = parse_from_mongo(u)
         out.append({"id": d.get("id"), "email": d.get("email"), "role": d.get("role"), "created_at": d.get("created_at")})
-    return {"items": out}
+    return {"items": out, "total": total, "page": page, "limit": limit, "has_more": (skip + len(out)) < total}
 
 @api.delete("/admin/users/{user_id}")
 async def admin_delete_user(user_id: str, user: Dict[str, Any] = Depends(get_current_admin)):
