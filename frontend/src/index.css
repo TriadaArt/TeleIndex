@@ -135,4 +135,42 @@
   .tg-pills { @apply inline-flex rounded-full bg-gray-100 p-1; }
   .tg-pill { @apply px-3 py-1.5 text-sm rounded-full hover:bg-white hover:shadow border border-transparent cursor-pointer; }
   .tg-pill-active { @apply bg-white shadow border-gray-200; }
+
+  /* Custom button classes and header styles ... previously defined */
+
+  /* Telega-like nav sidebar styles */
+  .nav-sidebar { width:72px; height:100%; z-index:27; overflow:hidden; overflow-y:auto; position:fixed; top:0; bottom:0; left:0; padding:20px 16px 24px; box-sizing:border-box; background:#202327; box-shadow:0px 3px 6px 3px rgba(0,0,0,0.15); transition:all 250ms ease-in-out; }
+  .nav-sidebar::-webkit-scrollbar { width:0; height:0 }
+  .nav-sidebar__header { height:32px; margin-bottom:16px; display:flex; flex-direction:row; justify-content:center; align-items:center }
+  .nav-sidebar__header .logo { height:32px; margin-left:8px; display:none; opacity:0; transition:all 250ms ease-in-out }
+  .nav-sidebar__header .chevron { color:#788394; font-size:20px; margin:4px 8px 0 0; cursor:pointer; display:none; opacity:0; transition:all 250ms ease-in-out }
+  .nav-sidebar__header .menu { color:#fff; font-size:24px; cursor:pointer }
+  .nav-sidebar__item { display:flex; flex-direction:column; justify-content:flex-start; align-items:flex-start }
+  .nav-sidebar__item .title { color:#788394; opacity:0; height:24px; font-family:'Raleway', sans-serif !important; font-size:16px; line-height:24px; font-weight:500; transition:all 250ms ease-in-out }
+  .nav-sidebar__item .link { width:100%; gap:8px; border-radius:8px; box-sizing:border-box; border:1px solid transparent; position:relative; display:flex; flex-direction:row; justify-content:flex-start; align-items:center; transition:all 250ms ease-in-out; padding:4px 6px; color:#C6D0EE; }
+  .nav-sidebar__item .link i { width:40px; height:40px; flex:0 0 auto; border-radius:8px; color:#C6D0EE; font-size:20px; display:flex; justify-content:center; align-items:center; transition:all 250ms ease-in-out; background:transparent }
+  .nav-sidebar__item .link span { color:#39414E; opacity:0; flex:1 0 auto; font-family:'Raleway', sans-serif !important; font-size:16px; line-height:24px; font-weight:500; transition:all 250ms ease-in-out }
+  .nav-sidebar__item .link.active i { background:rgba(57,65,78,0.5) }
+  .nav-sidebar__item .link:hover i { background:#39414e }
+  .nav-sidebar__item .spoller { width:100%; height:24px; cursor:pointer; margin-bottom:8px; display:flex; justify-content:center; align-items:flex-start; border-bottom:1px solid rgba(198,208,238,0.5) }
+  .nav-sidebar__item .spoller i { color:#C6D0EE; font-size:20px; display:block; transform:rotate(0); transition:all 250ms ease-in-out }
+  .nav-sidebar__item .spoller.active i { transform:rotate(180deg) }
+  .nav-sidebar__item .spoller-wrapper { width:100%; display:none }
+  .nav-sidebar__item .spoller-wrapper .link { pointer-events:none; opacity:0; transition:all 250ms ease-in-out }
+  .nav-sidebar__item .spoller-wrapper .link.show { pointer-events:all; opacity:1 }
+  .nav-sidebar__user { width:100%; border-radius:8px; padding:8px; margin-top:4px; box-sizing:border-box; background:transparent; cursor:pointer; border:1px solid transparent; gap:8px; transition:all 250ms ease-in-out; display:flex; flex-direction:row; justify-content:flex-start; align-items:center }
+  .nav-sidebar__user .avatar { width:24px; height:24px; background:#fff; color:#325feb; border-radius:100px; flex:0 0 auto; font-family:'Raleway', sans-serif !important; font-size:16px; line-height:16px; font-weight:500; display:flex; justify-content:center; align-items:center }
+  .nav-sidebar__user .avatar::before { content:attr(data-user-name) }
+  .nav-sidebar__user .mail { opacity:0; transition:all 250ms ease-in-out; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
+  .nav-sidebar.active { width:320px; background:#fff }
+  .nav-sidebar.active .nav-sidebar__header { display:flex; flex-direction:row; justify-content:space-between; align-items:center }
+  .nav-sidebar.active .nav-sidebar__header .menu { display:none }
+  .nav-sidebar.active .nav-sidebar__header .chevron, .nav-sidebar.active .nav-sidebar__header .logo { display:block; opacity:1 }
+  .nav-sidebar.active .nav-sidebar__item .title { opacity:1 }
+  .nav-sidebar.active .nav-sidebar__item .link i { color:#39414e }
+  .nav-sidebar.active .nav-sidebar__item .link span { opacity:1 }
+  .nav-sidebar.active .nav-sidebar__item .link.active { background:#eaeaea }
+  .nav-sidebar.active .nav-sidebar__item .link:hover { background:#eaeaea; box-shadow:0px 2px 4px 0px rgba(34,34,34,0.12); border-color:rgba(0,0,0,0.1) }
+  .nav-sidebar.active .nav-sidebar__user { background:#eaeaea }
+  .nav-sidebar.active .nav-sidebar__user .mail { opacity:1 }
 }
