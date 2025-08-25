@@ -1,6 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
+const collapseAndGo = (navigate, to) => {
+  try {
+    window.dispatchEvent(new Event('ownerDock:collapse'));
+  } catch {}
+  setTimeout(()=>navigate(to), 220); // match CSS transition ~250ms
+};
+
 export default function CatalogCard({ item }) {
   const navigate = useNavigate();
   return (
