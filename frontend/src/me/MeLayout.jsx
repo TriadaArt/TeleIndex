@@ -41,7 +41,7 @@ export default function MeLayout(){
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <aside className={`w-64 bg-white border-r p-4 hidden md:block`}>
+      <aside className={`${open? 'block':'hidden'} md:block w-64 bg-white border-r p-4`}>
         <div className="flex items-center gap-2 mb-4">
           <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold flex items-center justify-center">ME</div>
           <div className="font-semibold">Личный кабинет</div>
