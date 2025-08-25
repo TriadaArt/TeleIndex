@@ -34,6 +34,13 @@ export default function OwnerDock({ user: userProp }){
   // allow external collapse trigger before route change
   useEffect(() => {
     const h = () => setOpen(false);
+  // ensure CSS class toggle for smooth collapse effect
+  useEffect(()=>{
+    const el = document.querySelector('.nav-sidebar');
+    if (!el) return;
+    if (open) el.classList.add('active'); else el.classList.remove('active');
+  }, [open]);
+
     window.addEventListener('ownerDock:collapse', h);
     return () => window.removeEventListener('ownerDock:collapse', h);
   }, []);
