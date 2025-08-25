@@ -125,9 +125,9 @@ export default function ChannelForm(){
         </div>
 
         <div className="flex items-center gap-3">
-          <button disabled={loading} className="tg-login" onClick={()=>submit('draft')}>Сохранить черновик</button>
-          <button disabled={loading} className="tg-telega-reg" onClick={()=>submit('moderation')}>Отправить на модерацию</button>
-          <button disabled={loading} className="tg-pill tg-pill-outline" onClick={()=>navigate('/me/channels')}>Отмена</button>
+          <button type="button" disabled={loading} className="tg-login" onClick={()=>submit('draft')}>Сохранить черновик</button>
+          <button type="button" disabled={loading} className="tg-telega-reg" onClick={()=>submit('moderation')}>Отправить на модерацию</button>
+          <button type="button" disabled={loading} className="tg-pill tg-pill-outline" onClick={()=>navigate('/me/channels')}>Отмена</button>
         </div>
       </div>
     </div>
