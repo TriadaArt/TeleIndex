@@ -8,6 +8,7 @@ import HeroAnimated from "../components/HeroAnimated";
 import AuthModal from "../components/AuthModal";
 import TgHeader from "../components/TgHeader";
 import OwnerDock from "../components/OwnerDock";
+import { Routes, Route } from 'react-router-dom';
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
