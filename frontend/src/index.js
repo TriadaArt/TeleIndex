@@ -19,6 +19,13 @@ import MeDashboard from "./me/pages/Dashboard";
 import MyChannels from "./me/pages/MyChannels";
 import ChannelForm from "./me/pages/ChannelForm";
 import Favorites from "./me/pages/Favorites";
+import Billing from "./me/pages/Billing";
+import Payouts from "./me/pages/Payouts";
+import Invoices from "./me/pages/Invoices";
+import Transactions from "./me/pages/Transactions";
+import Blog from "./me/pages/help/Blog";
+import Faq from "./me/pages/help/Faq";
+import Support from "./me/pages/help/Support";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
