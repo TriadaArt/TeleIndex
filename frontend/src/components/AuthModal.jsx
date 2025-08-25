@@ -59,7 +59,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
           if (me.data?.role === 'admin') {
             window.location.href = '/admin/dashboard';
           } else {
-            window.location.href = '/me/dashboard';
+            window.location.replace('/me/dashboard');
           }
         } catch {
           window.location.href = '/me/dashboard';
