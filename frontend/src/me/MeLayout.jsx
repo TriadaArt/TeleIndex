@@ -58,6 +58,10 @@ export default function MeLayout(){
             <NavLink to="/me/favorites" className={({isActive})=>`block px-3 py-2 rounded-lg ${isActive? 'bg-indigo-50 text-indigo-700':'hover:bg-gray-50'}`}>Избранное</NavLink>
           )}
         </nav>
+        <div className="md:hidden bg-white border-b p-2 flex items-center justify-between">
+          <button className="tg-login" onClick={()=>setOpen(!open)}>{open? 'Скрыть меню':'Показать меню'}</button>
+          {user?.role==='owner' && <button className="tg-telega-reg" onClick={()=>navigate('/me/channels/new')}>Создать канал</button>}
+        </div>
       </aside>
 
       <div className="flex-1 min-w-0">
