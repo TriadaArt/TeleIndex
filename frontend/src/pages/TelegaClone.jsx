@@ -6,6 +6,7 @@ import Pagination from "../components/telega/Pagination";
 import { telegaDemo } from "../data/telegaDemo";
 import HeroAnimated from "../components/HeroAnimated";
 import AuthModal from "../components/AuthModal";
+import TgHeader from "../components/TgHeader";
 import axios from 'axios';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
