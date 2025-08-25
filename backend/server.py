@@ -39,6 +39,9 @@ async def seed_test_users():
         async def ensure_user(email: str, password: str, role: str) -> str:
             u = await db.users.find_one({"email": email})
             if u:
+                # ensure desired role if differs
+                if u.get("role") != role:
+                    await db.users.update_one({"id": u.get("id")}, {"$set": {"role": role, "updated_at": now}})
                 return u.get("id")
             uid = str(uuid.uuid4())
             await db.users.insert_one({
@@ -51,9 +54,9 @@ async def seed_test_users():
             })
             return uid
         admin_id = await ensure_user("admin@test.com", "Admin123", "admin")
-        _u1 = await ensure_user("user1@test.com", "Test1234", "editor")
-        _u2 = await ensure_user("user2@test.com", "Test5678", "editor")
-        _u3 = await ensure_user("user3@test.com", "Test91011", "editor")
+        _u1 = await ensure_user("user1@test.com", "Test1234", "owner")
+        _u2 = await ensure_user("user2@test.com", "Test5678", "advertiser")
+        _u3 = await ensure_user("user3@test.com", "Test91011", "advertiser")
     except Exception as e:
         logging.getLogger(__name__).warning(f"Seed test users skipped: {e}")
 
