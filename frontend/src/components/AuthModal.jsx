@@ -53,6 +53,9 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
         // Redirect based on role after login
         try {
           const me = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${data.access_token}` } });
+        // ensure no flash of owner dock before redirect
+        document.body.classList.add('auth-redirecting');
+
           if (me.data?.role === 'admin') {
             window.location.href = '/admin/dashboard';
           } else {
