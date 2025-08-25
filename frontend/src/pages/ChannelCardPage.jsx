@@ -93,6 +93,8 @@ export default function ChannelCardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <TgHeader user={user} />
+      <OwnerDock user={user} />
       <div className="tg-header">
         <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
           <div className="flex items-center gap-3 col-start-1">
