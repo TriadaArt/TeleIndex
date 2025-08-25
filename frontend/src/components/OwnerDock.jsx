@@ -31,6 +31,13 @@ export default function OwnerDock({ user: userProp }){
   // persist open state
   useEffect(() => { try { localStorage.setItem('ownerDockOpen', open ? '1' : '0'); } catch {} }, [open]);
 
+  // allow external collapse trigger before route change
+  useEffect(() => {
+    const h = () => setOpen(false);
+    window.addEventListener('ownerDock:collapse', h);
+    return () => window.removeEventListener('ownerDock:collapse', h);
+  }, []);
+
   // fetch owner channels count (only when logged in as owner)
   useEffect(() => {
     const token = localStorage.getItem('token');
