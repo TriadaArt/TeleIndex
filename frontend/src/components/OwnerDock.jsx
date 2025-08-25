@@ -20,7 +20,9 @@ export default function OwnerDock(){
   useEffect(()=>{ try { localStorage.setItem('ownerDockOpen', open? '1':'0'); } catch{} },[open]);
 
   useEffect(()=>{
-    const token = localStorage.getItem('token');
+    const t1 = localStorage.getItem('token');
+    const t2 = localStorage.getItem('fm_admin_token');
+    const token = t1 || t2;
     if (!token) return;
     (async ()=>{
       try {
@@ -35,7 +37,7 @@ export default function OwnerDock(){
     })();
   },[location.pathname]);
 
-  if (role !== 'owner') return null;
+  if (!(role === 'owner' || role === 'advertiser' || role === 'admin')) return null;
 
   const Item = ({ to, icon, label }) => (
     <button onClick={()=>navigate(to)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 text-left ${open? '':'justify-center'}`} title={label}>
