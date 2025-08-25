@@ -3,9 +3,12 @@ import { useNavigate } from "react-router-dom";
 
 const collapseAndGo = (navigate, to) => {
   try {
+    // persist collapsed state immediately
+    localStorage.setItem('ownerDockOpen', '0');
     window.dispatchEvent(new Event('ownerDock:collapse'));
   } catch {}
-  setTimeout(()=>navigate(to), 220); // match CSS transition ~250ms
+  // give CSS transition time to play
+  setTimeout(()=>navigate(to), 320);
 };
 
 export default function CatalogCard({ item }) {
