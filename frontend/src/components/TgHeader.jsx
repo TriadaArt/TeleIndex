@@ -38,6 +38,12 @@ export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, 
     }
   }, [user]);
 
+  const goBackToDashboard = () => {
+    if (!user) return navigate('/');
+    if (user.role === 'admin') return navigate('/admin/dashboard');
+    return navigate('/me/dashboard');
+  };
+
   const goCatalog = () => navigate('/');
   const doLogout = () => {
     if (onLogout) return onLogout();
