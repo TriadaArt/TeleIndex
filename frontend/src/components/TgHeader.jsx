@@ -49,7 +49,10 @@ export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, 
     if (onLogout) return onLogout();
     // default: user logout
     localStorage.removeItem('token');
+    localStorage.removeItem('fm_admin_token');
+    // force UI reset by reloading catalog
     navigate('/');
+    setTimeout(()=>window.location.reload(), 10);
   };
 
   return (
