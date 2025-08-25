@@ -60,8 +60,9 @@ export default function OwnerDock(){
         <div className="p-2 text-sm">
           <div className="mb-1 text-gray-400 uppercase text-[10px]">Навигация</div>
           <Item to="/me/dashboard" icon="🏠" label="Дашборд" />
-          <Item to="/me/channels" icon="📚" label={`Мои каналы ${open? `(${count})`:''}`} />
-          <Item to="/me/channels/new" icon="➕" label="Добавить канал" />
+          {role==='owner' && <Item to="/me/channels" icon="📚" label={`Мои каналы ${open? `(${count})`:''}`} />}
+          {role==='owner' && <Item to="/me/channels/new" icon="➕" label="Добавить канал" />}
+          {role!=='owner' && <Item to="/me/favorites" icon="❤" label="Избранное" />}
           <Item to="/me/billing" icon="💳" label="Платежные средства" />
           <Item to="/me/payouts" icon="💸" label="Вывод средств" />
           <Item to="/me/invoices" icon="🧾" label="Счета и акты" />
