@@ -14,6 +14,12 @@ export default function OwnerDock({ user: userProp }){
   const location = useLocation();
 
   useEffect(()=>{
+  // Hide immediately if no user or no role
+  useEffect(()=>{
+    if (!userProp || !userProp.role){ setRole(null); setEmail(''); }
+    else { setRole(userProp.role); setEmail(userProp.email||''); }
+  }, [userProp]);
+
     try { setOpen(localStorage.getItem('ownerDockOpen') !== '0'); } catch{}
   },[]);
 
