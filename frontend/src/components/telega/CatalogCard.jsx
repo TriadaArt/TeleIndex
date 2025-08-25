@@ -2,6 +2,14 @@ import React from "react";
 import { ruShort, daysAgo } from "./helpers";
 import { useNavigate } from "react-router-dom";
 
+const collapseAndGo = (navigate, to) => {
+  try {
+    localStorage.setItem('ownerDockOpen', '0');
+    window.dispatchEvent(new Event('ownerDock:collapse'));
+  } catch {}
+  setTimeout(()=>navigate(to), 320);
+};
+
 const Icon = ({ name }) => {
   const cls = "tg-icon";
   switch (name) {
