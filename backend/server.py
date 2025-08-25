@@ -197,6 +197,7 @@ class UserBase(BaseModel):
     first_name: Optional[str] = None
     last_name: Optional[str] = None
     tg_username: Optional[str] = None
+    balance: Optional[float] = 0.0
 
 class UserCreate(UserBase):
     password: str
