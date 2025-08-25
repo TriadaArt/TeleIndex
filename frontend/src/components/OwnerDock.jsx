@@ -44,7 +44,7 @@ export default function OwnerDock({ user: userProp }){
     }
   },[location.pathname, userProp]);
 
-  if (!(role === 'owner' || role === 'advertiser' || role === 'admin')) return null;
+  if (!role) return null;
 
   const LinkItem = ({ to, icon, label, extraClass }) => (
     <a onClick={(e)=>{e.preventDefault(); navigate(to);}} href={to} className={`link ${extraClass||''}`}>
