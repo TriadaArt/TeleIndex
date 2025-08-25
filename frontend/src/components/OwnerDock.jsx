@@ -18,6 +18,10 @@ export default function OwnerDock({ user: userProp }){
   },[]);
 
   useEffect(()=>{ try { localStorage.setItem('ownerDockOpen', open? '1':'0'); } catch{} },[open]);
+  useEffect(()=>{
+    if (userProp){ setRole(userProp.role); setEmail(userProp.email||''); }
+  }, [userProp]);
+
 
   useEffect(()=>{
     const t1 = localStorage.getItem('token');
