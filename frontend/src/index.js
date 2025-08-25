@@ -44,6 +44,13 @@ root.render(
           <Route path="channels/new" element={<ChannelForm />} />
           <Route path="channels/:id/edit" element={<ChannelForm />} />
           <Route path="favorites" element={<Favorites />} />
+          <Route path="billing" element={<(await import('./me/pages/Billing')).default />} />
+          <Route path="payouts" element={<(await import('./me/pages/Payouts')).default />} />
+          <Route path="invoices" element={<(await import('./me/pages/Invoices')).default />} />
+          <Route path="transactions" element={<(await import('./me/pages/Transactions')).default />} />
+          <Route path="help/blog" element={<(await import('./me/pages/help/Blog')).default />} />
+          <Route path="help/faq" element={<(await import('./me/pages/help/Faq')).default />} />
+          <Route path="help/support" element={<(await import('./me/pages/help/Support')).default />} />
         </Route>
         <Route path="*" element={<TelegaClone />} />
       </Routes>
