@@ -7,8 +7,8 @@ const API = `${BACKEND_URL}/api`;
 
 export default function OwnerDock({ user: userProp }){
   const [open, setOpen] = useState(true);
-  const [role, setRole] = useState(null);
-  const [email, setEmail] = useState('');
+  const [role, setRole] = useState(userProp?.role || null);
+  const [email, setEmail] = useState(userProp?.email || '');
   const [count, setCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
