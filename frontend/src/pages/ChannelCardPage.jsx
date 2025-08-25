@@ -18,6 +18,11 @@ export default function ChannelCardPage() {
   const [user, setUser] = useState(null);
   const [fav, setFav] = useState(false);
 
+  // Force dock collapsed when opening card page (guarantee state)
+  useEffect(() => {
+    try { localStorage.setItem('ownerDockOpen','0'); window.dispatchEvent(new Event('ownerDock:collapse')); } catch {}
+  }, []);
+
   // Load current user (for header/dock)
   useEffect(() => {
     const token = localStorage.getItem('token') || localStorage.getItem('fm_admin_token');
