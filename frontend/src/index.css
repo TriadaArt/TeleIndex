@@ -174,3 +174,6 @@
   .nav-sidebar.active .nav-sidebar__user { background:#eaeaea }
   .nav-sidebar.active .nav-sidebar__user .mail { opacity:1 }
 }
+
+/* Smooth labels reveal */
+.nav-sidebar .title, .nav-sidebar .link span, .nav-sidebar__user .mail { transition: opacity 250ms ease-in-out; }
