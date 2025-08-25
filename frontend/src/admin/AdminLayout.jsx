@@ -38,8 +38,11 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-gray-50">
       <AdminSidebar />
-      <div className="ml-64 p-6">
-        <Outlet context={{ user, usersMap }} />
+      <div className="ml-64">
+        <TgHeader user={user} onLogout={()=>{ localStorage.removeItem('fm_admin_token'); window.location.href='/admin/login'; }} />
+        <div className="p-6">
+          <Outlet context={{ user, usersMap }} />
+        </div>
       </div>
     </div>
   );
