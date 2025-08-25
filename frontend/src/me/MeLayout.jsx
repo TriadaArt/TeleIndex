@@ -45,7 +45,7 @@ export default function MeLayout(){
       {/* Global header with role-aware info */}
       <TgHeader user={user} />
       {/* Collapsible owner dock visible for roles (owner/advertiser/admin) */}
-      <OwnerDock />
+      <OwnerDock user={user} />
       <div className="tg-container py-6">
         <Outlet context={{ user }} />
       </div>
