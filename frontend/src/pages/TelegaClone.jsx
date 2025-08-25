@@ -149,55 +149,14 @@ export default function TelegaClone(){
     <div className="min-h-screen">
       <HeroAnimated />
 
-      <div className="tg-header">
-        <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
-          <div className="flex items-center gap-3 col-start-1">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-              <span className="text-white font-bold text-base">T</span>
-            </div>
-            <h1 className="font-semibold text-xl text-gray-900 tracking-tight">TeleIndex</h1>
-            <div className="text-sm text-gray-500 font-medium border-l border-gray-200 pl-4">Каталог</div>
-            {useRealData && (
-              <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium ml-2">
-                Live Data
-              </span>
-            )}
-            {loading && (
-              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium ml-2">
-                Loading...
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 justify-end col-start-2">
-            {user ? (
-              <>
-                <span className="text-sm text-gray-700 font-semibold">
-                  {user.email || user.name}
-                </span>
-                {user?.role === 'admin' && (
-                  <button className="tg-pill tg-pill-soft tg-grad-hover" onClick={goToAdmin}>
-                    Админ
-                  </button>
-                )}
-                <button className="tg-pill tg-pill-outline" onClick={handleLogout}>
-                  Выйти
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Swapped order per request: Регистрация then Войти */}
-                <button className="tg-telega-reg" onClick={openRegisterModal}>
-                  Регистрация
-                </button>
-                <button className="tg-login tg-grad-hover" onClick={openLoginModal}>
-                  Войти
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+      <TgHeader 
+        user={user}
+        onOpenLogin={openLoginModal}
+        onOpenRegister={openRegisterModal}
+        onLogout={handleLogout}
+        useRealData={useRealData}
+        loading={loading}
+      />
 
       <div className="tg-container mt-4 grid grid-cols-1 lg:grid-cols-[340px_820px] gap-6">
         <FilterSidebar 
