@@ -7,6 +7,7 @@ const API = `${BACKEND_URL}/api`;
 
 export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, useRealData, loading }){
   const navigate = useNavigate();
+  const location = useLocation();
   const [ownerCounts, setOwnerCounts] = useState({ total: 0, moderation: 0 });
   const [favCount, setFavCount] = useState(0);
 
