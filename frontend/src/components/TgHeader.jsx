@@ -90,6 +90,12 @@ export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, 
           {!!user && (
             <>
               {/* Center content per role */}
+              <div className="hidden md:flex items-center gap-3 mr-2">
+                <a className="tg-login" href="/me/invoices" title="Баланс"><span className="amount ru">0<sup className="pennies">.00</sup></span><span className="b-rub">₽</span></a>
+                <button className="tg-login" title="Уведомления">🔔</button>
+                <button className="tg-login" onClick={()=>navigate('/me/dashboard')} title="Профиль">👤</button>
+              </div>
+
               {user.role === 'admin' && (
                 <span className="text-sm text-gray-700">Админ-панель</span>
               )}
