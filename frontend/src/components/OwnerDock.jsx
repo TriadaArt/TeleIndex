@@ -39,40 +39,41 @@ export default function OwnerDock(){
 
   if (!(role === 'owner' || role === 'advertiser' || role === 'admin')) return null;
 
-  const Item = ({ to, icon, label }) => (
-    <button onClick={()=>navigate(to)} className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 text-left ${open? '':'justify-center'}`} title={label}>
-      <span className="text-gray-500">{icon}</span>
-      {open && <span>{label}</span>}
-    </button>
+  const LinkItem = ({ to, icon, label, extraClass }) => (
+    <a onClick={(e)=>{e.preventDefault(); navigate(to);}} href={to} className={`link ${extraClass||''}`}>
+      <i className="icon">{icon}</i>
+      <span>{label}</span>
+    </a>
   );
 
   return (
-    <div className="fixed left-0 top-14 md:top-16 h-[calc(100vh-64px)] z-40">
-      <div className={`h-full bg-white border-r shadow-sm transition-all duration-200 ${open? 'w-64':'w-12'}`}>
-        <div className="p-2 flex items-center justify-between border-b">
-          {open ? (
-            <div className="text-sm font-semibold truncate">Владелец · {email}</div>
-          ) : (
-            <div className="text-sm font-semibold text-gray-500 text-center w-full">☰</div>
-          )}
-          <button className="tg-login" onClick={()=>setOpen(!open)}>{open? '⟨' : '⟩'}</button>
-        </div>
-        <div className="p-2 text-sm">
-          <div className="mb-1 text-gray-400 uppercase text-[10px]">Навигация</div>
-          <Item to="/me/dashboard" icon="🏠" label="Дашборд" />
-          {role==='owner' && <Item to="/me/channels" icon="📚" label={`Мои каналы ${open? `(${count})`:''}`} />}
-          {role==='owner' && <Item to="/me/channels/new" icon="➕" label="Добавить канал" />}
-          {role!=='owner' && <Item to="/me/favorites" icon="❤" label="Избранное" />}
-          <Item to="/me/billing" icon="💳" label="Платежные средства" />
-          <Item to="/me/payouts" icon="💸" label="Вывод средств" />
-          <Item to="/me/invoices" icon="🧾" label="Счета и акты" />
-          <Item to="/me/transactions" icon="📈" label="Транзакции" />
-          <div className="mt-3 mb-1 text-gray-400 uppercase text-[10px]">Помощь</div>
-          <Item to="/me/help/blog" icon="📰" label="Блог" />
-          <Item to="/me/help/faq" icon="❓" label="FAQ" />
-          <Item to="/me/help/support" icon="✉️" label="Связь с нами" />
-        </div>
+    <aside className={`nav-sidebar ${open? 'active':''}`}>
+      <div className="nav-sidebar__header">
+        <div className="menu" onClick={()=>setOpen(true)}>☰</div>
+        <div className="logo">{/* можно поставить логотип */}</div>
+        <div className="chevron" onClick={()=>setOpen(false)}>❮</div>
       </div>
-    </div>
+      <div className="nav-sidebar__item">
+        <div className="title">Навигация</div>
+        <LinkItem to="/me/dashboard" icon="🏠" label="Дашборд" />
+        {role==='owner' && <LinkItem to="/me/channels" icon="📚" label={`Мои каналы (${count})`} />}
+        {role==='owner' && <LinkItem to="/me/channels/new" icon="➕" label="Добавить канал" />}
+        {role!=='owner' && <LinkItem to="/me/favorites" icon="❤" label="Избранное" />}
+        <LinkItem to="/me/billing" icon="💳" label="Платежные средства" />
+        <LinkItem to="/me/payouts" icon="💸" label="Вывод средств" />
+        <LinkItem to="/me/invoices" icon="🧾" label="Счета и акты" />
+        <LinkItem to="/me/transactions" icon="📈" label="Транзакции" />
+      </div>
+      <div className="nav-sidebar__item" style={{marginTop: 12}}>
+        <div className="title">Помощь</div>
+        <LinkItem to="/me/help/blog" icon="📰" label="Блог" />
+        <LinkItem to="/me/help/faq" icon="❓" label="FAQ" />
+        <LinkItem to="/me/help/support" icon="✉️" label="Связь с нами" />
+      </div>
+      <div className="nav-sidebar__user" title={email} onClick={()=>navigate('/me/settings')}>
+        <div className="avatar" data-user-name={(email||'?')[0]?.toUpperCase()} />
+        <div className="mail">{email}</div>
+      </div>
+    </aside>
   );
 }
