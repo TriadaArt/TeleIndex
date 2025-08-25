@@ -33,7 +33,7 @@ export default function CatalogCard({ item }){
     e?.stopPropagation?.();
     const uname = item.username || (item.link||"").replace("https://t.me/", "").replace("http://t.me/", "").replace("t.me/", "").replace("@", "");
     if (!uname) return;
-    navigate(`/tchannel/${uname}`);
+    collapseAndGo(navigate, `/tchannel/${uname}`);
   };
 
   return (
