@@ -62,7 +62,7 @@ const AuthModal = ({ isOpen, onClose, initialMode = 'register', onSuccess }) => 
             window.location.replace('/me/dashboard');
           }
         } catch {
-          window.location.href = '/me/dashboard';
+          window.location.replace('/me/dashboard');
         }
         onSuccess && onSuccess({ 
           email: data.user.email,
