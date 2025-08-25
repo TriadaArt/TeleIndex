@@ -149,6 +149,8 @@ export default function TelegaClone(){
   return (
     <div className="min-h-screen">
       <HeroAnimated />
+      {/* Owner collapsible dock (always rendered but shows only for owner) */}
+      <OwnerDock />
 
       <TgHeader 
         user={user}
