@@ -6,34 +6,36 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 export default function OwnerDock({ user: userProp }){
-  const [open, setOpen] = useState(true);
-  const [role, setRole] = useState(userProp?.role || null);
-  const [email, setEmail] = useState(userProp?.email || '');
-  const [count, setCount] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(()=>{
-  // Hide immediately if no user or no role
-  useEffect(()=>{
-    if (!userProp || !userProp.role){ setRole(null); setEmail(''); }
-    else { setRole(userProp.role); setEmail(userProp.email||''); }
+  // open state from localStorage (default active/expanded)
+  const [open, setOpen] = useState(() => {
+    try { return (localStorage.getItem('ownerDockOpen') !== '0'); } catch { return true; }
+  });
+
+  // role/email derived from prop (no internal fetch for identity)
+  const [role, setRole] = useState(userProp?.role || null);
+  const [email, setEmail] = useState(userProp?.email || '');
+  const [count, setCount] = useState(0);
+
+  // keep role/email in sync with prop
+  useEffect(() => {
+    if (userProp && userProp.role) {
+      setRole(userProp.role); setEmail(userProp.email || '');
+    } else {
+      setRole(null); setEmail('');
+    }
   }, [userProp]);
 
-    try { setOpen(localStorage.getItem('ownerDockOpen') !== '0'); } catch{}
-  },[]);
+  // persist open state
+  useEffect(() => { try { localStorage.setItem('ownerDockOpen', open ? '1' : '0'); } catch {} }, [open]);
 
-  useEffect(()=>{ try { localStorage.setItem('ownerDockOpen', open? '1':'0'); } catch{} },[open]);
-  useEffect(()=>{
-    if (userProp){ setRole(userProp.role); setEmail(userProp.email||''); }
-  }, [userProp]);
-
-
-  useEffect(()=>{
-    // rely on passed userProp only; fetch count if owner
+  // fetch owner channels count (only when logged in as owner)
+  useEffect(() => {
     const token = localStorage.getItem('token');
-    if (userProp?.role === 'owner' && token){
-      (async ()=>{
+    if (userProp?.role === 'owner' && token) {
+      (async () => {
         try {
           const { data } = await axios.get(`${API}/channels?owner_id=${userProp.id}&page=1&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
           setCount(data?.total || 0);
@@ -42,9 +44,11 @@ export default function OwnerDock({ user: userProp }){
     } else {
       setCount(0);
     }
-  },[location.pathname, userProp]);
+  }, [location.pathname, userProp]);
 
-  if (!role) return null;
+  // hide immediately if logging out or redirecting during auth
+  const isAuthRedirecting = typeof document !== 'undefined' && document.body.classList.contains('auth-redirecting');
+  if (!role || isAuthRedirecting) return null;
 
   const LinkItem = ({ to, icon, label, extraClass }) => (
     <a onClick={(e)=>{e.preventDefault(); navigate(to);}} href={to} className={`link ${extraClass||''}`}>
@@ -54,10 +58,10 @@ export default function OwnerDock({ user: userProp }){
   );
 
   return (
-    <aside className={`nav-sidebar ${open? 'active':''}`}>
+    <aside className={`nav-sidebar ${open ? 'active' : ''}`}>
       <div className="nav-sidebar__header">
         <div className="menu" onClick={()=>setOpen(true)}>☰</div>
-        <div className="logo">{/* можно поставить логотип */}</div>
+        <div className="logo" />
         <div className="chevron" onClick={()=>setOpen(false)}>❮</div>
       </div>
       <div className="nav-sidebar__item">
@@ -71,7 +75,7 @@ export default function OwnerDock({ user: userProp }){
         <LinkItem to="/me/invoices" icon="🧾" label="Счета и акты" />
         <LinkItem to="/me/transactions" icon="📈" label="Транзакции" />
       </div>
-      <div className="nav-sidebar__item" style={{marginTop: 12}}>
+      <div className="nav-sidebar__item" style={{ marginTop: 12 }}>
         <div className="title">Помощь</div>
         <LinkItem to="/me/help/blog" icon="📰" label="Блог" />
         <LinkItem to="/me/help/faq" icon="❓" label="FAQ" />
