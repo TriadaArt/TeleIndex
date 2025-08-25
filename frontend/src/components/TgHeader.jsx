@@ -56,6 +56,9 @@ export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, 
     <div className="tg-header">
       <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
         <div className="flex items-center gap-3 col-start-1">
+          {location.pathname !== '/' && (
+            <button className="tg-login" onClick={goBackToDashboard}>Назад в дашборд</button>
+          )}
           <button className="tg-login" onClick={goCatalog}>Каталог</button>
           {useRealData && (
             <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">Live Data</span>
