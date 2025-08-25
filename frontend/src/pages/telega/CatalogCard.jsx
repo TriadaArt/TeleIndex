@@ -15,7 +15,7 @@ export default function CatalogCard({ item }) {
       <div className="tg-card-pad tg-card-grid">
         <div>
           <div className="flex items-start gap-3">
-            <button className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold flex items-center justify-center overflow-hidden" onClick={(e)=>{e.stopPropagation(); navigate(`/tchannel/${item.username || (item.link||'').replace('https://t.me/','')}`)}}>
+            <button className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-semibold flex items-center justify-center overflow-hidden" onClick={(e)=>{e.stopPropagation(); collapseAndGo(navigate, `/tchannel/${item.username || (item.link||'').replace('https://t.me/','')}`)}}>
               {item.avatar_url ? (
                 <img src={item.avatar_url} alt={item.name} className="w-full h-full rounded-xl object-cover"/>
               ) : (
