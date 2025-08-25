@@ -131,6 +131,7 @@ export default function TelegaClone(){
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("fm_admin_token");
     setUser(null);
   };
 
