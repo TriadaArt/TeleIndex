@@ -546,6 +546,7 @@ async def register(user: UserCreate):
         "first_name": user.first_name,
         "last_name": user.last_name,
         "tg_username": user.tg_username,
+        "balance": user.balance or 0.0,
         "created_at": utcnow_iso(),
         "updated_at": utcnow_iso(),
     }
