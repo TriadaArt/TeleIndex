@@ -56,6 +56,19 @@ export default function TgHeader({ user, onOpenLogin, onOpenRegister, onLogout, 
     <div className="tg-header">
       <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
         <div className="flex items-center gap-3 col-start-1">
+        {/* Center utilities like telega.in */}
+        <div className="hidden md:flex items-center gap-4 mr-4">
+          <div className="header-management__online" title="пользователей в сети"><i className="icon online"></i>1.1K</div>
+          <button className="header-link __noMob tg-login" onClick={goCatalog}><i className="icon ballot"></i>Каталог</button>
+          <div className="relative">
+            <button className="header-link js-service-link tg-login" onClick={(e)=>{e.preventDefault();}}><i className="icon widgets"></i>Сервисы<i className="icon keyboard_arrow"></i></button>
+            {/* simple placeholder dropdown */}
+            <div className="absolute mt-2 right-0 bg-white border rounded-lg shadow-sm p-2 hidden">
+              <a className="item" href="/catalog"><i className="icon ballot"></i><span className="ml-1">Каталог каналов</span></a>
+            </div>
+          </div>
+        </div>
+
           {location.pathname !== '/' && (
             <button className="tg-login" onClick={goBackToDashboard}>Назад в дашборд</button>
           )}
