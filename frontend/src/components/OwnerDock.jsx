@@ -24,22 +24,19 @@ export default function OwnerDock({ user: userProp }){
 
 
   useEffect(()=>{
-    const t1 = localStorage.getItem('token');
-    const t2 = localStorage.getItem('fm_admin_token');
-    const token = t1 || t2;
-    if (!token) return;
-    (async ()=>{
-      try {
-        const me = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-        setRole(me.data?.role);
-        setEmail(me.data?.email || '');
-        if (me.data?.role === 'owner'){
-          const { data } = await axios.get(`${API}/channels?owner_id=${me.data.id}&page=1&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
+    // rely on passed userProp only; fetch count if owner
+    const token = localStorage.getItem('token');
+    if (userProp?.role === 'owner' && token){
+      (async ()=>{
+        try {
+          const { data } = await axios.get(`${API}/channels?owner_id=${userProp.id}&page=1&limit=1`, { headers: { Authorization: `Bearer ${token}` } });
           setCount(data?.total || 0);
-        }
-      } catch {}
-    })();
-  },[location.pathname]);
+        } catch { setCount(0); }
+      })();
+    } else {
+      setCount(0);
+    }
+  },[location.pathname, userProp]);
 
   if (!(role === 'owner' || role === 'advertiser' || role === 'admin')) return null;
 
