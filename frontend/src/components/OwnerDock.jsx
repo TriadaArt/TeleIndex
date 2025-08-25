@@ -9,43 +9,32 @@ export default function OwnerDock({ user: userProp }){
   const navigate = useNavigate();
   const location = useLocation();
 
-  // open state from localStorage (default active/expanded)
   const [open, setOpen] = useState(() => {
     try { return (localStorage.getItem('ownerDockOpen') !== '0'); } catch { return true; }
   });
-
-  // role/email derived from prop (no internal fetch for identity)
   const [role, setRole] = useState(userProp?.role || null);
   const [email, setEmail] = useState(userProp?.email || '');
   const [count, setCount] = useState(0);
 
-  // keep role/email in sync with prop
   useEffect(() => {
-    if (userProp && userProp.role) {
-      setRole(userProp.role); setEmail(userProp.email || '');
-    } else {
-      setRole(null); setEmail('');
-    }
+    if (userProp && userProp.role) { setRole(userProp.role); setEmail(userProp.email || ''); }
+    else { setRole(null); setEmail(''); }
   }, [userProp]);
 
-  // persist open state
   useEffect(() => { try { localStorage.setItem('ownerDockOpen', open ? '1' : '0'); } catch {} }, [open]);
 
-  // allow external collapse trigger before route change
   useEffect(() => {
     const h = () => setOpen(false);
-  // ensure CSS class toggle for smooth collapse effect
-  useEffect(()=>{
+    window.addEventListener('ownerDock:collapse', h);
+    return () => window.removeEventListener('ownerDock:collapse', h);
+  }, []);
+
+  useEffect(() => {
     const el = document.querySelector('.nav-sidebar');
     if (!el) return;
     if (open) el.classList.add('active'); else el.classList.remove('active');
   }, [open]);
 
-    window.addEventListener('ownerDock:collapse', h);
-    return () => window.removeEventListener('ownerDock:collapse', h);
-  }, []);
-
-  // fetch owner channels count (only when logged in as owner)
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (userProp?.role === 'owner' && token) {
@@ -60,7 +49,6 @@ export default function OwnerDock({ user: userProp }){
     }
   }, [location.pathname, userProp]);
 
-  // hide immediately if logging out or redirecting during auth
   const isAuthRedirecting = typeof document !== 'undefined' && document.body.classList.contains('auth-redirecting');
   if (!role || isAuthRedirecting) return null;
 

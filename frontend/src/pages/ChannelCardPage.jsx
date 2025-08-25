@@ -16,10 +16,13 @@ export default function ChannelCardPage() {
   const [useLive, setUseLive] = useState(false);
   const [error, setError] = useState("");
   const [user, setUser] = useState(null);
-  useEffect(()=>{
+  const [fav, setFav] = useState(false);
+
+  // Load current user (for header/dock)
+  useEffect(() => {
     const token = localStorage.getItem('token') || localStorage.getItem('fm_admin_token');
     if (!token) return;
-    (async()=>{
+    (async () => {
       try {
         const { data } = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
         setUser(data);
@@ -27,8 +30,13 @@ export default function ChannelCardPage() {
     })();
   }, []);
 
-  const [fav, setFav] = useState(false);
+  // Init favorites indicator for this username
+  useEffect(() => {
+    const favs = JSON.parse(localStorage.getItem('favorites') || '[]');
+    setFav(favs.includes(username));
+  }, [username]);
 
+  // Load channel by username and its owners
   useEffect(() => {
     let mounted = true;
     (async () => {
@@ -38,12 +46,12 @@ export default function ChannelCardPage() {
         if (!mounted) return;
         const ch = chRes.data?.channel || chRes.data;
         setChannel(ch);
-        let ownersItems = [];
         try {
           const ownRes = await axios.get(`${API}/channels/${ch.id}/owners`);
-          ownersItems = ownRes.data?.items || [];
-        } catch (e) { ownersItems = []; }
-        setOwners(ownersItems);
+          setOwners(ownRes.data?.items || []);
+        } catch {
+          setOwners([]);
+        }
         setUseLive(true);
       } catch (e) {
         setError("Канал не найден");
@@ -52,13 +60,6 @@ export default function ChannelCardPage() {
       }
     })();
     return () => { mounted = false; };
-  useEffect(()=>{
-    // init favorites
-    const favs = JSON.parse(localStorage.getItem('favorites')||'[]');
-    const uname = username;
-    setFav(favs.includes(uname));
-  }, [username]);
-
   }, [username]);
 
   if (loading) {
@@ -81,7 +82,7 @@ export default function ChannelCardPage() {
   }
 
   const metric = (label, value, accent) => (
-    <div className={`text-center p-4 rounded-lg ${accent}`}> 
+    <div className={`text-center p-4 rounded-lg ${accent}`}>
       <div className="text-2xl font-bold">{value ?? "—"}</div>
       <div className="text-sm opacity-80">{label}</div>
     </div>
@@ -95,23 +96,6 @@ export default function ChannelCardPage() {
     <div className="min-h-screen bg-gray-50">
       <TgHeader user={user} />
       <OwnerDock user={user} />
-      <div className="tg-header">
-        <div className="tg-header-inner lg:grid lg:grid-cols-[340px_820px] items-center">
-          <div className="flex items-center gap-3 col-start-1">
-            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
-              <span className="text-white font-bold text-base">T</span>
-            </div>
-            <h1 className="font-semibold text-xl text-gray-900 tracking-tight">TeleIndex</h1>
-            <div className="text-sm text-gray-500 font-medium border-l border-gray-200 pl-4">Каталог</div>
-            {useLive && (
-              <span className="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">Live Data</span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 justify-end col-start-2">
-            <button className="tg-login" onClick={() => navigate('/')}>Назад</button>
-          </div>
-        </div>
-      </div>
 
       <main className="tg-container py-6">
         {/* Card header section */}
@@ -136,15 +120,14 @@ export default function ChannelCardPage() {
                 {channel.link && (
                   <a href={channel.link} target="_blank" rel="noopener noreferrer" className="tg-telega-reg">Перейти в Telegram</a>
                 )}
-                <button className={`tg-login`} onClick={()=>{
+                <button className={`tg-login`} onClick={() => {
                   const favs = JSON.parse(localStorage.getItem('favorites')||'[]');
-                  const uname = username;
-                  if (favs.includes(uname)){
-                    const next = favs.filter(x=>x!==uname);
+                  if (favs.includes(username)){
+                    const next = favs.filter(x=>x!==username);
                     localStorage.setItem('favorites', JSON.stringify(next));
                     setFav(false);
                   } else {
-                    favs.push(uname);
+                    favs.push(username);
                     localStorage.setItem('favorites', JSON.stringify(favs));
                     setFav(true);
                   }
@@ -152,11 +135,6 @@ export default function ChannelCardPage() {
               </div>
               {channel.short_description && (
                 <p className="mt-2 text-gray-700 text-sm md:text-base">{channel.short_description}</p>
-              )}
-              {channel.link && (
-                <div className="mt-3">
-                  <a href={channel.link} target="_blank" rel="noopener noreferrer" className="tg-telega-reg">Перейти в Telegram</a>
-                </div>
               )}
             </div>
           </div>
@@ -207,7 +185,6 @@ function AdminActions({ channel }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    // quick role check
     (async () => {
       try {
         const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
