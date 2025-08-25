@@ -15,6 +15,18 @@ export default function ChannelCardPage() {
   const [loading, setLoading] = useState(true);
   const [useLive, setUseLive] = useState(false);
   const [error, setError] = useState("");
+  const [user, setUser] = useState(null);
+  useEffect(()=>{
+    const token = localStorage.getItem('token') || localStorage.getItem('fm_admin_token');
+    if (!token) return;
+    (async()=>{
+      try {
+        const { data } = await axios.get(`${API}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        setUser(data);
+      } catch {}
+    })();
+  }, []);
+
   const [fav, setFav] = useState(false);
 
   useEffect(() => {
